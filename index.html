@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="pt-BR">
+
+<head>
+  <meta charset="UTF-8" />
+  <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Sistema completo para gestão de salão de beleza" />
+  <title>MeuSalão - Gestão de Salão de Beleza</title>
+  <style id="early-theme">
+    :root {
+      --primary: 0 0% 15%;
+      --ring: 0 0% 15%;
+      --primary-foreground: 0 0% 98%;
+    }
+  </style>
+  <script>
+    (function () {
+      try {
+        const color = localStorage.getItem('salao_cor');
+        if (color) {
+          const clean = color.replace('#', '');
+          const r = parseInt(clean.slice(0, 2), 16) / 255;
+          const g = parseInt(clean.slice(2, 4), 16) / 255;
+          const b = parseInt(clean.slice(4, 6), 16) / 255;
+          const max = Math.max(r, g, b), min = Math.min(r, g, b);
+          let h, s, l = (max + min) / 2;
+          if (max === min) { h = s = 0; } else {
+            const d = max - min;
+            s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+            if (max === r) h = (g - b) / d + (g < b ? 6 : 0);
+            else if (max === g) h = (b - r) / d + 2;
+            else h = (r - g) / d + 4;
+            h /= 6;
+          }
+          h = Math.round(h * 360); s = Math.round(s * 100); l = Math.round(l * 100);
+          const foreground = l < 72 ? '210 20% 98%' : '210 20% 12%';
+          const themeStr = ':root { --primary: ' + h + ' ' + s + '% ' + l + '%; --ring: ' + h + ' ' + s + '% ' + l + '%; --primary-foreground: ' + foreground + '; }';
+          document.getElementById('early-theme').innerHTML = themeStr;
+        }
+      } catch (e) { }
+    })();
+  </script>
+</head>
+
+<body>
+  <div id="root"></div>
+  <script type="module" src="/src/main.tsx"></script>
+</body>
+
+</html>
