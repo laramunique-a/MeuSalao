@@ -28,3 +28,21 @@ dist-ssr
 .env.development.local
 .env.test.local
 .env.production.local
+
+# TypeScript output logs
+tsc_output*.txt
+
+# Scripts temporários
+*.ps1
+
+# Planos e arquivos internos de desenvolvimento
+.verdent/
+
+# Pasta de histórico/docs internos
+docs/
+
+# SQLs de correção temporária (já aplicados)
+fix_*.sql
+
+# Arquivos de debug
+debug_types.ts
