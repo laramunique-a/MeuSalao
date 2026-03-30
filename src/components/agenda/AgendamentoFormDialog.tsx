@@ -139,6 +139,16 @@ export function AgendamentoFormDialog({
 
       const dataHora = new Date(`${data.data}T${data.hora}:00`)
 
+      // Validar se o horário não está no passado
+      if (dataHora < new Date()) {
+        toast({
+          title: 'Horário Inválido',
+          description: 'Não é possível agendar para um horário que já passou.',
+          variant: 'destructive',
+        })
+        return
+      }
+
       // Verificar se horário está bloqueado
       const isBloqueado = await checkBloqueio.mutateAsync({
         profissionalId: data.profissional_id,
@@ -265,17 +275,19 @@ export function AgendamentoFormDialog({
                       <Popover open={openCombobox} onOpenChange={setOpenCombobox}>
                         <PopoverTrigger asChild>
                           <FormControl>
-                            <Button
-                              variant="outline"
+                            <div
                               role="combobox"
+                              aria-expanded={openCombobox}
                               className={cn(
-                                'w-full justify-between font-normal',
+                                'flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background cursor-pointer',
+                                'hover:bg-accent hover:text-accent-foreground',
+                                'focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2',
                                 !field.value && 'text-muted-foreground'
                               )}
                             >
-                              {field.value ? clienteLabel : 'Digite ou selecione o cliente'}
+                              <span>{field.value ? clienteLabel : 'Digite ou selecione o cliente'}</span>
                               <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                            </Button>
+                            </div>
                           </FormControl>
                         </PopoverTrigger>
                         <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">

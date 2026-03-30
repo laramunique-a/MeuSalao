@@ -2,8 +2,15 @@ import { z } from 'zod'
 
 export const salaoSchema = z.object({
   nome: z.string().min(3, 'Nome deve ter no mínimo 3 caracteres'),
-  endereco: z.string().optional(),
+  cnpj: z.string().optional(),
   telefone: z.string().optional(),
+  cep: z.string().optional(),
+  logradouro: z.string().optional(),
+  numero: z.string().optional(),
+  complemento: z.string().optional(),
+  bairro: z.string().optional(),
+  cidade: z.string().optional(),
+  estado: z.string().optional(),
   logo_url: z.string().optional(),
   cor_primaria: z.string().regex(/^#[0-9A-Fa-f]{6}$/, 'Cor inválida').optional(),
 })

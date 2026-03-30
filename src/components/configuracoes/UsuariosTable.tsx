@@ -11,16 +11,18 @@ import { Badge } from '@/components/ui/badge'
 import { Switch } from '@/components/ui/switch'
 import { useToggleAtivoUsuario } from '@/hooks/useUsuarios'
 import { useToast } from '@/hooks/use-toast'
-import { Shield, User } from 'lucide-react'
+import { Shield, User, Edit2 } from 'lucide-react'
+import { Button } from '@/components/ui/button'
 import type { Database } from '@/types/database.types'
 
 type Usuario = Database['public']['Tables']['usuario']['Row']
 
 interface UsuariosTableProps {
   usuarios: Usuario[]
+  onEdit: (usuario: Usuario) => void
 }
 
-export function UsuariosTable({ usuarios }: UsuariosTableProps) {
+export function UsuariosTable({ usuarios, onEdit }: UsuariosTableProps) {
   const { toast } = useToast()
   const toggleAtivo = useToggleAtivoUsuario()
 
@@ -48,8 +50,10 @@ export function UsuariosTable({ usuarios }: UsuariosTableProps) {
             <TableHead className="py-2 h-10">Nome</TableHead>
             <TableHead className="py-2 h-10">Email</TableHead>
             <TableHead className="py-2 h-10">Perfil</TableHead>
+            <TableHead className="py-2 h-10">Comissão</TableHead>
             <TableHead className="py-2 h-10">Status</TableHead>
             <TableHead className="text-right py-2 h-10">Ativo</TableHead>
+            <TableHead className="text-right py-2 h-10">Ações</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -66,7 +70,12 @@ export function UsuariosTable({ usuarios }: UsuariosTableProps) {
                 <TableCell className="py-2">{usuario.email}</TableCell>
                 <TableCell className="py-2">
                   <div className="flex items-center gap-2">
-                    {usuario.perfil === 'administrador' ? (
+                    {usuario.perfil === 'super_admin' ? (
+                      <>
+                        <Shield className="h-4 w-4 text-purple-600" />
+                        <span className="text-sm font-bold text-purple-700">Master Admin</span>
+                      </>
+                    ) : usuario.perfil === 'administrador' ? (
                       <>
                         <Shield className="h-4 w-4 text-primary" />
                         <span className="text-sm">Administrador</span>
@@ -78,6 +87,11 @@ export function UsuariosTable({ usuarios }: UsuariosTableProps) {
                       </>
                     )}
                   </div>
+                </TableCell>
+                <TableCell className="py-2">
+                  <Badge variant="outline" className="text-[10px] font-bold border-blue-200 text-blue-700 bg-blue-50/30">
+                    {(usuario as any).comissao_percentual || 0}%
+                  </Badge>
                 </TableCell>
                 <TableCell className="py-2">
                   <Badge variant={usuario.ativo ? 'default' : 'secondary'} className="text-[10px] px-1.5 py-0">
@@ -93,6 +107,16 @@ export function UsuariosTable({ usuarios }: UsuariosTableProps) {
                       disabled={toggleAtivo.isPending}
                     />
                   </div>
+                </TableCell>
+                <TableCell className="text-right py-2">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 text-muted-foreground hover:text-primary"
+                    onClick={() => onEdit(usuario as any)}
+                  >
+                    <Edit2 className="h-4 w-4" />
+                  </Button>
                 </TableCell>
               </TableRow>
             ))

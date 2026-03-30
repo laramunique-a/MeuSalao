@@ -20,6 +20,7 @@ export function useCreateUsuario() {
       email: string
       perfil: 'administrador' | 'funcionario'
       senha: string
+      comissao_percentual?: number
     }) => usuarioService.createUsuario(input),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['usuarios'] })

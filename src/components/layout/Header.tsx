@@ -41,21 +41,23 @@ export function Header({ onMenuClick }: HeaderProps) {
             <Menu className="h-6 w-6" />
           </button>
 
-          {salao?.logo_url || localStorage.getItem('salao_logo') ? (
-            <img
-              src={salao?.logo_url || localStorage.getItem('salao_logo') || ''}
-              alt="Logo"
-              className="h-10 w-10 object-contain rounded"
-            />
-          ) : (
-            <div className="h-10 w-10 rounded bg-primary flex items-center justify-center text-primary-foreground font-bold text-sm">
-              {(salao?.nome || localStorage.getItem('salao_nome') || 'S').charAt(0)}
-            </div>
-          )}
-
-          <span className="text-lg font-bold text-foreground hidden sm:block">
-            {salao?.nome || localStorage.getItem('salao_nome') || ''}
-          </span>
+          <div className="flex items-center gap-4 pl-2 lg:w-64">
+            {salao?.logo_url || localStorage.getItem('salao_logo') ? (
+              <img
+                src={salao?.logo_url || localStorage.getItem('salao_logo') || ''}
+                alt="Logo"
+                className="h-8 w-12 object-contain"
+              />
+            ) : (
+              <div className="h-8 w-12 rounded bg-primary/10 flex items-center justify-center text-primary font-black text-sm">
+                {(salao?.nome || localStorage.getItem('salao_nome') || 'S').charAt(0)}
+              </div>
+            )}
+  
+            <span className="text-[17px] font-bold tracking-tight text-foreground truncate max-w-[200px]">
+              {salao?.nome || localStorage.getItem('salao_nome') || ''}
+            </span>
+          </div>
         </div>
 
         <div className="flex items-center gap-3">

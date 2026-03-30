@@ -26,17 +26,24 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { useEffect } from 'react'
-import { useCreateUsuario } from '@/hooks/useUsuarios'
+import { useCreateUsuario, useUpdateUsuario } from '@/hooks/useUsuarios'
 import { useToast } from '@/hooks/use-toast'
+import type { Database } from '@/types/database.types'
+
+type Usuario = Database['public']['Tables']['usuario']['Row']
 
 interface UsuarioFormDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
+  usuario?: Usuario | null
 }
 
-export function UsuarioFormDialog({ open, onOpenChange }: UsuarioFormDialogProps) {
+export function UsuarioFormDialog({ open, onOpenChange, usuario }: UsuarioFormDialogProps) {
   const { toast } = useToast()
   const createUsuario = useCreateUsuario()
+  const updateUsuario = useUpdateUsuario()
+
+  const isEditing = !!usuario
 
   const form = useForm<UsuarioFormData>({
     resolver: zodResolver(usuarioSchema),
@@ -45,39 +52,82 @@ export function UsuarioFormDialog({ open, onOpenChange }: UsuarioFormDialogProps
       email: '',
       perfil: 'funcionario',
       senha: '',
+      comissao_percentual: '0',
     },
   })
 
   useEffect(() => {
     if (open) {
-      form.reset({
-        nome: '',
-        email: '',
-        perfil: 'funcionario',
-        senha: '',
-      })
+      if (usuario) {
+        form.reset({
+          nome: usuario.nome,
+          email: usuario.email,
+          perfil: usuario.perfil as any,
+          senha: '',
+          comissao_percentual: (usuario as any).comissao_percentual?.toString() || '0',
+        })
+      } else {
+        form.reset({
+          nome: '',
+          email: '',
+          perfil: 'funcionario',
+          senha: '',
+          comissao_percentual: '0',
+        })
+      }
     }
-  }, [open, form])
+  }, [open, usuario, form])
 
   async function onSubmit(data: UsuarioFormData) {
     try {
-      await createUsuario.mutateAsync({
-        nome: data.nome,
-        email: data.email,
-        perfil: data.perfil,
-        senha: data.senha || '',
-      })
+      if (isEditing) {
+        // Prepare updates WITHOUT the password (passwords are handled by Auth, not the public table)
+        const updates: any = {
+          nome: data.nome,
+          email: data.email,
+          perfil: data.perfil,
+          comissao_percentual: parseFloat(data.comissao_percentual?.replace(',', '.') || '0'),
+        }
 
-      toast({
-        title: 'Usuário cadastrado!',
-        description: `${data.nome} foi adicionado com sucesso.`,
-      })
+        await updateUsuario.mutateAsync({
+          id: usuario.id,
+          updates
+        })
+
+        // NOTE: Actually changing another user's password requires Admin API
+        // which isn't safe to expose in the frontend directly.
+        // We only update the public profile here.
+        if (data.senha) {
+          toast({
+            title: 'Perfil atualizado',
+            description: 'Dados salvos, mas a alteração de senha de terceiros requer permissões de administrador no painel do Supabase.',
+          })
+        } else {
+          toast({
+            title: 'Usuário atualizado!',
+            description: `${data.nome} foi atualizado com sucesso.`,
+          })
+        }
+      } else {
+        await createUsuario.mutateAsync({
+          nome: data.nome,
+          email: data.email,
+          perfil: data.perfil,
+          comissao_percentual: parseFloat(data.comissao_percentual?.replace(',', '.') || '0'),
+          senha: data.senha || '',
+        })
+
+        toast({
+          title: 'Usuário cadastrado!',
+          description: `${data.nome} foi adicionado com sucesso.`,
+        })
+      }
 
       onOpenChange(false)
       form.reset()
     } catch (error: any) {
       toast({
-        title: 'Erro ao cadastrar usuário',
+        title: isEditing ? 'Erro ao atualizar usuário' : 'Erro ao cadastrar usuário',
         description: error.message,
         variant: 'destructive',
       })
@@ -88,9 +138,11 @@ export function UsuarioFormDialog({ open, onOpenChange }: UsuarioFormDialogProps
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
-          <DialogTitle>Novo Usuário</DialogTitle>
+          <DialogTitle>{isEditing ? 'Editar Usuário' : 'Novo Usuário'}</DialogTitle>
           <DialogDescription>
-            Adicione um novo funcionário ou administrador ao sistema.
+            {isEditing 
+              ? 'Atualize os dados e configurações do usuário.' 
+              : 'Adicione um novo funcionário ou administrador ao sistema.'}
           </DialogDescription>
         </DialogHeader>
 
@@ -129,7 +181,7 @@ export function UsuarioFormDialog({ open, onOpenChange }: UsuarioFormDialogProps
               name="senha"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Senha *</FormLabel>
+                  <FormLabel>Senha {isEditing ? '(deixe em branco para manter)' : '*'}</FormLabel>
                   <FormControl>
                     <Input type="password" placeholder="******" {...field} />
                   </FormControl>
@@ -160,12 +212,41 @@ export function UsuarioFormDialog({ open, onOpenChange }: UsuarioFormDialogProps
               )}
             />
 
+            <FormField
+              control={form.control}
+              name="comissao_percentual"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Comissão (%)</FormLabel>
+                  <FormControl>
+                    <Input 
+                      placeholder="0" 
+                      {...field} 
+                      onFocus={(e) => {
+                        if (e.target.value === '0') {
+                          field.onChange('')
+                        }
+                      }}
+                      onBlur={(e) => {
+                        if (e.target.value === '') {
+                          field.onChange('0')
+                        }
+                      }}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
             <div className="flex justify-end gap-3 pt-4">
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
                 Cancelar
               </Button>
-              <Button type="submit" disabled={createUsuario.isPending}>
-                {createUsuario.isPending ? 'Cadastrando...' : 'Cadastrar'}
+              <Button type="submit" disabled={createUsuario.isPending || updateUsuario.isPending}>
+                {createUsuario.isPending || updateUsuario.isPending 
+                  ? (isEditing ? 'Salvando...' : 'Cadastrando...') 
+                  : (isEditing ? 'Salvar Alterações' : 'Cadastrar')}
               </Button>
             </div>
           </form>

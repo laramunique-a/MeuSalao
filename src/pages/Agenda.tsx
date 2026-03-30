@@ -122,51 +122,53 @@ export default function Agenda() {
     }
   }
 
-  // Auto-atualizar status para 'Pendente Caixa' quando o tempo do serviço passar
+  // Refs para evitar chamadas duplicadas de auto-update
   const statusUpdateInProgress = useRef<Set<string>>(new Set())
 
+  // Auto-atualizar status do agendamento conforme o tempo passa
   useEffect(() => {
-    const checkPendenteCaixa = async () => {
+    const updateStatuses = async () => {
       const now = new Date()
-      // Filtrar agendamentos que estão 'em_atendimento' e já deveriam ter terminado
-      const toUpdate = agendamentos.filter(ag => {
-        if (ag.status !== 'em_atendimento') return false
-        if (statusUpdateInProgress.current.has(ag.id)) return false
+      const toUpdate: { id: string; status: Agendamento['status'] }[] = []
+
+      agendamentos.forEach(ag => {
+        if (statusUpdateInProgress.current.has(ag.id)) return
 
         const dataInicio = new Date(ag.data_hora)
         const duracao = ag.servico?.duracao_minutos || 60
         const dataFim = new Date(dataInicio.getTime() + duracao * 60000)
 
-        return dataFim < now
+        // 1. Agendado -> Em Atendimento (quando chega o horário)
+        if (ag.status === 'agendado' && dataInicio <= now) {
+          toUpdate.push({ id: ag.id, status: 'em_atendimento' })
+        }
+        // 2. Em Atendimento -> Pendente Caixa (quando termina a duração)
+        else if (ag.status === 'em_atendimento' && dataFim <= now) {
+          toUpdate.push({ id: ag.id, status: 'pendente_caixa' })
+        }
       })
 
       if (toUpdate.length === 0) return
 
-      for (const ag of toUpdate) {
+      for (const { id, status } of toUpdate) {
         try {
-          statusUpdateInProgress.current.add(ag.id)
-          await updateStatus.mutateAsync({
-            id: ag.id,
-            status: 'pendente_caixa'
-          })
+          statusUpdateInProgress.current.add(id)
+          await updateStatus.mutateAsync({ id, status })
         } catch (error) {
-          console.error(`Erro ao auto-atualizar agendamento ${ag.id}:`, error)
+          console.error(`Erro ao auto-atualizar agendamento ${id} para ${status}:`, error)
         } finally {
-          // Removemos do set após um tempo para evitar loops imediatos se o refetch for lento
           setTimeout(() => {
-            statusUpdateInProgress.current.delete(ag.id)
+            statusUpdateInProgress.current.delete(id)
           }, 5000)
         }
       }
     }
 
-    const timer = setTimeout(() => {
-      if (agendamentos.length > 0) {
-        checkPendenteCaixa()
-      }
-    }, 1000)
+    const timer = setInterval(() => {
+      if (agendamentos.length > 0) updateStatuses()
+    }, 10000) // Verifica a cada 10 segundos
 
-    return () => clearTimeout(timer)
+    return () => clearInterval(timer)
   }, [agendamentos, updateStatus])
 
   const filteredAgendamentos = agendamentos.filter((a) => {
@@ -253,140 +255,178 @@ export default function Agenda() {
   const isToday = format(selectedDate, 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd')
 
   return (
-    <div className="p-6">
-      <div className="flex items-center justify-between mb-6">
+    <div className="px-6 py-4">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-4">
         <div>
-          <h1 className="text-3xl font-bold">Agenda</h1>
-          <p className="text-gray-600 dark:text-gray-400 mt-1">
-            Gerencie os agendamentos do salão
-          </p>
+          <h1 className="text-2xl font-extrabold tracking-tight">Agenda</h1>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" onClick={() => setIsBloqueioFormOpen(true)}>
+          <Button variant="outline" size="sm" onClick={() => setIsBloqueioFormOpen(true)} className="h-9 px-3">
             <Ban className="h-4 w-4 mr-2" />
-            Bloquear Agenda
+            Bloquear
           </Button>
-          <Button onClick={() => setIsFormOpen(true)}>
+          <Button size="sm" onClick={() => setIsFormOpen(true)} className="h-9 px-3 shadow-md">
             <Plus className="h-4 w-4 mr-2" />
-            Novo Agendamento
+            Novo
           </Button>
         </div>
       </div>
-
-      <div className="flex flex-col md:flex-row gap-4 mb-6">
-        <div className="flex items-center gap-2">
-          <Button variant="outline" size="icon" onClick={handlePrevious}>
-            <ChevronLeft className="h-4 w-4" />
-          </Button>
+      <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 mb-6 bg-gradient-to-br from-background/80 to-muted/30 backdrop-blur-md p-3 rounded-2xl border border-border/50 shadow-sm transition-all duration-300">
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="flex items-center bg-background/50 backdrop-blur-sm rounded-xl border border-border/40 p-1 shadow-sm group hover:border-primary/30 transition-all">
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              onClick={handlePrevious} 
+              className="h-8 w-8 hover:bg-primary/10 hover:text-primary"
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+            
+            <Button
+              variant="ghost"
+              onClick={handleToday}
+              className={cn(
+                "h-8 px-4 text-xs font-bold relative overflow-hidden",
+                isToday 
+                  ? "text-primary bg-primary/10 shadow-[inset_0_0_0_1px_rgba(var(--primary),0.2)]" 
+                  : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
+              )}
+            >
+              Hoje
+              {isToday && <span className="absolute bottom-1 left-1/2 -translate-x-1/2 w-0.5 h-0.5 rounded-full bg-primary" />}
+            </Button>
+            
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              onClick={handleNext} 
+              className="h-8 w-8 hover:bg-primary/10 hover:text-primary"
+            >
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
 
           <Popover>
             <PopoverTrigger asChild>
-              <Button variant="outline" className={cn("min-w-[240px] justify-start text-left font-normal")}>
-                <CalendarIcon className="h-4 w-4 mr-2" />
-                {format(selectedDate, "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
+              <Button 
+                variant="ghost" 
+                className={cn(
+                  "h-10 px-3 gap-2 rounded-xl transition-all duration-300 shadow-none hover:shadow-none",
+                  "hover:bg-primary/5 active:scale-95",
+                  "group border border-transparent hover:border-primary/20"
+                )}
+              >
+                <div className="bg-primary/10 p-1.5 rounded-lg group-hover:bg-primary group-hover:text-primary-foreground transition-all duration-300">
+                  <CalendarIcon className="h-4 w-4" />
+                </div>
+                <div className="flex flex-col items-start leading-none">
+                  <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-tight">
+                    {format(selectedDate, "EEEE", { locale: ptBR })}
+                  </span>
+                  <span className="text-base font-bold tracking-tight">
+                    {format(selectedDate, "dd 'de' MMMM", { locale: ptBR })}
+                  </span>
+                </div>
               </Button>
             </PopoverTrigger>
-            <PopoverContent className="w-auto p-0" align="start">
+            <PopoverContent className="w-auto p-0 border-none shadow-2xl rounded-2xl overflow-hidden" align="start">
               <Calendar
                 mode="single"
                 selected={selectedDate}
                 onSelect={(date) => date && setSelectedDate(date)}
                 initialFocus
                 locale={ptBR}
+                className="p-3"
               />
             </PopoverContent>
           </Popover>
 
-          <Button
-            variant={isToday ? 'secondary' : 'outline'}
-            onClick={handleToday}
-            size="sm"
-          >
-            Hoje
-          </Button>
-
-          <Button variant="outline" size="icon" onClick={handleNext}>
-            <ChevronRight className="h-4 w-4" />
-          </Button>
+          <Badge variant="secondary" className="h-7 px-3 text-[11px] font-bold bg-background/40 backdrop-blur-sm border border-border/50 text-muted-foreground rounded-full shadow-sm">
+            {agendamentosOrdenados.length === 0 ? (
+              <span>Nenhum agendamento</span>
+            ) : (
+              <>
+                <span className="text-primary mr-1">{agendamentosOrdenados.length}</span>
+                {agendamentosOrdenados.length === 1 ? 'agendamento' : 'agendamentos'}
+              </>
+            )}
+          </Badge>
         </div>
 
-        <div className="flex items-center gap-2">
-          <Filter className="h-4 w-4 text-gray-500" />
-          <Select value={filterProfissional} onValueChange={setFilterProfissional}>
-            <SelectTrigger className="w-[200px]">
-              <SelectValue placeholder="Filtrar profissional" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="todos">Todos os profissionais</SelectItem>
-              {profissionais.map((profissional) => (
-                <SelectItem key={profissional.id} value={profissional.id}>
-                  {profissional.nome}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+        <div className="flex items-center gap-3 w-full md:w-auto">
+          <div className="flex items-center gap-2 flex-1 md:flex-none">
+            <Select value={filterProfissional} onValueChange={setFilterProfissional}>
+              <SelectTrigger className="w-full md:w-[180px] h-10 bg-background border-border">
+                <SelectValue placeholder="Profissional" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="todos">Todos Profissionais</SelectItem>
+                {profissionais.map((profissional) => (
+                  <SelectItem key={profissional.id} value={profissional.id}>
+                    {profissional.nome}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
 
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" className="gap-2">
-                <Filter className="h-4 w-4 text-gray-500" />
-                Status
-                {filterStatus.length < Object.values(STATUS_AGENDAMENTO).length && (
-                  <Badge variant="secondary" className="ml-1 px-1.5 py-0">
-                    {filterStatus.length}
-                  </Badge>
-                )}
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56">
-              <DropdownMenuLabel>Filtrar por Status</DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              {Object.entries(STATUS_AGENDAMENTO_LABELS).map(([value, label]) => (
-                <DropdownMenuCheckboxItem
-                  key={value}
-                  checked={filterStatus.includes(value)}
-                  onCheckedChange={(checked) => {
-                    setFilterStatus(prev =>
-                      checked
-                        ? [...prev, value]
-                        : prev.filter(s => s !== value)
-                    )
-                  }}
-                  onSelect={(e) => e.preventDefault()}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" className="h-10 border-border bg-background gap-2">
+                  <Filter className="h-4 w-4 text-muted-foreground" />
+                  Status
+                  {filterStatus.length < Object.values(STATUS_AGENDAMENTO).length && (
+                    <Badge variant="default" className="ml-1 px-1.5 py-0 h-4 min-w-4 flex items-center justify-center text-[10px]">
+                      {filterStatus.length}
+                    </Badge>
+                  )}
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuLabel>Filtrar por Status</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                {Object.entries(STATUS_AGENDAMENTO_LABELS).map(([value, label]) => (
+                  <DropdownMenuCheckboxItem
+                    key={value}
+                    checked={filterStatus.includes(value)}
+                    onCheckedChange={(checked) => {
+                      setFilterStatus(prev =>
+                        checked
+                          ? [...prev, value]
+                          : prev.filter(s => s !== value)
+                      )
+                    }}
+                    onSelect={(e) => e.preventDefault()}
+                  >
+                    {label}
+                  </DropdownMenuCheckboxItem>
+                ))}
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  onClick={() => setFilterStatus(Object.values(STATUS_AGENDAMENTO))}
+                  className="justify-center text-primary font-medium"
                 >
-                  {label}
-                </DropdownMenuCheckboxItem>
-              ))}
-              <DropdownMenuSeparator />
-              <DropdownMenuItem
-                onClick={() => setFilterStatus(Object.values(STATUS_AGENDAMENTO))}
-                className="justify-center text-primary font-medium"
-              >
-                Selecionar Todos
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+                  Selecionar Todos
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
 
-          <ToggleGroup type="single" value={viewMode} onValueChange={(value) => value && setViewMode(value as any)}>
-            <ToggleGroupItem value="list" aria-label="Visualização em lista">
+          <div className="h-8 w-[1px] bg-border hidden md:block mx-1" />
+
+          <ToggleGroup 
+            type="single" 
+            value={viewMode} 
+            onValueChange={(value) => value && setViewMode(value as any)}
+            className="bg-background border border-border p-1 rounded-lg"
+          >
+            <ToggleGroupItem value="list" className="h-7 w-7 p-0" aria-label="Lista">
               <List className="h-4 w-4" />
             </ToggleGroupItem>
-            <ToggleGroupItem value="week" aria-label="Visualização semanal">
+            <ToggleGroupItem value="week" className="h-7 w-7 p-0" aria-label="Semana">
               <CalendarRange className="h-4 w-4" />
             </ToggleGroupItem>
           </ToggleGroup>
-        </div>
-      </div>
-
-      <div className="mb-6 flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-semibold">
-            {format(selectedDate, "EEEE, dd 'de' MMMM", { locale: ptBR })}
-          </h2>
-          <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-            {agendamentosOrdenados.length}{' '}
-            {agendamentosOrdenados.length === 1 ? 'agendamento' : 'agendamentos'}
-          </p>
         </div>
       </div>
 

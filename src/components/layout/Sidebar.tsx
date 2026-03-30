@@ -8,6 +8,7 @@ import {
   DollarSign,
   BarChart3,
   Settings,
+  ShieldCheck,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -17,7 +18,7 @@ interface SidebarProps {
 }
 
 export function Sidebar({ open, setOpen }: SidebarProps) {
-  const { isAdmin } = useAuth()
+  const { isAdmin, isSuperAdmin } = useAuth()
 
   const navigation = [
     { name: 'Agenda', to: '/', icon: Calendar },
@@ -30,6 +31,10 @@ export function Sidebar({ open, setOpen }: SidebarProps) {
     { name: 'Dashboard', to: '/dashboard', icon: LayoutDashboard },
     { name: 'Relatórios', to: '/relatorios', icon: BarChart3 },
     { name: 'Configurações', to: '/configuracoes', icon: Settings },
+  ]
+
+  const masterNavigation = [
+    { name: 'Painel Master', to: '/master', icon: ShieldCheck },
   ]
 
   const navLinkClass = ({ isActive }: { isActive: boolean }) =>
@@ -53,7 +58,7 @@ export function Sidebar({ open, setOpen }: SidebarProps) {
 
       <div
         className={cn(
-          'fixed top-16 bottom-0 left-0 z-30 w-64 bg-card border-r border-border transform transition-transform duration-300 ease-in-out lg:translate-x-0 flex flex-col',
+          'fixed top-20 bottom-0 left-0 z-30 w-64 bg-card border-r border-border transform transition-transform duration-300 ease-in-out lg:translate-x-0 flex flex-col',
           open ? 'translate-x-0' : '-translate-x-full'
         )}
       >
@@ -78,6 +83,27 @@ export function Sidebar({ open, setOpen }: SidebarProps) {
                 </p>
               </div>
               {adminNavigation.map((item) => (
+                <NavLink
+                  key={item.name}
+                  to={item.to}
+                  onClick={() => setOpen(false)}
+                  className={navLinkClass}
+                >
+                  <item.icon className="mr-3 h-4 w-4" />
+                  {item.name}
+                </NavLink>
+              ))}
+            </>
+          )}
+
+          {isSuperAdmin && (
+            <>
+              <div className="pt-4 pb-2">
+                <p className="px-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                  Plataforma
+                </p>
+              </div>
+              {masterNavigation.map((item) => (
                 <NavLink
                   key={item.name}
                   to={item.to}

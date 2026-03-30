@@ -6,6 +6,7 @@ import { ServicoFormDialog } from '@/components/servicos/ServicoFormDialog'
 import { ServicosTable } from '@/components/servicos/ServicosTable'
 import type { Servico } from '@/types/models'
 import { useToast } from '@/hooks/use-toast'
+import { Badge } from '@/components/ui/badge'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -86,35 +87,36 @@ export default function Servicos() {
   const servicosInativos = servicos.filter((s) => !s.ativo).length
 
   return (
-    <div className="p-6">
-      <div className="flex items-center justify-between mb-6">
+    <div className="px-6 py-4">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-4">
         <div>
-          <h1 className="text-3xl font-bold">Serviços</h1>
-          <p className="text-gray-600 dark:text-gray-400 mt-1">
-            Gerencie os serviços oferecidos no seu salão
-          </p>
+          <h1 className="text-2xl font-extrabold tracking-tight">Serviços</h1>
         </div>
-        <Button onClick={() => setIsFormOpen(true)}>
+        <Button size="sm" onClick={() => setIsFormOpen(true)} className="h-9 px-3 shadow-md">
           <Plus className="h-4 w-4 mr-2" />
           Novo Serviço
         </Button>
+      </div>
+
+      <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 mb-6 bg-gradient-to-br from-background/80 to-muted/30 backdrop-blur-md p-3 rounded-2xl border border-border/50 shadow-sm transition-all duration-300">
+        <div className="flex flex-wrap items-center gap-2">
+          <Badge variant="secondary" className="h-7 px-3 text-[11px] font-bold bg-background/40 backdrop-blur-sm border border-border/50 text-muted-foreground rounded-full shadow-sm">
+            Total: <span className="text-primary ml-1">{servicos.length}</span>
+          </Badge>
+          <Badge variant="secondary" className="h-7 px-3 text-[11px] font-bold bg-background/40 backdrop-blur-sm border border-border/50 text-muted-foreground rounded-full shadow-sm">
+            Ativos: <span className="text-green-600 ml-1">{servicosAtivos}</span>
+          </Badge>
+          <Badge variant="secondary" className="h-7 px-3 text-[11px] font-bold bg-background/40 backdrop-blur-sm border border-border/50 text-muted-foreground rounded-full shadow-sm">
+            Inativos: <span className="text-orange-600 ml-1">{servicosInativos}</span>
+          </Badge>
+        </div>
       </div>
 
       {isLoading ? (
         <div className="text-center py-12">Carregando serviços...</div>
       ) : (
         <>
-          <div className="mb-4 flex gap-4 text-sm text-gray-600 dark:text-gray-400">
-            <div>
-              Total: <span className="font-semibold">{servicos.length}</span>
-            </div>
-            <div>
-              Ativos: <span className="font-semibold text-green-600">{servicosAtivos}</span>
-            </div>
-            <div>
-              Inativos: <span className="font-semibold text-gray-500">{servicosInativos}</span>
-            </div>
-          </div>
+
           <ServicosTable
             servicos={servicos}
             onEdit={handleEdit}

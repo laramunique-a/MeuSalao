@@ -18,12 +18,12 @@ export default function Dashboard() {
 
   const agendamentosConcluidos = agendamentosHoje.filter((a) => a.status === 'concluido').length
   const agendamentosPendentes = agendamentosHoje.filter((a) =>
-    ['agendado', 'confirmado', 'em_atendimento'].includes(a.status)
+    ['agendado', 'confirmado', 'em_atendimento', 'em_atraso'].includes(a.status)
   ).length
 
   const proximosAgendamentos = agendamentosHoje
     .filter((a) =>
-      ['agendado', 'confirmado', 'em_atendimento'].includes(a.status)
+      ['agendado', 'confirmado', 'em_atendimento', 'em_atraso'].includes(a.status)
     )
     .sort((a, b) => new Date(a.data_hora).getTime() - new Date(b.data_hora).getTime())
     .slice(0, 5)

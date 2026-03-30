@@ -3,7 +3,15 @@ import { Json } from './database.types'
 export interface Salao {
   id: string
   nome: string
+  cnpj: string | null
   endereco: string | null
+  logradouro: string | null
+  numero: string | null
+  complemento: string | null
+  bairro: string | null
+  cidade: string | null
+  estado: string | null
+  cep: string | null
   telefone: string | null
   logo_url: string | null
   cor_primaria: string | null
@@ -14,11 +22,12 @@ export interface Salao {
 
 export interface Usuario {
   id: string
-  salao_id: string
+  salao_id: string | null
   auth_user_id: string
   nome: string
   email: string
-  perfil: 'administrador' | 'funcionario'
+  perfil: 'administrador' | 'funcionario' | 'super_admin'
+  comissao_percentual?: number
   ativo: boolean
   created_at: string
 }
@@ -41,6 +50,7 @@ export interface Servico {
   descricao: string | null
   valor: number
   duracao_minutos: number
+  comissao_percentual?: number
   ativo: boolean
   created_at: string
   updated_at: string
@@ -72,15 +82,38 @@ export interface TransacaoCaixa {
   salao_id: string
   usuario_id: string
   agendamento_id: string | null
+  caixa_id: string | null
   tipo: 'entrada' | 'saida'
   valor: number
   forma_pagamento: FormaPagamento
   categoria: string | null
   descricao: string
+  status: 'ativo' | 'cancelado' | 'estornado'
+  taxa_cartao?: number
+  comissao_valor?: number
+  metadata?: Json
   data_hora: string
   created_at: string
   usuario?: Usuario
   agendamento?: Agendamento
+}
+
+export interface CaixaDiario {
+  id: string
+  salao_id: string
+  usuario_abertura_id: string
+  usuario_fechamento_id: string | null
+  data_abertura: string
+  data_fechamento: string | null
+  valor_inicial: number
+  valor_fechamento_informado: number | null
+  valor_fechamento_sistema: number | null
+  status: 'aberto' | 'fechado'
+  observacoes: string | null
+  created_at: string
+  updated_at: string
+  usuario_abertura?: Usuario
+  usuario_fechamento?: Usuario
 }
 
 export interface BloqueioAgenda {

@@ -3,7 +3,7 @@ import { useAuthStore } from '@/store/authStore'
 import { authService } from '@/services/auth.service'
 
 export function useAuth() {
-  const { user, usuario, isAuthenticated, isAdmin } = useAuthStore()
+  const { user, usuario, isAuthenticated, isAdmin, isSuperAdmin } = useAuthStore()
 
   useEffect(() => {
     authService.getCurrentUser()
@@ -14,6 +14,7 @@ export function useAuth() {
     usuario,
     isAuthenticated,
     isAdmin,
+    isSuperAdmin,
     login: authService.login,
     logout: authService.logout,
     resetPassword: authService.resetPassword,

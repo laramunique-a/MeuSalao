@@ -8,6 +8,7 @@ interface AuthState {
   usuario: Usuario | null
   isAuthenticated: boolean
   isAdmin: boolean
+  isSuperAdmin: boolean
   setUser: (user: User | null, usuario: Usuario | null) => void
   logout: () => void
 }
@@ -19,12 +20,14 @@ export const useAuthStore = create<AuthState>()(
       usuario: null,
       isAuthenticated: false,
       isAdmin: false,
+      isSuperAdmin: false,
       setUser: (user, usuario) =>
         set({
           user,
           usuario,
           isAuthenticated: !!user,
-          isAdmin: usuario?.perfil === 'administrador',
+          isAdmin: usuario?.perfil === 'administrador' || usuario?.perfil === 'super_admin',
+          isSuperAdmin: usuario?.perfil === 'super_admin',
         }),
       logout: () =>
         set({
@@ -32,6 +35,7 @@ export const useAuthStore = create<AuthState>()(
           usuario: null,
           isAuthenticated: false,
           isAdmin: false,
+          isSuperAdmin: false,
         }),
     }),
     {

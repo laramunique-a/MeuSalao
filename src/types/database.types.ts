@@ -47,31 +47,34 @@ export interface Database {
       usuario: {
         Row: {
           id: string
-          salao_id: string
+          salao_id: string | null
           auth_user_id: string
           nome: string
           email: string
-          perfil: 'administrador' | 'funcionario'
+          perfil: 'administrador' | 'funcionario' | 'super_admin'
+          comissao_percentual: number
           ativo: boolean
           created_at: string
         }
         Insert: {
           id?: string
-          salao_id: string
+          salao_id?: string | null
           auth_user_id: string
           nome: string
           email: string
-          perfil?: 'administrador' | 'funcionario'
+          perfil?: 'administrador' | 'funcionario' | 'super_admin'
+          comissao_percentual?: number
           ativo?: boolean
           created_at?: string
         }
         Update: {
           id?: string
-          salao_id?: string
+          salao_id?: string | null
           auth_user_id?: string
           nome?: string
           email?: string
-          perfil?: 'administrador' | 'funcionario'
+          perfil?: 'administrador' | 'funcionario' | 'super_admin'
+          comissao_percentual?: number
           ativo?: boolean
           created_at?: string
         }
@@ -138,6 +141,7 @@ export interface Database {
           descricao?: string | null
           valor?: number
           duracao_minutos?: number
+          comissao_percentual?: number
           ativo?: boolean
           created_at?: string
           updated_at?: string
@@ -190,11 +194,16 @@ export interface Database {
           salao_id: string
           usuario_id: string
           agendamento_id: string | null
+          caixa_id: string | null
           tipo: 'entrada' | 'saida'
           valor: number
           forma_pagamento: 'dinheiro' | 'cartao_debito' | 'cartao_credito' | 'pix' | 'outros'
           categoria: string | null
           descricao: string
+          status: 'ativo' | 'cancelado' | 'estornado'
+          taxa_cartao: number
+          comissao_valor: number
+          metadata: Json
           data_hora: string
           created_at: string
         }
@@ -203,11 +212,16 @@ export interface Database {
           salao_id: string
           usuario_id: string
           agendamento_id?: string | null
+          caixa_id?: string | null
           tipo: 'entrada' | 'saida'
           valor: number
           forma_pagamento: 'dinheiro' | 'cartao_debito' | 'cartao_credito' | 'pix' | 'outros'
           categoria?: string | null
           descricao: string
+          status?: 'ativo' | 'cancelado' | 'estornado'
+          taxa_cartao?: number
+          comissao_valor?: number
+          metadata?: Json
           data_hora?: string
           created_at?: string
         }
@@ -216,11 +230,16 @@ export interface Database {
           salao_id?: string
           usuario_id?: string
           agendamento_id?: string | null
+          caixa_id?: string | null
           tipo?: 'entrada' | 'saida'
           valor?: number
           forma_pagamento?: 'dinheiro' | 'cartao_debito' | 'cartao_credito' | 'pix' | 'outros'
           categoria?: string | null
           descricao?: string
+          status?: 'ativo' | 'cancelado' | 'estornado'
+          taxa_cartao?: number
+          comissao_valor?: number
+          metadata?: Json
           data_hora?: string
           created_at?: string
         }

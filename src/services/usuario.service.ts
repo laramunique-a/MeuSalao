@@ -14,7 +14,8 @@ export const usuarioService = {
     const { data, error } = await supabase
       .from('usuario')
       .select('*')
-      .eq('salao_id', usuario.salao_id)
+      .eq('salao_id', usuario.salao_id as any)
+      .neq('perfil', 'super_admin')
       .order('nome')
 
     if (error) throw error
@@ -26,6 +27,7 @@ export const usuarioService = {
     email: string
     perfil: 'administrador' | 'funcionario'
     senha: string
+    comissao_percentual?: number
   }): Promise<Usuario> {
     const adminUsuario = useAuthStore.getState().usuario
     if (!adminUsuario) throw new Error('Usuário não autenticado')
@@ -65,6 +67,7 @@ export const usuarioService = {
       nome: input.nome,
       email: input.email,
       perfil: input.perfil,
+      comissao_percentual: input.comissao_percentual || 0,
       ativo: true,
     }
 

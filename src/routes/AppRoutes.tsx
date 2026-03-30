@@ -2,6 +2,7 @@ import { Routes, Route } from 'react-router-dom'
 import { ProtectedRoute } from './ProtectedRoute'
 import { PublicRoute } from './PublicRoute'
 import { AdminRoute } from './AdminRoute'
+import { SuperAdminRoute } from './SuperAdminRoute'
 import MainLayout from '@/components/layout/MainLayout'
 import Login from '@/pages/Login'
 import Dashboard from '@/pages/Dashboard'
@@ -11,6 +12,7 @@ import Servicos from '@/pages/Servicos'
 import Caixa from '@/pages/Caixa'
 import Relatorios from '@/pages/Relatorios'
 import Configuracoes from '@/pages/Configuracoes'
+import MasterDashboard from '@/pages/MasterDashboard'
 import NotFound from '@/pages/NotFound'
 import { Toaster } from '@/components/ui/toaster'
 
@@ -34,6 +36,10 @@ export default function AppRoutes() {
             <Route element={<AdminRoute />}>
               <Route path="/relatorios" element={<Relatorios />} />
               <Route path="/configuracoes" element={<Configuracoes />} />
+            </Route>
+
+            <Route element={<SuperAdminRoute />}>
+              <Route path="/master" element={<MasterDashboard />} />
             </Route>
           </Route>
         </Route>

@@ -8,6 +8,8 @@ import { DeleteClienteDialog } from '@/components/clientes/DeleteClienteDialog'
 import { ClientesTable } from '@/components/clientes/ClientesTable'
 import type { Cliente } from '@/types/models'
 import { useToast } from '@/hooks/use-toast'
+import { Badge } from '@/components/ui/badge'
+import { cn } from '@/lib/utils'
 
 export default function Clientes() {
   const { toast } = useToast()
@@ -64,51 +66,65 @@ export default function Clientes() {
   }
 
   return (
-    <div className="p-6">
-      <div className="flex items-center justify-between mb-6">
+    <div className="px-6 py-4">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-4">
         <div>
-          <h1 className="text-3xl font-bold">Clientes</h1>
-          <p className="text-gray-600 dark:text-gray-400 mt-1">
-            Gerencie os clientes do seu salão
-          </p>
+          <h1 className="text-2xl font-extrabold tracking-tight">Clientes</h1>
         </div>
-        <Button onClick={() => setIsFormOpen(true)}>
+        <Button size="sm" onClick={() => setIsFormOpen(true)} className="h-9 px-3 shadow-md">
           <Plus className="h-4 w-4 mr-2" />
           Novo Cliente
         </Button>
       </div>
 
-      <div className="mb-6">
-        <div className="relative max-w-md mb-4">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-          <Input
-            placeholder="Buscar por nome, telefone ou email..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10"
-          />
-        </div>
+      <div className="flex flex-col lg:flex-row items-center justify-between gap-4 mb-6 bg-gradient-to-br from-background/80 to-muted/30 backdrop-blur-md p-3 rounded-2xl border border-border/50 shadow-sm transition-all duration-300">
+        <div className="flex flex-col sm:flex-row items-center gap-4 w-full">
+          <div className="relative w-full sm:w-72 lg:w-96 group">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
+            <Input
+              placeholder="Buscar por nome, telefone ou email..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10 h-10 bg-background/50 border-border group-focus-within:border-primary/50 transition-all rounded-xl shadow-none focus-visible:ring-1 focus-visible:ring-primary/20"
+            />
+          </div>
 
-        <div className="flex flex-wrap gap-0.5">
-          <Button
-            variant={selectedLetter === null ? 'default' : 'outline'}
-            size="sm"
-            onClick={() => setSelectedLetter(null)}
-            className="h-7 px-2 text-[9px] uppercase font-bold"
-          >
-            Todos
-          </Button>
-          {alphabet.map((letter) => (
+          <div className="h-6 w-[1px] bg-border/40 mx-1 hidden sm:block" />
+
+          <div className="flex items-center gap-1 w-full overflow-x-auto no-scrollbar scroll-smooth pb-1 sm:pb-0">
             <Button
-              key={letter}
-              variant={selectedLetter === letter ? 'default' : 'outline'}
+              variant="ghost"
               size="sm"
-              onClick={() => setSelectedLetter(letter)}
-              className="h-7 w-7 text-[9px] p-0 font-bold"
+              onClick={() => setSelectedLetter(null)}
+              className={cn(
+                "h-8 px-4 text-[10px] uppercase font-bold transition-all shrink-0",
+                selectedLetter === null 
+                  ? "text-primary bg-primary/15 shadow-[0_2px_10px_-3px_rgba(var(--primary),0.3)] ring-1 ring-primary/20" 
+                  : "text-muted-foreground hover:text-foreground hover:bg-background/60"
+              )}
             >
-              {letter}
+              Todos
             </Button>
-          ))}
+            
+            <div className="flex items-center gap-0.5">
+              {alphabet.map((letter) => (
+                <Button
+                  key={letter}
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setSelectedLetter(letter)}
+                  className={cn(
+                    "h-8 w-8 text-[11px] p-0 font-extrabold transition-all shrink-0",
+                    selectedLetter === letter 
+                      ? "text-primary bg-primary/15 shadow-[0_2px_10px_-3px_rgba(var(--primary),0.3)] ring-1 ring-primary/20" 
+                      : "text-muted-foreground hover:text-foreground hover:bg-background/60"
+                  )}
+                >
+                  {letter}
+                </Button>
+              ))}
+            </div>
+          </div>
         </div>
       </div>
 
@@ -116,9 +132,12 @@ export default function Clientes() {
         <div className="text-center py-12">Carregando clientes...</div>
       ) : (
         <>
-          <div className="mb-4 text-sm text-gray-600 dark:text-gray-400">
-            {displayedClientes.length} {displayedClientes.length === 1 ? 'cliente' : 'clientes'}
-            {searchTerm && ' encontrado(s)'}
+          <div className="mb-4">
+            <Badge variant="secondary" className="h-7 px-3 text-[11px] font-bold bg-muted/40 backdrop-blur-sm border border-border/50 text-muted-foreground rounded-full shadow-sm">
+              <span className="text-primary mr-1">{displayedClientes.length}</span>
+              {displayedClientes.length === 1 ? 'cliente' : 'clientes'}
+              {searchTerm && ' encontrado(s)'}
+            </Badge>
           </div>
           <ClientesTable
             clientes={displayedClientes}

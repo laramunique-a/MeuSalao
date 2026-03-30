@@ -42,7 +42,7 @@ interface BloqueioFormDialogProps {
 
 export function BloqueioFormDialog({ open, onOpenChange, bloqueio }: BloqueioFormDialogProps) {
   const { toast } = useToast()
-  const { usuario } = useAuthStore()
+  const { usuario, isAdmin } = useAuthStore()
   const { data: profissionais = [] } = useProfissionais()
   const createBloqueio = useCreateBloqueio()
   const updateBloqueio = useUpdateBloqueio()
@@ -71,7 +71,7 @@ export function BloqueioFormDialog({ open, onOpenChange, bloqueio }: BloqueioFor
       })
     } else {
       form.reset({
-        profissional_id: '',
+        profissional_id: !isAdmin ? usuario?.id || '' : '',
         data_inicio: '',
         data_fim: '',
         horario_inicio: '',
@@ -87,7 +87,7 @@ export function BloqueioFormDialog({ open, onOpenChange, bloqueio }: BloqueioFor
         await updateBloqueio.mutateAsync({
           id: bloqueio.id,
           data: {
-            profissional_id: data.profissional_id,
+            profissional_id: !isAdmin ? usuario!.id : data.profissional_id,
             data_inicio: `${data.data_inicio}T00:00:00`,
             data_fim: `${data.data_fim}T23:59:59`,
             horario_inicio: data.horario_inicio,
@@ -102,7 +102,7 @@ export function BloqueioFormDialog({ open, onOpenChange, bloqueio }: BloqueioFor
       } else {
         await createBloqueio.mutateAsync({
           salao_id: usuario!.salao_id,
-          profissional_id: data.profissional_id,
+          profissional_id: !isAdmin ? usuario!.id : data.profissional_id,
           data_inicio: `${data.data_inicio}T00:00:00`,
           data_fim: `${data.data_fim}T23:59:59`,
           horario_inicio: data.horario_inicio,
@@ -144,7 +144,7 @@ export function BloqueioFormDialog({ open, onOpenChange, bloqueio }: BloqueioFor
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Profissional</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value}>
+                  <Select onValueChange={field.onChange} value={field.value} disabled={!isAdmin}>
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder="Selecione um profissional" />

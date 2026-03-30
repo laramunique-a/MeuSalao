@@ -5,7 +5,7 @@ import { useAuthStore } from '@/store/authStore'
 const AGENDAMENTO_SELECT = `
   *,
   cliente:cliente_id (id, nome, telefone),
-  profissional:profissional_id (id, nome),
+  profissional:profissional_id (id, nome, perfil, comissao_percentual),
   servico:servico_id (id, nome, valor, duracao_minutos)
 `
 
@@ -14,10 +14,16 @@ export const agendamentoService = {
     const usuario = useAuthStore.getState().usuario
     if (!usuario) throw new Error('Usuário não autenticado')
 
-    const { data, error } = await supabase
+    let query = supabase
       .from('agendamento')
       .select(AGENDAMENTO_SELECT)
       .eq('salao_id', usuario.salao_id)
+
+    if (usuario.perfil !== 'admin' && usuario.perfil !== 'super_admin') {
+      query = query.eq('profissional_id', usuario.id)
+    }
+
+    const { data, error } = await query
       .order('data_hora', { ascending: true })
 
     if (error) throw error
@@ -28,12 +34,18 @@ export const agendamentoService = {
     const usuario = useAuthStore.getState().usuario
     if (!usuario) throw new Error('Usuário não autenticado')
 
-    const { data, error } = await supabase
+    let query = supabase
       .from('agendamento')
       .select(AGENDAMENTO_SELECT)
       .eq('salao_id', usuario.salao_id)
       .gte('data_hora', startDate)
       .lte('data_hora', endDate)
+
+    if (usuario.perfil !== 'admin' && usuario.perfil !== 'super_admin') {
+      query = query.eq('profissional_id', usuario.id)
+    }
+
+    const { data, error } = await query
       .order('data_hora', { ascending: true })
 
     if (error) throw error
@@ -44,13 +56,19 @@ export const agendamentoService = {
     const usuario = useAuthStore.getState().usuario
     if (!usuario) throw new Error('Usuário não autenticado')
 
-    const { data, error } = await supabase
+    let query = supabase
       .from('agendamento')
       .select(AGENDAMENTO_SELECT)
       .eq('salao_id', usuario.salao_id)
       .eq('status', status)
       .gte('data_hora', startDate)
       .lte('data_hora', endDate)
+
+    if (usuario.perfil !== 'admin' && usuario.perfil !== 'super_admin') {
+      query = query.eq('profissional_id', usuario.id)
+    }
+
+    const { data, error } = await query
       .order('data_hora', { ascending: true })
 
     if (error) throw error

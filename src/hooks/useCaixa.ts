@@ -60,3 +60,70 @@ export function useCaixaSummary(startDate: string, endDate: string) {
     enabled: !!startDate && !!endDate,
   })
 }
+
+export function useCaixaAberto() {
+  return useQuery({
+    queryKey: ['caixa-aberto'],
+    queryFn: () => caixaService.getCaixaAberto(),
+  })
+}
+
+export function useLastClosedCaixa() {
+  return useQuery({
+    queryKey: ['caixa-last-closed'],
+    queryFn: () => caixaService.getLastClosedCaixa(),
+  })
+}
+
+export function useCaixasByPeriod(startDate: string, endDate: string) {
+  return useQuery({
+    queryKey: ['caixas-period', startDate, endDate],
+    queryFn: () => caixaService.getCaixasByPeriod(startDate, endDate),
+    enabled: !!startDate && !!endDate,
+  })
+}
+
+export function useTransacoesByCaixa(caixaId: string | null) {
+  return useQuery({
+    queryKey: ['transacoes-caixa', caixaId],
+    queryFn: () => caixaService.getTransacoesByCaixa(caixaId!),
+    enabled: !!caixaId,
+  })
+}
+
+export function useAbrirCaixa() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ valorInicial, observacoes }: { valorInicial: number; observacoes?: string }) =>
+      caixaService.abrirCaixa(valorInicial, observacoes),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['caixa-aberto'] })
+      queryClient.invalidateQueries({ queryKey: ['transacoes'] })
+      queryClient.invalidateQueries({ queryKey: ['caixa-summary'] })
+    },
+  })
+}
+
+export function useFecharCaixa() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ caixaId, valorInformado, observacoes }: { caixaId: string; valorInformado: number; observacoes?: string }) =>
+      caixaService.fecharCaixa(caixaId, valorInformado, observacoes),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['caixa-aberto'] })
+      queryClient.invalidateQueries({ queryKey: ['transacoes'] })
+      queryClient.invalidateQueries({ queryKey: ['caixa-summary'] })
+    },
+  })
+}
+
+export function useEstornarTransacao() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (id: string) => caixaService.estornar(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['transacoes'] })
+      queryClient.invalidateQueries({ queryKey: ['caixa-summary'] })
+    },
+  })
+}

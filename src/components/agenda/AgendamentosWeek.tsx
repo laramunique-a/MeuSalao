@@ -89,9 +89,11 @@ export function AgendamentosWeek({
                                                         </span>
                                                         <div className={cn(
                                                             "w-2 h-2 rounded-full",
-                                                            ag.status === 'concluido' ? "bg-green-500" :
-                                                                ag.status === 'em_atendimento' ? "bg-blue-500" :
-                                                                    ag.status === 'cancelado' ? "bg-red-500" : "bg-yellow-500"
+                                                            ag.status === 'concluido' ? "bg-green-700" :
+                                                                ag.status === 'pendente_caixa' ? "bg-purple-500" :
+                                                                    ag.status === 'em_atendimento' ? "bg-yellow-500" :
+                                                                        ag.status === 'em_atraso' ? "bg-orange-500" :
+                                                                            ag.status === 'cancelado' ? "bg-red-500" : "bg-blue-500"
                                                         )} />
                                                     </div>
                                                     <div className="font-semibold truncate uppercase tracking-tight">{ag.cliente?.nome}</div>

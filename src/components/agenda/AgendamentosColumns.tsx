@@ -217,9 +217,15 @@ export function AgendamentosColumns({
                                       <Pencil className="h-4 w-4 mr-2" />
                                       Editar
                                     </DropdownMenuItem>
-                                    {!['concluido', 'cancelado'].includes(agendamento.status) && (
+                                    {!['concluido', 'cancelado', 'em_atendimento', 'pendente_caixa'].includes(agendamento.status) && (
                                       <>
                                         <DropdownMenuSeparator />
+                                        {agendamento.status === 'em_atraso' && (
+                                          <DropdownMenuItem onClick={() => handleClienteChegou(agendamento)} className="text-orange-600">
+                                            <UserCheck className="h-4 w-4 mr-2" />
+                                            Cliente chegou?
+                                          </DropdownMenuItem>
+                                        )}
                                         <DropdownMenuItem
                                           onClick={() => onCancel(agendamento)}
                                           className="text-red-600"

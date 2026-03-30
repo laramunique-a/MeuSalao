@@ -24,7 +24,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
-import { Clock, User, Scissors, MoreVertical, Pencil, Ban, Check, Trash2 } from 'lucide-react'
+import { User, Scissors, MoreVertical, Pencil, Ban, Check, Trash2, UserCheck } from 'lucide-react'
 import type { Agendamento } from '@/types/models'
 import { format, isAfter, addMinutes } from 'date-fns'
 import { STATUS_AGENDAMENTO_LABELS } from '@/lib/constants'
@@ -98,14 +98,23 @@ export function AgendamentosList({
   function shouldShowClienteChegouPrompt(agendamento: Agendamento): boolean {
     const now = new Date()
     const agendamentoHora = new Date(agendamento.data_hora)
-    const toleranciaMinutos = 10 // Tolerância de 10 minutos antes do horário
+
+    // Só mostrar para agendamentos de hoje
+    const isToday =
+      agendamentoHora.getDate() === now.getDate() &&
+      agendamentoHora.getMonth() === now.getMonth() &&
+      agendamentoHora.getFullYear() === now.getFullYear()
+
+    if (!isToday) return false
+
+    const toleranciaMinutos = 20 // Tolerância de 20 minutos antes do horário
     const agendamentoComTolerancia = addMinutes(agendamentoHora, -toleranciaMinutos)
 
     // Mostrar prompt apenas se:
-    // 1. Status é 'agendado' ou 'em_atraso'
+    // 1. Status é 'agendado'
     // 2. Horário atual >= horário do agendamento - tolerância
     return (
-      ['agendado', 'em_atraso'].includes(agendamento.status) &&
+      agendamento.status === 'agendado' &&
       isAfter(now, agendamentoComTolerancia)
     )
   }
@@ -156,25 +165,17 @@ export function AgendamentosList({
                           <Pencil className="h-4 w-4 mr-2" />
                           Editar Detalhes
                         </DropdownMenuItem>
-                        {agendamento.status === 'agendado' && (
-                          <DropdownMenuItem onClick={() => onChangeStatus(agendamento, 'confirmado')} className="py-2.5">
-                            <Check className="h-4 w-4 mr-2" />
-                            Confirmar Presença
-                          </DropdownMenuItem>
-                        )}
-                        {agendamento.status === 'confirmado' && (
-                          <DropdownMenuItem onClick={() => onChangeStatus(agendamento, 'em_atendimento')} className="py-2.5">
-                            <Clock className="h-4 w-4 mr-2" />
-                            Iniciar Atendimento Agora
-                          </DropdownMenuItem>
-                        )}
+                        <DropdownMenuItem onClick={() => handleClienteChegou(agendamento)} className="py-2.5">
+                          <UserCheck className="h-4 w-4 mr-2" />
+                          Cliente chegou?
+                        </DropdownMenuItem>
                         {agendamento.status === 'em_atendimento' && (
                           <DropdownMenuItem onClick={() => onChangeStatus(agendamento, 'pendente_caixa')} className="py-2.5">
                             <Check className="h-4 w-4 mr-2" />
                             Finalizar Atendimento
                           </DropdownMenuItem>
                         )}
-                        {!['concluido', 'cancelado'].includes(agendamento.status) && (
+                        {!['concluido', 'cancelado', 'em_atendimento', 'pendente_caixa'].includes(agendamento.status) && (
                           <>
                             <DropdownMenuSeparator />
                             <DropdownMenuItem
