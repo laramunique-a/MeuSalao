@@ -1,0 +1,4 @@
+src/components/configuracoes/TaxasCartaoForm.tsx(223,90): error TS1005: '}' expected.
+src/components/configuracoes/TaxasCartaoForm.tsx(223,111): error TS1003: Identifier expected.
+src/components/configuracoes/TaxasCartaoForm.tsx(223,112): error TS1381: Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+src/components/configuracoes/TaxasCartaoForm.tsx(238,26): error TS1382: Unexpected token. Did you mean `{'>'}` or `&gt;`?

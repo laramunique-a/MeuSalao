@@ -220,7 +220,7 @@ export function TaxasCartaoForm({ salao }: TaxasCartaoFormProps) {
                         <Label className="font-bold text-slate-700 mb-2 block">{bandeira}</Label>
                         <Controller
                           control={form.control}
-                          name={`taxas_bandeira.${bandeira as keyof typeof form.getValues()['taxas_bandeira']}`}
+                          name={`taxas_bandeira.${bandeira as keyof TaxasFormData['taxas_bandeira']}`}
                           render={({ field }) => (
                             <div className="relative">
                               <Input 
