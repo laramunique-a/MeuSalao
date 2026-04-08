@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+
 import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -75,8 +75,7 @@ export function TaxasCartaoForm({ salao }: TaxasCartaoFormProps) {
       }
 
       await updateSalao.mutateAsync({
-        id: salao.id,
-        data: { configuracoes: novasConfiguracoes }
+        configuracoes: novasConfiguracoes
       })
 
       toast({
@@ -112,38 +111,45 @@ export function TaxasCartaoForm({ salao }: TaxasCartaoFormProps) {
   return (
     <Card className="border-border/50 shadow-xl shadow-primary/5 overflow-hidden rounded-2xl bg-card/50 backdrop-blur-sm">
       <CardHeader className="border-b border-border/50 bg-muted/20 py-6 px-8">
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-4">
-            <div className="p-3 bg-primary/10 rounded-2xl">
-              <CreditCard className="h-6 w-6 text-primary" />
-            </div>
-            <div className="space-y-1">
-              <CardTitle className="text-2xl font-black tracking-tight">Taxas de Cartão</CardTitle>
-              <p className="text-sm text-muted-foreground font-medium">
-                Configure as taxas aplicadas no cartão de crédito para cálculos corretos de caixa e comissão.
-              </p>
-            </div>
+        <div className="flex items-center gap-4">
+          <div className="p-3 bg-primary/10 rounded-2xl">
+            <CreditCard className="h-6 w-6 text-primary" />
           </div>
-          
-          <Controller
-            control={form.control}
-            name="ativo"
-            render={({ field }) => (
-              <div className="flex items-center gap-2 bg-white px-4 py-2 rounded-xl border shadow-sm">
-                <Switch 
-                  checked={field.value} 
-                  onCheckedChange={field.onChange} 
-                  disabled={!isEditable}
-                />
-                <Label className="font-bold cursor-pointer">{field.value ? 'Taxas Ativas' : 'Taxas Inativas'}</Label>
-              </div>
-            )}
-          />
+          <div className="space-y-1">
+            <CardTitle className="text-2xl font-black tracking-tight">Taxas de Cartão</CardTitle>
+            <p className="text-sm text-muted-foreground font-medium">
+              Configure as taxas aplicadas no cartão de crédito para cálculos corretos de caixa e comissão.
+            </p>
+          </div>
         </div>
       </CardHeader>
 
       <CardContent className="p-8">
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+          
+          <Controller
+            control={form.control}
+            name="ativo"
+            render={({ field }) => (
+              <div className="flex flex-row items-center justify-between rounded-2xl border border-primary/10 bg-primary/5 p-6 transition-all duration-300">
+                <div className="space-y-1">
+                  <Label className="text-lg font-bold text-primary cursor-pointer" htmlFor="toggle-taxas">
+                    Habilitar cálculo automático de taxas
+                  </Label>
+                  <p className="text-sm text-muted-foreground font-medium">
+                    Ative para descontar automaticamente as taxas de cartão nos cálculos de caixa e comissões.
+                  </p>
+                </div>
+                <Switch 
+                  id="toggle-taxas"
+                  checked={field.value} 
+                  onCheckedChange={field.onChange} 
+                  disabled={!isEditable}
+                  className="scale-125 data-[state=checked]:bg-primary"
+                />
+              </div>
+            )}
+          />
           
           <div className={`transition-all duration-500 ${!ativo ? 'opacity-40 pointer-events-none grayscale' : ''}`}>
             

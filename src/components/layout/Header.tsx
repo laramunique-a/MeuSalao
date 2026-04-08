@@ -31,30 +31,30 @@ export function Header({ onMenuClick }: HeaderProps) {
   }
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-40 h-16 bg-card border-b border-border shadow-sm">
-      <div className="flex h-full items-center justify-between px-4 sm:px-6">
+    <header className="fixed top-0 left-0 lg:left-64 right-0 z-20 h-20 bg-transparent transition-all duration-300">
+      <div className="flex h-full items-center justify-between px-4 sm:px-8">
         <div className="flex items-center gap-3">
           <button
             onClick={onMenuClick}
-            className="lg:hidden text-muted-foreground hover:text-foreground"
+            className="lg:hidden p-2 -ml-2 text-muted-foreground hover:text-foreground hover:bg-muted rounded-xl transition-colors"
           >
             <Menu className="h-6 w-6" />
           </button>
 
-          <div className="flex items-center gap-4 pl-2 lg:w-64">
+          {/* Logo compacta apenas para Mobile */}
+          <div className="flex lg:hidden items-center gap-3">
             {salao?.logo_url || localStorage.getItem('salao_logo') ? (
               <img
                 src={salao?.logo_url || localStorage.getItem('salao_logo') || ''}
                 alt="Logo"
-                className="h-8 w-12 object-contain"
+                className="h-9 w-9 rounded-lg object-cover border border-border/50"
               />
             ) : (
-              <div className="h-8 w-12 rounded bg-primary/10 flex items-center justify-center text-primary font-black text-sm">
+              <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center text-primary font-black text-xs">
                 {(salao?.nome || localStorage.getItem('salao_nome') || 'S').charAt(0)}
               </div>
             )}
-  
-            <span className="text-[17px] font-bold tracking-tight text-foreground truncate max-w-[200px]">
+            <span className="text-[15px] font-black tracking-tight text-foreground truncate max-w-[150px]">
               {salao?.nome || localStorage.getItem('salao_nome') || ''}
             </span>
           </div>
@@ -65,32 +65,32 @@ export function Header({ onMenuClick }: HeaderProps) {
             variant="ghost"
             size="icon"
             onClick={toggleTheme}
-            className="text-muted-foreground"
+            className="text-muted-foreground hover:bg-muted rounded-xl"
           >
             {theme === 'light' ? <Moon className="h-5 w-5" /> : <Sun className="h-5 w-5" />}
           </Button>
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="relative h-10 w-10 rounded-full">
-                <Avatar>
-                  <AvatarFallback className="bg-primary text-primary-foreground">
+              <Button variant="ghost" className="relative h-10 w-10 rounded-xl p-0 overflow-hidden border border-border/50 hover:border-primary/50 transition-colors">
+                <Avatar className="h-full w-full rounded-none">
+                  <AvatarFallback className="bg-primary text-primary-foreground rounded-none text-xs font-bold">
                     {usuario ? getInitials(usuario.nome) : 'U'}
                   </AvatarFallback>
                 </Avatar>
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <div className="flex items-center justify-start gap-2 p-2">
-                <div className="flex flex-col space-y-1">
-                  <p className="text-sm font-medium">{usuario?.nome}</p>
-                  <p className="text-xs text-muted-foreground">{usuario?.email}</p>
+            <DropdownMenuContent align="end" className="w-56 mt-2 rounded-xl border-border/50 shadow-xl">
+              <div className="flex items-center justify-start gap-3 p-3">
+                <div className="flex flex-col space-y-0.5">
+                  <p className="text-sm font-bold leading-none">{usuario?.nome}</p>
+                  <p className="text-[11px] text-muted-foreground">{usuario?.email}</p>
                 </div>
               </div>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={logout}>
+              <DropdownMenuSeparator className="bg-border/50" />
+              <DropdownMenuItem onClick={logout} className="p-3 text-destructive focus:text-destructive focus:bg-destructive/10 cursor-pointer rounded-lg m-1">
                 <LogOut className="mr-2 h-4 w-4" />
-                Sair
+                <span className="font-bold">Sair do Sistema</span>
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>

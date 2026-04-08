@@ -11,6 +11,7 @@ import {
   ShieldCheck,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { useSalao } from '@/hooks/useSalao'
 
 interface SidebarProps {
   open: boolean
@@ -18,7 +19,8 @@ interface SidebarProps {
 }
 
 export function Sidebar({ open, setOpen }: SidebarProps) {
-  const { isAdmin, isSuperAdmin } = useAuth()
+  const { usuario, isAdmin, isSuperAdmin } = useAuth()
+  const { data: salao } = useSalao()
 
   const navigation = [
     { name: 'Agenda', to: '/', icon: Calendar },
@@ -58,10 +60,33 @@ export function Sidebar({ open, setOpen }: SidebarProps) {
 
       <div
         className={cn(
-          'fixed top-20 bottom-0 left-0 z-30 w-64 bg-card border-r border-border transform transition-transform duration-300 ease-in-out lg:translate-x-0 flex flex-col',
+          'fixed top-0 bottom-0 left-0 z-30 w-64 bg-card border-r border-border transform transition-transform duration-300 ease-in-out lg:translate-x-0 flex flex-col',
           open ? 'translate-x-0' : '-translate-x-full'
         )}
       >
+        <div className="h-20 flex items-center px-6 border-b border-border/50 bg-muted/5">
+          <div className="flex items-center gap-3">
+            {salao?.logo_url || localStorage.getItem('salao_logo') ? (
+              <img
+                src={salao?.logo_url || localStorage.getItem('salao_logo') || ''}
+                alt="Logo"
+                className="h-14 w-14 rounded-xl object-cover shadow-sm border border-border/50"
+              />
+            ) : (
+              <div className="h-14 w-14 rounded-xl bg-primary/10 flex items-center justify-center text-primary font-black text-2xl shadow-sm border border-border/10">
+                {(salao?.nome || localStorage.getItem('salao_nome') || 'S').charAt(0)}
+              </div>
+            )}
+            <div className="flex flex-col overflow-hidden">
+              <span className="text-[15px] font-black tracking-tight text-foreground truncate leading-tight">
+                {salao?.nome || localStorage.getItem('salao_nome') || 'Meu Salão'}
+              </span>
+              <span className="text-[10px] font-bold text-primary/60 uppercase tracking-widest mt-0.5 truncate">
+                {usuario?.nome || 'Usuário'}
+              </span>
+            </div>
+          </div>
+        </div>
         <nav className="flex-1 space-y-1 px-3 py-4 overflow-y-auto">
           {navigation.map((item) => (
             <NavLink
