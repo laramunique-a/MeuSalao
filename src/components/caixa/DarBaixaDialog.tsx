@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
 import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -16,7 +16,6 @@ import {
   FormField,
   FormItem,
   FormLabel,
-  FormMessage,
 } from '@/components/ui/form'
 import {
   Select,
@@ -32,8 +31,7 @@ import { useToast } from '@/hooks/use-toast'
 import { useAuthStore } from '@/store/authStore'
 import type { Agendamento } from '@/types/models'
 import { format } from 'date-fns'
-import { ptBR } from 'date-fns/locale'
-import { Receipt, UserCircle, Scissors, Clock, CreditCard, CheckCircle2, ChevronDown, Percent } from 'lucide-react'
+import { Receipt, UserCircle, Scissors, Clock, CheckCircle2 } from 'lucide-react'
 
 const darBaixaSchema = z.object({
   forma_pagamento: z.enum(['dinheiro', 'cartao_debito', 'cartao_credito', 'pix', 'outros']),

@@ -5,7 +5,7 @@ import type { Usuario } from '@/types/models'
 
 async function getProfissionais(): Promise<Usuario[]> {
   const usuario = useAuthStore.getState().usuario
-  if (!usuario) throw new Error('Usuário não autenticado')
+  if (!usuario || !usuario.salao_id) throw new Error('Usuário não autenticado')
 
   const { data, error } = await supabase
     .from('usuario')

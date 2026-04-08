@@ -12,14 +12,14 @@ const AGENDAMENTO_SELECT = `
 export const agendamentoService = {
   async getAll() {
     const usuario = useAuthStore.getState().usuario
-    if (!usuario) throw new Error('Usuário não autenticado')
+    if (!usuario || !usuario.salao_id) throw new Error('Usuário não autenticado')
 
     let query = supabase
       .from('agendamento')
       .select(AGENDAMENTO_SELECT)
       .eq('salao_id', usuario.salao_id)
 
-    if (usuario.perfil !== 'admin' && usuario.perfil !== 'super_admin') {
+    if (usuario.perfil !== 'administrador' && usuario.perfil !== 'super_admin') {
       query = query.eq('profissional_id', usuario.id)
     }
 
@@ -32,7 +32,7 @@ export const agendamentoService = {
 
   async getByDate(startDate: string, endDate: string) {
     const usuario = useAuthStore.getState().usuario
-    if (!usuario) throw new Error('Usuário não autenticado')
+    if (!usuario || !usuario.salao_id) throw new Error('Usuário não autenticado')
 
     let query = supabase
       .from('agendamento')
@@ -41,7 +41,7 @@ export const agendamentoService = {
       .gte('data_hora', startDate)
       .lte('data_hora', endDate)
 
-    if (usuario.perfil !== 'admin' && usuario.perfil !== 'super_admin') {
+    if (usuario.perfil !== 'administrador' && usuario.perfil !== 'super_admin') {
       query = query.eq('profissional_id', usuario.id)
     }
 
@@ -54,7 +54,7 @@ export const agendamentoService = {
 
   async getByDateAndStatus(startDate: string, endDate: string, status: string) {
     const usuario = useAuthStore.getState().usuario
-    if (!usuario) throw new Error('Usuário não autenticado')
+    if (!usuario || !usuario.salao_id) throw new Error('Usuário não autenticado')
 
     let query = supabase
       .from('agendamento')
@@ -64,7 +64,7 @@ export const agendamentoService = {
       .gte('data_hora', startDate)
       .lte('data_hora', endDate)
 
-    if (usuario.perfil !== 'admin' && usuario.perfil !== 'super_admin') {
+    if (usuario.perfil !== 'administrador' && usuario.perfil !== 'super_admin') {
       query = query.eq('profissional_id', usuario.id)
     }
 
@@ -77,7 +77,7 @@ export const agendamentoService = {
 
   async getAgendamentosSemBaixa(startDate: string, endDate: string, profissionalId?: string) {
     const usuario = useAuthStore.getState().usuario
-    if (!usuario) throw new Error('Usuário não autenticado')
+    if (!usuario || !usuario.salao_id) throw new Error('Usuário não autenticado')
 
     // Buscar IDs de agendamentos que já têm transação vinculada
     const { data: transacoes } = await supabase
@@ -115,7 +115,7 @@ export const agendamentoService = {
 
   async hasAnyPendencia(profissionalId?: string): Promise<boolean> {
     const usuario = useAuthStore.getState().usuario
-    if (!usuario) throw new Error('Usuário não autenticado')
+    if (!usuario || !usuario.salao_id) throw new Error('Usuário não autenticado')
 
     // Buscar IDs de agendamentos que já têm transação vinculada
     const { data: transacoes } = await supabase
@@ -153,7 +153,7 @@ export const agendamentoService = {
     endDate: string
   ) {
     const usuario = useAuthStore.getState().usuario
-    if (!usuario) throw new Error('Usuário não autenticado')
+    if (!usuario || !usuario.salao_id) throw new Error('Usuário não autenticado')
 
     const { data, error } = await supabase
       .from('agendamento')
@@ -182,7 +182,7 @@ export const agendamentoService = {
 
   async create(agendamento: Omit<Agendamento, 'id' | 'salao_id' | 'created_at' | 'updated_at' | 'cliente' | 'profissional' | 'servico'>) {
     const usuario = useAuthStore.getState().usuario
-    if (!usuario) throw new Error('Usuário não autenticado')
+    if (!usuario || !usuario.salao_id) throw new Error('Usuário não autenticado')
 
     const { data, error } = await (supabase
       .from('agendamento') as any)
@@ -246,7 +246,7 @@ export const agendamentoService = {
     excludeId?: string
   ): Promise<boolean> {
     const usuario = useAuthStore.getState().usuario
-    if (!usuario) throw new Error('Usuário não autenticado')
+    if (!usuario || !usuario.salao_id) throw new Error('Usuário não autenticado')
 
     // Buscar todos os agendamentos do profissional no dia para verificar sobreposição
     const dataInicio = new Date(dataHora)

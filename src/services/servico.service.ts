@@ -5,7 +5,7 @@ import { useAuthStore } from '@/store/authStore'
 export const servicoService = {
   async getAll() {
     const usuario = useAuthStore.getState().usuario
-    if (!usuario) throw new Error('Usuário não autenticado')
+    if (!usuario || !usuario.salao_id) throw new Error('Usuário não autenticado')
 
     const { data, error } = await supabase
       .from('servico')
@@ -30,7 +30,7 @@ export const servicoService = {
 
   async create(servico: Omit<Servico, 'id' | 'salao_id' | 'created_at' | 'updated_at'>) {
     const usuario = useAuthStore.getState().usuario
-    if (!usuario) throw new Error('Usuário não autenticado')
+    if (!usuario || !usuario.salao_id) throw new Error('Usuário não autenticado')
 
     const { data, error } = await (supabase
       .from('servico') as any)

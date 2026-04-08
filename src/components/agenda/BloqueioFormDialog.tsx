@@ -101,7 +101,7 @@ export function BloqueioFormDialog({ open, onOpenChange, bloqueio }: BloqueioFor
         })
       } else {
         await createBloqueio.mutateAsync({
-          salao_id: usuario!.salao_id,
+          salao_id: usuario!.salao_id as string,
           profissional_id: !isAdmin ? usuario!.id : data.profissional_id,
           data_inicio: `${data.data_inicio}T00:00:00`,
           data_fim: `${data.data_fim}T23:59:59`,

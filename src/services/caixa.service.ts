@@ -17,7 +17,7 @@ const TRANSACAO_SELECT = `
 export const caixaService = {
   async getAll() {
     const usuario = useAuthStore.getState().usuario
-    if (!usuario) throw new Error('Usuário não autenticado')
+    if (!usuario || !usuario.salao_id) throw new Error('Usuário não autenticado')
 
     const { data, error } = await supabase
       .from('transacao_caixa')
@@ -31,7 +31,7 @@ export const caixaService = {
 
   async getByDate(startDate: string, endDate: string, profissionalId?: string) {
     const usuario = useAuthStore.getState().usuario
-    if (!usuario) throw new Error('Usuário não autenticado')
+    if (!usuario || !usuario.salao_id) throw new Error('Usuário não autenticado')
 
     let query = (supabase
       .from('transacao_caixa') as any)
@@ -65,7 +65,7 @@ export const caixaService = {
 
   async create(transacao: Omit<TransacaoCaixa, 'id' | 'salao_id' | 'usuario_id' | 'created_at' | 'usuario' | 'agendamento'>) {
     const usuario = useAuthStore.getState().usuario
-    if (!usuario) throw new Error('Usuário não autenticado')
+    if (!usuario || !usuario.salao_id) throw new Error('Usuário não autenticado')
 
     // Verificar se existe caixa aberto
     const caixaAberto = await this.getCaixaAberto()
@@ -106,9 +106,9 @@ export const caixaService = {
 
   async delete(id: string) {
     // Regra obrigatória: não excluir fisicamente. Usar status 'cancelado'.
-    const { error } = await supabase
-      .from('transacao_caixa')
-      .update({ status: 'cancelado' } as any)
+    const { error } = await (supabase
+      .from('transacao_caixa') as any)
+      .update({ status: 'cancelado' })
       .eq('id', id)
 
     if (error) throw error
@@ -127,7 +127,7 @@ export const caixaService = {
 
   async getCaixaAberto() {
     const usuario = useAuthStore.getState().usuario
-    if (!usuario) throw new Error('Usuário não autenticado')
+    if (!usuario || !usuario.salao_id) throw new Error('Usuário não autenticado')
 
     const { data, error } = await (supabase
       .from('caixa_diario') as any)
@@ -142,7 +142,7 @@ export const caixaService = {
 
   async getLastClosedCaixa(): Promise<CaixaDiario | null> {
     const usuario = useAuthStore.getState().usuario
-    if (!usuario) throw new Error('Usuário não autenticado')
+    if (!usuario || !usuario.salao_id) throw new Error('Usuário não autenticado')
 
     const { data, error } = await (supabase
       .from('caixa_diario') as any)
@@ -159,7 +159,7 @@ export const caixaService = {
 
   async abrirCaixa(valorInicial: number, observacoes?: string) {
     const usuario = useAuthStore.getState().usuario
-    if (!usuario) throw new Error('Usuário não autenticado')
+    if (!usuario || !usuario.salao_id) throw new Error('Usuário não autenticado')
 
     // Verificar se já existe um aberto
     const atual = await this.getCaixaAberto()
@@ -197,7 +197,7 @@ export const caixaService = {
 
   async fecharCaixa(caixaId: string, valorInformado: number, observacoes?: string) {
     const usuario = useAuthStore.getState().usuario
-    if (!usuario) throw new Error('Usuário não autenticado')
+    if (!usuario || !usuario.salao_id) throw new Error('Usuário não autenticado')
 
     // Calcular saldo do sistema para este caixa
     const { data: transacoes, error: errorTrans } = await (supabase
@@ -232,7 +232,7 @@ export const caixaService = {
 
   async getSummary(startDate: string, endDate: string, profissionalId?: string) {
     const usuario = useAuthStore.getState().usuario
-    if (!usuario) throw new Error('Usuário não autenticado')
+    if (!usuario || !usuario.salao_id) throw new Error('Usuário não autenticado')
 
     let query = (supabase
       .from('transacao_caixa') as any)
@@ -272,7 +272,7 @@ export const caixaService = {
 
   async getCaixasByPeriod(startDate: string, endDate: string): Promise<CaixaDiario[]> {
     const usuario = useAuthStore.getState().usuario
-    if (!usuario) throw new Error('Usuário não autenticado')
+    if (!usuario || !usuario.salao_id) throw new Error('Usuário não autenticado')
 
     const { data, error } = await (supabase
       .from('caixa_diario') as any)

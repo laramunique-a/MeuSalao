@@ -5,7 +5,7 @@ import { useAuthStore } from '@/store/authStore'
 export const salaoService = {
   async getSalao(): Promise<Salao | null> {
     const usuario = useAuthStore.getState().usuario
-    if (!usuario) throw new Error('Usuário não autenticado')
+    if (!usuario || !usuario.salao_id) throw new Error('Usuário não autenticado')
 
     const { data, error } = await supabase
       .from('salao')
@@ -19,7 +19,7 @@ export const salaoService = {
 
   async updateSalao(updates: Partial<Salao>): Promise<Salao> {
     const usuario = useAuthStore.getState().usuario
-    if (!usuario) throw new Error('Usuário não autenticado')
+    if (!usuario || !usuario.salao_id) throw new Error('Usuário não autenticado')
 
     const { data, error } = await (supabase
       .from('salao') as any)

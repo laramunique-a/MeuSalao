@@ -75,6 +75,8 @@ export function TransacaoFormDialog({ open, onOpenChange }: TransacaoFormDialogP
         descricao: data.descricao,
         data_hora: data.data_hora || new Date().toISOString(),
         agendamento_id: data.agendamento_id || null,
+        status: 'ativo',
+        caixa_id: null,
       })
 
       toast({
