@@ -31,30 +31,30 @@ export function Header({ onMenuClick }: HeaderProps) {
   }
 
   return (
-    <header className="fixed top-0 left-0 lg:left-64 right-0 z-20 h-20 bg-transparent transition-all duration-300">
+    <header className="fixed top-0 left-0 lg:left-64 right-0 z-20 h-20 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 lg:bg-transparent border-b border-border/50 lg:border-none transition-all duration-300">
       <div className="flex h-full items-center justify-between px-4 sm:px-8">
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-1.5 sm:gap-3">
           <button
             onClick={onMenuClick}
-            className="lg:hidden p-2 -ml-2 text-muted-foreground hover:text-foreground hover:bg-muted rounded-xl transition-colors"
+            className="lg:hidden p-2 -ml-2 text-muted-foreground hover:text-foreground hover:bg-muted rounded-xl transition-colors shrink-0"
           >
             <Menu className="h-6 w-6" />
           </button>
 
           {/* Logo compacta apenas para Mobile */}
-          <div className="flex lg:hidden items-center gap-3">
+          <div className="flex lg:hidden items-center gap-2 sm:gap-3 min-w-0">
             {salao?.logo_url || localStorage.getItem('salao_logo') ? (
               <img
                 src={salao?.logo_url || localStorage.getItem('salao_logo') || ''}
                 alt="Logo"
-                className="h-9 w-9 rounded-lg object-cover border border-border/50"
+                className="h-8 w-8 sm:h-9 sm:w-9 rounded-lg object-cover border border-border/50 shrink-0"
               />
             ) : (
-              <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center text-primary font-black text-xs">
+              <div className="h-8 w-8 sm:h-9 sm:w-9 rounded-lg bg-primary/10 flex items-center justify-center text-primary font-black text-xs shrink-0">
                 {(salao?.nome || localStorage.getItem('salao_nome') || 'S').charAt(0)}
               </div>
             )}
-            <span className="text-[15px] font-black tracking-tight text-foreground truncate max-w-[150px]">
+            <span className="text-[14px] sm:text-[15px] font-black tracking-tight text-foreground truncate max-w-[100px] sm:max-w-[150px]">
               {salao?.nome || localStorage.getItem('salao_nome') || ''}
             </span>
           </div>
