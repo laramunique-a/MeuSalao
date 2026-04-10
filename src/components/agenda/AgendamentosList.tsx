@@ -193,7 +193,7 @@ export function AgendamentosList({
                 </div>
               </CardHeader>
 
-              <CardContent className="px-5 pb-5 pt-1 flex flex-1 gap-4">
+              <CardContent className="px-5 pb-5 pt-1 flex flex-col sm:flex-row flex-1 gap-4">
                 {/* Esquerda: Informações Principais */}
                 <div className="flex-1 space-y-3 min-w-0">
                   <div className="flex items-center gap-2.5">
@@ -238,7 +238,7 @@ export function AgendamentosList({
 
                 {/* Direita: Prompt de Chegada (Apenas se aplicável) */}
                 {shouldShowClienteChegouPrompt(agendamento) && (
-                  <div className="w-44 flex-shrink-0 bg-primary/[0.03] dark:bg-primary/[0.05] border border-primary/10 rounded-xl p-3 flex flex-col items-center justify-center gap-2.5 self-stretch" style={{ height: 'fit-content' }}>
+                  <div className="w-full sm:w-44 flex-shrink-0 bg-primary/[0.03] dark:bg-primary/[0.05] border border-primary/10 rounded-xl p-3 flex flex-col items-center justify-center gap-2.5 self-stretch" style={{ height: 'fit-content' }}>
                     <span className="text-sm font-bold text-zinc-600 dark:text-zinc-400 text-center leading-tight">
                       Cliente chegou?
                     </span>
