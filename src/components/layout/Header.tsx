@@ -31,7 +31,7 @@ export function Header({ onMenuClick }: HeaderProps) {
   }
 
   return (
-    <header className="fixed top-0 left-0 lg:left-64 right-0 z-20 h-20 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 lg:bg-transparent border-b border-border/50 lg:border-none transition-all duration-300">
+    <header className="fixed top-0 left-0 right-0 z-20 h-16 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b border-border/50 lg:hidden transition-all duration-300">
       <div className="flex h-full items-center justify-between px-4 sm:px-8">
         <div className="flex items-center gap-1.5 sm:gap-3">
           <button
