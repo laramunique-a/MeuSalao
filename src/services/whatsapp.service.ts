@@ -29,6 +29,7 @@ export const whatsappService = {
 
   async createInstance(salaoId: string) {
     const instanceName = `salao_${salaoId.split('-')[0]}_${Date.now().toString().slice(-4)}`
+    const token = Math.random().toString(36).substring(2, 15)
     
     const response = await fetch(`${EVOLUTION_API_URL}/instance/create`, {
       method: 'POST',
@@ -38,27 +39,41 @@ export const whatsappService = {
       },
       body: JSON.stringify({
         instanceName,
-        token: Math.random().toString(36).substring(7),
-        qrcode: true
+        token,
+        qrcode: true,
+        integration: 'WHATSAPP-BAILEYS'
       })
     })
 
     const data = await response.json()
-    if (!response.ok) throw new Error(data.message || 'Erro ao criar instância no Evolution API')
+    if (!response.ok || data.status === 400 || data.error) {
+      const errorMessage = Array.isArray(data?.response?.message) 
+        ? data.response.message[0] 
+        : (data.message || data.error || 'Erro ao criar instância no Evolution API')
+      throw new Error(errorMessage)
+    }
 
     // Salvar no banco
     const { error: dbError } = await (supabase as any)
       .from('whatsapp_config')
       .upsert({
         salao_id: salaoId,
-        instance_name: data.hash.instanceName,
-        apikey: data.hash.apikey,
+        instance_name: instanceName,
+        apikey: token,
         status: 'disconnected',
         updated_at: new Date().toISOString()
       })
 
     if (dbError) throw dbError
-    return data
+    
+    // Retornar um objeto formatado compatível com o form
+    return {
+      hash: {
+        instanceName: instanceName,
+        apikey: token
+      },
+      qrcode: data.qrcode
+    }
   },
 
   async getQRCode(instanceName: string, apikey: string) {
