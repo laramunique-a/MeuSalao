@@ -9,6 +9,7 @@ import {
   BarChart3,
   Settings,
   ShieldCheck,
+  LogOut,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useSalao } from '@/hooks/useSalao'
@@ -144,6 +145,15 @@ export function Sidebar({ open, setOpen }: SidebarProps) {
         </nav>
 
         <div className="p-4 border-t border-border">
+          <button
+            onClick={logout}
+            className="w-full group flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors text-destructive hover:bg-destructive/10"
+          >
+            <LogOut className="mr-3 h-4 w-4" />
+            Sair do Sistema
+          </button>
+        </div>
+        <div className="p-4 border-t border-border/50">
           <p className="text-[10px] font-bold text-center text-primary/60 uppercase tracking-widest">
             MeuSalão
           </p>
