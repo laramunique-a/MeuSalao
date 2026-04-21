@@ -2,8 +2,8 @@ import { useState, useEffect } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { whatsappService, WhatsAppConfig } from '@/services/whatsapp.service'
-import { Loader2, CheckCircle2, XCircle, QrCode, RefreshCw } from 'lucide-react'
-import { useToast } from '@/components/ui/use-toast'
+import { Loader2, CheckCircle2, QrCode, RefreshCw } from 'lucide-react'
+import { useToast } from '@/hooks/use-toast'
 import type { Salao } from '@/types/models'
 
 interface WhatsAppFormProps {

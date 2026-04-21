@@ -47,7 +47,7 @@ export const whatsappService = {
     if (!response.ok) throw new Error(data.message || 'Erro ao criar instância no Evolution API')
 
     // Salvar no banco
-    const { error: dbError } = await supabase
+    const { error: dbError } = await (supabase as any)
       .from('whatsapp_config')
       .upsert({
         salao_id: salaoId,
@@ -108,7 +108,7 @@ export const whatsappService = {
       const result = await response.json()
       
       // Logar a notificação
-      await supabase.from('notificacao_log').insert({
+      await (supabase as any).from('notificacao_log').insert({
         salao_id: salaoId,
         tipo: 'whatsapp',
         status: response.ok ? 'sucesso' : 'erro',
@@ -118,7 +118,7 @@ export const whatsappService = {
       return result
     } catch (error: any) {
       console.error('Erro ao enviar WhatsApp:', error)
-      await supabase.from('notificacao_log').insert({
+      await (supabase as any).from('notificacao_log').insert({
         salao_id: salaoId,
         tipo: 'whatsapp',
         status: 'erro',
