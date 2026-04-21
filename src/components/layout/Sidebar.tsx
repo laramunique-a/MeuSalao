@@ -20,7 +20,7 @@ interface SidebarProps {
 }
 
 export function Sidebar({ open, setOpen }: SidebarProps) {
-  const { usuario, isAdmin, isSuperAdmin } = useAuth()
+  const { usuario, isAdmin, isSuperAdmin, logout } = useAuth()
   const { data: salao } = useSalao()
 
   const navigation = [
