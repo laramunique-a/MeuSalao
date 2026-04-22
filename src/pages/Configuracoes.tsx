@@ -8,8 +8,7 @@ import { SalaoForm } from '@/components/configuracoes/SalaoForm'
 import { UsuarioFormDialog } from '@/components/configuracoes/UsuarioFormDialog'
 import { UsuariosTable } from '@/components/configuracoes/UsuariosTable'
 import { TaxasCartaoForm } from '@/components/configuracoes/TaxasCartaoForm'
-import { Building2, Users, Plus, Loader2, CreditCard, MessageSquare } from 'lucide-react'
-import { WhatsAppForm } from '@/components/configuracoes/WhatsAppForm'
+import { Building2, Users, Plus, Loader2, CreditCard } from 'lucide-react'
 
 export default function Configuracoes() {
   const [dialogOpen, setDialogOpen] = useState(false)
@@ -86,13 +85,6 @@ export default function Configuracoes() {
               <CreditCard className="h-4 w-4 mr-2" />
               Financeiro
             </TabsTrigger>
-            <TabsTrigger 
-              value="whatsapp" 
-              className="rounded-xl px-4 data-[state=active]:bg-background data-[state=active]:shadow-sm data-[state=active]:text-primary font-bold transition-all h-full text-xs"
-            >
-              <MessageSquare className="h-4 w-4 mr-2" />
-              WhatsApp
-            </TabsTrigger>
           </TabsList>
         </div>
 
@@ -136,10 +128,6 @@ export default function Configuracoes() {
 
         <TabsContent value="financeiro" className="mt-0 outline-none animate-in slide-in-from-bottom-4 duration-500">
           <TaxasCartaoForm salao={salao} />
-        </TabsContent>
-
-        <TabsContent value="whatsapp" className="mt-0 outline-none animate-in slide-in-from-bottom-4 duration-500">
-          <WhatsAppForm salao={salao} />
         </TabsContent>
       </Tabs>
 

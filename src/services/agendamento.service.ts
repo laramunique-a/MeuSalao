@@ -1,9 +1,6 @@
 import { supabase } from '@/lib/supabase'
 import type { Agendamento, AgendamentoStatus } from '@/types/models'
 import { useAuthStore } from '@/store/authStore'
-import { whatsappService } from './whatsapp.service'
-import { format } from 'date-fns'
-import { ptBR } from 'date-fns/locale'
 
 const AGENDAMENTO_SELECT = `
   *,
@@ -204,17 +201,7 @@ export const agendamentoService = {
       .single()
 
     if (error) throw error
-    const dataAgendamento = data as unknown as Agendamento
-
-    // Enviar notificação via WhatsApp (sem await para não bloquear)
-    if (dataAgendamento.cliente?.telefone) {
-      const dataFormatada = format(new Date(dataAgendamento.data_hora), "dd/MM 'às' HH:mm", { locale: ptBR })
-      const mensagem = `✅ *Agendamento Confirmado!*\n\nOlá, *${dataAgendamento.cliente.nome}*!\nSeu horário no estabelecimento foi reservado.\n\n📅 *Data:* ${dataFormatada}\n✂️ *Serviço:* ${dataAgendamento.servico?.nome || 'Serviço'}\n👤 *Profissional:* ${dataAgendamento.profissional?.nome || 'Equipe'}\n\nTe esperamos lá! 😊`
-      
-      whatsappService.sendText(dataAgendamento.salao_id, dataAgendamento.cliente.telefone, mensagem)
-    }
-
-    return dataAgendamento
+    return data as unknown as Agendamento
   },
 
   async update(id: string, agendamento: Partial<Agendamento>) {
