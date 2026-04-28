@@ -18,8 +18,16 @@ export default defineConfig({
         background_color: '#ffffff',
         display: 'standalone',
         orientation: 'portrait',
+        scope: '/',
+        start_url: '/',
         icons: [
           {
+            src: 'icons/icon-144x144.png',
+            sizes: '144x144',
+            type: 'image/png',
+            purpose: 'any'
+          },
+          {
             src: 'icons/icon-192x192.png',
             sizes: '192x192',
             type: 'image/png',
@@ -42,6 +50,15 @@ export default defineConfig({
             sizes: '512x512',
             type: 'image/png',
             purpose: 'maskable'
+          }
+        ],
+        screenshots: [
+          {
+            src: 'screenshots/mobile.png',
+            sizes: '1080x1920',
+            type: 'image/png',
+            form_factor: 'narrow',
+            label: 'Dashboard do MeuSalão'
           }
         ]
       }
