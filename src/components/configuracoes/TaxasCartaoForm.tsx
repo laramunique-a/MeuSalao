@@ -169,21 +169,27 @@ export function TaxasCartaoForm({ salao }: TaxasCartaoFormProps) {
                     disabled={!isEditable}
                     className="grid grid-cols-1 md:grid-cols-2 gap-4"
                   >
-                    <div className={`flex items-start space-x-3 p-4 rounded-xl border-2 transition-all cursor-pointer ${field.value === 'unica' ? 'border-primary bg-primary/5' : 'border-transparent bg-white shadow-sm'}`} onClick={() => field.onChange('unica')}>
+                    <Label 
+                      htmlFor="unica" 
+                      className={`flex items-start space-x-3 p-4 rounded-xl border-2 transition-all cursor-pointer ${field.value === 'unica' ? 'border-primary bg-primary/5' : 'border-transparent bg-white shadow-sm'}`}
+                    >
                       <RadioGroupItem value="unica" id="unica" className="mt-1" />
                       <div className="space-y-1">
-                        <Label htmlFor="unica" className="font-bold cursor-pointer">Taxa Única Global</Label>
+                        <span className="font-bold text-sm block cursor-pointer">Taxa Única Global</span>
                         <p className="text-xs text-muted-foreground">Aplica exatamente a mesma porcentagem para qualquer transação em crédito.</p>
                       </div>
-                    </div>
+                    </Label>
                     
-                    <div className={`flex items-start space-x-3 p-4 rounded-xl border-2 transition-all cursor-pointer ${field.value === 'bandeira' ? 'border-primary bg-primary/5' : 'border-transparent bg-white shadow-sm'}`} onClick={() => field.onChange('bandeira')}>
+                    <Label 
+                      htmlFor="bandeira" 
+                      className={`flex items-start space-x-3 p-4 rounded-xl border-2 transition-all cursor-pointer ${field.value === 'bandeira' ? 'border-primary bg-primary/5' : 'border-transparent bg-white shadow-sm'}`}
+                    >
                       <RadioGroupItem value="bandeira" id="bandeira" className="mt-1" />
                       <div className="space-y-1">
-                        <Label htmlFor="bandeira" className="font-bold cursor-pointer">Taxa Específica por Bandeira</Label>
+                        <span className="font-bold text-sm block cursor-pointer">Taxa Específica por Bandeira</span>
                         <p className="text-xs text-muted-foreground">Define taxas exatas cobradas por cada operadora de cartão. Mais preciso.</p>
                       </div>
-                    </div>
+                    </Label>
                   </RadioGroup>
                 )}
               />
