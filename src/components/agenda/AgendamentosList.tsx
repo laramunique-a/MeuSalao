@@ -24,7 +24,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
-import { User, Scissors, MoreVertical, Pencil, Ban, Check, Trash2, UserCheck } from 'lucide-react'
+import { User, Scissors, MoreVertical, Pencil, Ban, Check, Trash2, UserCheck, UserX } from 'lucide-react'
 import type { Agendamento } from '@/types/models'
 import { format, isAfter, addMinutes } from 'date-fns'
 import { STATUS_AGENDAMENTO_LABELS } from '@/lib/constants'
@@ -111,10 +111,10 @@ export function AgendamentosList({
     const agendamentoComTolerancia = addMinutes(agendamentoHora, -toleranciaMinutos)
 
     // Mostrar prompt apenas se:
-    // 1. Status é 'agendado'
+    // 1. Status é 'agendado' ou 'em_atraso'
     // 2. Horário atual >= horário do agendamento - tolerância
     return (
-      agendamento.status === 'agendado' &&
+      ['agendado', 'em_atraso'].includes(agendamento.status) &&
       isAfter(now, agendamentoComTolerancia)
     )
   }
@@ -130,6 +130,10 @@ export function AgendamentosList({
     }
     setShowClienteChegouDialog(false)
     setSelectedAgendamento(null)
+  }
+
+  function handleClienteChegouNao(agendamento: Agendamento) {
+    onChangeStatus(agendamento, 'em_atraso')
   }
 
 
@@ -242,23 +246,24 @@ export function AgendamentosList({
                     <span className="text-sm font-bold text-zinc-600 dark:text-zinc-400 text-center leading-tight">
                       Cliente chegou?
                     </span>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 w-full">
                       <Button
-                        variant="ghost"
+                        variant="outline"
                         size="sm"
                         onClick={() => handleClienteChegou(agendamento)}
-                        className="h-8 w-8 p-0 text-green-600 hover:text-green-700 hover:bg-green-50 dark:hover:bg-green-950/20 rounded-md flex items-center justify-center"
-                        title="Confirmar Chegada"
+                        className="h-8 text-xs gap-1 flex-1 text-green-600 hover:text-green-700 hover:bg-green-50 dark:hover:bg-green-950/20 border-green-200 dark:border-green-900/30"
                       >
-                        <Check className="h-4 w-4" />
+                        <UserCheck className="h-3 w-3" />
+                        Sim
                       </Button>
                       <Button
-                        variant="ghost"
+                        variant="outline"
                         size="sm"
-                        onClick={() => onCancel(agendamento)}
-                        className="h-8 px-2 text-sm text-red-500/80 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/20 font-bold rounded-md"
+                        onClick={() => handleClienteChegouNao(agendamento)}
+                        className="h-8 text-xs gap-1 flex-1 text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/20 border-red-200 dark:border-red-900/30"
                       >
-                        Cancelar
+                        <UserX className="h-3 w-3" />
+                        Não
                       </Button>
                     </div>
                   </div>

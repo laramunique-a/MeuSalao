@@ -137,12 +137,8 @@ export function AgendamentosColumns({
     setSelectedAgendamento(null)
   }
 
-  function handleClienteChegouNao() {
-    if (selectedAgendamento) {
-      onChangeStatus(selectedAgendamento, 'em_atraso')
-    }
-    setShowClienteChegouDialog(false)
-    setSelectedAgendamento(null)
+  function handleClienteChegouNao(agendamento: Agendamento) {
+    onChangeStatus(agendamento, 'em_atraso')
   }
 
   if (profissionais.length === 0) {
@@ -254,7 +250,7 @@ export function AgendamentosColumns({
                                 <Button
                                   size="sm"
                                   variant="outline"
-                                  onClick={() => handleClienteChegouNao()}
+                                  onClick={() => handleClienteChegouNao(agendamento)}
                                   className="h-6 text-xs gap-1 flex-1 text-red-600"
                                 >
                                   <UserX className="h-3 w-3" />
