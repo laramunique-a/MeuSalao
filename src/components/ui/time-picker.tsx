@@ -97,6 +97,7 @@ export function TimePicker({ value, onChange, disabled, className }: TimePickerP
                     value={localHour}
                     onChange={handleHourChange}
                     onBlur={handleBlur}
+                    onFocus={(e) => e.target.select()}
                     disabled={disabled}
                     placeholder="HH"
                     className="text-center font-medium"
@@ -110,6 +111,7 @@ export function TimePicker({ value, onChange, disabled, className }: TimePickerP
                     value={localMinute}
                     onChange={handleMinuteChange}
                     onBlur={handleBlur}
+                    onFocus={(e) => e.target.select()}
                     disabled={disabled}
                     placeholder="mm"
                     className="text-center font-medium"
