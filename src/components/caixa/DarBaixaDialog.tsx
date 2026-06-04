@@ -9,6 +9,9 @@ import { Switch } from '@/components/ui/switch'
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
 } from '@/components/ui/dialog'
 import {
   Form,
@@ -118,7 +121,7 @@ export function DarBaixaDialog({ open, onOpenChange, agendamento }: DarBaixaDial
   // Auto-calcular valor 2 quando valor 1 muda
   useEffect(() => {
     if (isSplit && agendamento && v1Str) {
-      const v1 = parseFloat(v1Str.replace('.', '').replace(',', '.'))
+      const v1 = parseFloat(v1Str.replace(/\./g, '').replace(',', '.'))
       if (!isNaN(v1)) {
         const v2 = Math.max(0, agendamento.valor - v1)
         form.setValue('valor_pagamento_2', v2.toFixed(2).replace('.', ','))
@@ -143,13 +146,13 @@ export function DarBaixaDialog({ open, onOpenChange, agendamento }: DarBaixaDial
   // Cálculos dinâmicos
   const agValor = agendamento?.valor || 0
   
-  const val1 = parseFloat(v1Str?.replace('.', '').replace(',', '.') || '0') || 0
+  const val1 = parseFloat(v1Str?.replace(/\./g, '').replace(',', '.') || '0') || 0
   const realVal1 = isSplit ? val1 : agValor
   const pct1 = getTaxaPercentual(form1, b1)
   const taxaVal1 = (realVal1 * pct1) / 100
   const net1 = realVal1 - taxaVal1
 
-  const val2 = parseFloat(v2Str?.replace('.', '').replace(',', '.') || '0') || 0
+  const val2 = parseFloat(v2Str?.replace(/\./g, '').replace(',', '.') || '0') || 0
   const realVal2 = isSplit ? val2 : 0
   const pct2 = getTaxaPercentual(form2 || '', b2)
   const taxaVal2 = (realVal2 * pct2) / 100
@@ -285,61 +288,62 @@ export function DarBaixaDialog({ open, onOpenChange, agendamento }: DarBaixaDial
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[480px] p-0 overflow-hidden border-0 shadow-2xl rounded-2xl">
+      <DialogContent className="sm:max-w-[480px] p-0 overflow-hidden border-0 shadow-2xl rounded-2xl flex flex-col max-h-[90vh]">
         
         {/* PARTE 1: Cabeçalho */}
-        <div className="bg-slate-900 px-6 py-5 relative">
-          <h2 className="text-lg font-black tracking-tight text-white uppercase flex items-center gap-2">
-            <Receipt className="h-5 w-5 text-emerald-400" />
+        <DialogHeader className="px-6 pt-6 pb-4 border-b border-border bg-background shrink-0">
+          <DialogTitle className="text-lg font-extrabold tracking-tight flex items-center gap-2 text-foreground">
+            <Receipt className="h-5 w-5 text-primary" />
             Registro de Pagamento
-          </h2>
-          <p className="text-slate-400 text-xs font-medium mt-1">
-            Conclua o atendimento e injete o valor líquido no caixa.
-          </p>
-        </div>
+          </DialogTitle>
+          <DialogDescription className="text-xs text-muted-foreground mt-1">
+            Conclua o atendimento e registre a transação no caixa.
+          </DialogDescription>
+        </DialogHeader>
 
-        <div className="p-6 space-y-6 bg-slate-50/50">
-          
-          {/* PARTE 2: Resumo do Atendimento */}
-          <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-4 relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-24 h-24 bg-primary/5 rounded-bl-[100px] pointer-events-none" />
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col flex-1 overflow-hidden bg-slate-50/30 dark:bg-slate-900/10">
             
-            <div className="flex justify-between items-start mb-4">
-              <div className="space-y-3 w-full">
-                <div className="flex items-center gap-2">
-                  <UserCircle className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-sm font-bold text-slate-700">{agendamento.cliente?.nome}</span>
+            {/* Conteúdo Rolável */}
+            <div className="flex-1 overflow-y-auto p-6 space-y-5">
+              
+              {/* PARTE 2: Resumo do Atendimento */}
+              <div className="bg-background rounded-xl border border-border shadow-sm p-4 relative overflow-hidden transition-all hover:border-primary/20">
+                <div className="absolute top-0 right-0 w-24 h-24 bg-primary/5 rounded-bl-[100px] pointer-events-none" />
+                
+                <div className="flex justify-between items-start">
+                  <div className="space-y-2.5 w-full">
+                    <div className="flex items-center gap-2">
+                      <UserCircle className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-sm font-bold text-foreground">{agendamento.cliente?.nome}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Scissors className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-sm font-medium text-muted-foreground">{agendamento.servico?.nome}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Clock className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-xs text-muted-foreground">
+                        {format(new Date(agendamento.data_hora), "dd/MM/yyyy 'às' HH:mm")} • com {agendamento.profissional?.nome}
+                      </span>
+                    </div>
+                  </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <Scissors className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-sm font-medium text-slate-600">{agendamento.servico?.nome}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Clock className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-xs text-slate-500">
-                    {format(new Date(agendamento.data_hora), "dd/MM/yyyy 'às' HH:mm")} • com {agendamento.profissional?.nome}
+
+                <div className="pt-3 border-t border-border mt-3 flex items-center justify-between">
+                  <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Valor Bruto</span>
+                  <span className="text-lg font-black text-foreground tracking-tight">
+                    R$ {agendamento.valor.toFixed(2).replace('.', ',')}
                   </span>
                 </div>
               </div>
-            </div>
 
-            <div className="pt-3 border-t border-slate-100 flex items-center justify-between">
-              <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Valor Bruto</span>
-              <span className="text-xl font-black text-slate-900 tracking-tight">
-                R$ {agendamento.valor.toFixed(2).replace('.', ',')}
-              </span>
-            </div>
-          </div>
-
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-              
               {/* PARTE 3: Área de Pagamento */}
               <div className="space-y-4">
                 
-                <div className="flex items-center justify-between bg-white px-4 py-2.5 rounded-xl border border-slate-200 shadow-sm">
+                <div className="flex items-center justify-between bg-background px-4 py-3 rounded-xl border border-border shadow-sm transition-all hover:border-primary/20">
                   <div className="space-y-0.5">
-                    <Label className="text-sm font-bold text-slate-700">Dividir Pagamento</Label>
+                    <Label className="text-sm font-bold text-foreground">Dividir Pagamento</Label>
                     <p className="text-[10px] text-muted-foreground">Pagar com mais de um método</p>
                   </div>
                   <Controller
@@ -352,7 +356,7 @@ export function DarBaixaDialog({ open, onOpenChange, agendamento }: DarBaixaDial
                 </div>
 
                 {!isSplit ? (
-                  <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm space-y-4">
+                  <div className="bg-background p-4 rounded-xl border border-border shadow-sm space-y-4 transition-all hover:border-primary/20">
                     <FormField
                       control={form.control}
                       name="forma_pagamento"
@@ -361,7 +365,7 @@ export function DarBaixaDialog({ open, onOpenChange, agendamento }: DarBaixaDial
                           <FormLabel className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Método de Recebimento</FormLabel>
                           <Select onValueChange={field.onChange} value={field.value}>
                             <FormControl>
-                              <SelectTrigger className="h-11">
+                              <SelectTrigger className="h-10 bg-background border-border">
                                 <SelectValue placeholder="Selecione..." />
                               </SelectTrigger>
                             </FormControl>
@@ -383,10 +387,10 @@ export function DarBaixaDialog({ open, onOpenChange, agendamento }: DarBaixaDial
                         name="bandeira_1"
                         render={({ field }) => (
                           <FormItem className="animate-in slide-in-from-top-2 duration-300">
-                            <FormLabel className="text-xs font-bold uppercase tracking-wider text-blue-600">Bandeira do Cartão</FormLabel>
+                            <FormLabel className="text-xs font-bold uppercase tracking-wider text-primary">Bandeira do Cartão</FormLabel>
                             <Select onValueChange={field.onChange} value={field.value}>
                               <FormControl>
-                                <SelectTrigger className="h-10 border-blue-200 bg-blue-50/30 ring-offset-blue-50 focus:ring-blue-300">
+                                <SelectTrigger className="h-10 border-primary/20 bg-primary/5 focus:ring-primary/30">
                                   <SelectValue placeholder="Qual a bandeira?" />
                                 </SelectTrigger>
                               </FormControl>
@@ -402,9 +406,9 @@ export function DarBaixaDialog({ open, onOpenChange, agendamento }: DarBaixaDial
                     )}
                   </div>
                 ) : (
-                  <div className="space-y-3 bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+                  <div className="space-y-3 bg-background p-4 rounded-xl border border-border shadow-sm transition-all hover:border-primary/20">
                     {/* FRAÇÃO 1 */}
-                    <div className="p-3 bg-slate-50 rounded-lg border border-slate-100 space-y-3">
+                    <div className="p-3 bg-muted/40 rounded-lg border border-border/50 space-y-3">
                       <div className="grid grid-cols-2 gap-3">
                         <FormField
                           control={form.control}
@@ -414,7 +418,7 @@ export function DarBaixaDialog({ open, onOpenChange, agendamento }: DarBaixaDial
                               <FormLabel className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Forma 1</FormLabel>
                               <Select onValueChange={field.onChange} value={field.value}>
                                 <FormControl>
-                                  <SelectTrigger className="h-9 text-xs font-medium">
+                                  <SelectTrigger className="h-9 text-xs font-medium bg-background border-border">
                                     <SelectValue />
                                   </SelectTrigger>
                                 </FormControl>
@@ -438,7 +442,7 @@ export function DarBaixaDialog({ open, onOpenChange, agendamento }: DarBaixaDial
                               <FormControl>
                                 <Input
                                   {...field}
-                                  className="h-9 text-xs font-bold"
+                                  className="h-9 text-xs font-bold bg-background border-border"
                                   placeholder="0,00"
                                   onChange={(e: React.ChangeEvent<HTMLInputElement>) => field.onChange(e.target.value.replace(/[^\d,.]/g, ''))}
                                 />
@@ -456,7 +460,7 @@ export function DarBaixaDialog({ open, onOpenChange, agendamento }: DarBaixaDial
                             <FormItem className="animate-in slide-in-from-top-1 duration-200">
                               <Select onValueChange={field.onChange} value={field.value}>
                                 <FormControl>
-                                  <SelectTrigger className="h-8 text-xs border-blue-200 bg-blue-50/30 text-blue-700 font-semibold">
+                                  <SelectTrigger className="h-8 text-xs border-primary/20 bg-primary/5 text-primary font-semibold">
                                     <SelectValue placeholder="Selecione a Bandeira" />
                                   </SelectTrigger>
                                 </FormControl>
@@ -471,7 +475,7 @@ export function DarBaixaDialog({ open, onOpenChange, agendamento }: DarBaixaDial
                     </div>
 
                     {/* FRAÇÃO 2 */}
-                    <div className="p-3 bg-slate-50 rounded-lg border border-slate-100 space-y-3">
+                    <div className="p-3 bg-muted/40 rounded-lg border border-border/50 space-y-3">
                       <div className="grid grid-cols-2 gap-3">
                         <FormField
                           control={form.control}
@@ -481,7 +485,7 @@ export function DarBaixaDialog({ open, onOpenChange, agendamento }: DarBaixaDial
                               <FormLabel className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Forma 2</FormLabel>
                               <Select onValueChange={field.onChange} value={field.value}>
                                 <FormControl>
-                                  <SelectTrigger className="h-9 text-xs font-medium">
+                                  <SelectTrigger className="h-9 text-xs font-medium bg-background border-border">
                                     <SelectValue />
                                   </SelectTrigger>
                                 </FormControl>
@@ -503,7 +507,7 @@ export function DarBaixaDialog({ open, onOpenChange, agendamento }: DarBaixaDial
                             <FormItem>
                               <FormLabel className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Restante (R$)</FormLabel>
                               <FormControl>
-                                <Input {...field} readOnly className="h-9 text-xs font-bold bg-slate-200/50 text-slate-500 border-dashed" />
+                                <Input {...field} readOnly className="h-9 text-xs font-bold bg-muted text-muted-foreground border-dashed border-border" />
                               </FormControl>
                             </FormItem>
                           )}
@@ -518,7 +522,7 @@ export function DarBaixaDialog({ open, onOpenChange, agendamento }: DarBaixaDial
                             <FormItem className="animate-in slide-in-from-top-1 duration-200">
                               <Select onValueChange={field.onChange} value={field.value}>
                                 <FormControl>
-                                  <SelectTrigger className="h-8 text-xs border-blue-200 bg-blue-50/30 text-blue-700 font-semibold">
+                                  <SelectTrigger className="h-8 text-xs border-primary/20 bg-primary/5 text-primary font-semibold">
                                     <SelectValue placeholder="Selecione a Bandeira" />
                                   </SelectTrigger>
                                 </FormControl>
@@ -538,56 +542,57 @@ export function DarBaixaDialog({ open, onOpenChange, agendamento }: DarBaixaDial
 
               {/* PARTE 4: Resumo Financeiro (Aparece se houver taxas) */}
               {(hasTaxas && (form1 === 'cartao_credito' || (isSplit && form2 === 'cartao_credito'))) && (
-                <div className="bg-gradient-to-br from-emerald-50 to-emerald-100/50 p-4 rounded-xl border border-emerald-200/50 space-y-2 animate-in fade-in duration-500">
-                  <h4 className="text-[10px] font-black uppercase text-emerald-800 tracking-widest mb-3 flex items-center gap-1.5">
-                    <CheckCircle2 className="h-3 w-3" />
+                <div className="bg-emerald-500/10 p-4 rounded-xl border border-emerald-500/20 space-y-2 animate-in fade-in duration-500">
+                  <h4 className="text-[10px] font-bold uppercase text-emerald-600 dark:text-emerald-400 tracking-widest mb-2 flex items-center gap-1.5">
+                    <CheckCircle2 className="h-3.5 w-3.5" />
                     Resumo Líquido
                   </h4>
-                  <div className="flex justify-between text-xs text-emerald-700/80 font-semibold">
+                  <div className="flex justify-between text-xs text-muted-foreground">
                     <span>Total Bruto</span>
-                    <span>R$ {totalBruto.toFixed(2).replace('.', ',')}</span>
+                    <span className="font-semibold text-foreground">R$ {totalBruto.toFixed(2).replace('.', ',')}</span>
                   </div>
-                  <div className="flex justify-between text-xs text-rose-600/80 font-semibold border-b border-emerald-200/50 pb-2">
+                  <div className="flex justify-between text-xs text-red-500 font-semibold border-b border-border/40 pb-2">
                     <span>Taxas Retidas</span>
                     <span>- R$ {totalTaxas.toFixed(2).replace('.', ',')}</span>
                   </div>
                   <div className="flex justify-between items-center pt-1">
-                    <span className="text-xs font-bold text-emerald-900">Total Líquido Caixa/Comissão</span>
-                    <span className="text-lg font-black text-emerald-700 tracking-tight">R$ {totalLiquido.toFixed(2).replace('.', ',')}</span>
+                    <span className="text-xs font-bold text-foreground">Total Líquido Caixa</span>
+                    <span className="text-lg font-black text-emerald-600 dark:text-emerald-400 tracking-tight">R$ {totalLiquido.toFixed(2).replace('.', ',')}</span>
                   </div>
-                  <p className="text-[9px] text-emerald-700/60 font-medium italic pt-1 leading-tight text-right">
-                    As comissões e o caixa serão registrados sobre o líquido.
+                  <p className="text-[9px] text-muted-foreground font-medium italic pt-1 leading-tight text-right">
+                    Comissões e o caixa serão calculados sobre o valor líquido.
                   </p>
                 </div>
               )}
 
-              {/* PARTE 5: Rodapé */}
-              <div className="pt-2 flex flex-col sm:flex-row justify-end gap-3 mt-4">
-                <Button 
-                  type="button" 
-                  variant="ghost" 
-                  onClick={() => onOpenChange(false)}
-                  className="w-full sm:w-auto text-slate-500 hover:bg-slate-200 hover:text-slate-700"
-                >
-                  Cancelar
-                </Button>
-                <Button
-                  type="submit"
-                  disabled={createTransacao.isPending || updateStatus.isPending || !canConfirm}
-                  className="w-full sm:w-auto h-11 px-8 rounded-xl font-bold tracking-wide shadow-lg shadow-primary/20 hover:scale-[1.02] transition-transform"
-                >
-                  {createTransacao.isPending || updateStatus.isPending
-                    ? 'Salvando Caixa...'
-                    : !canConfirm 
-                      ? 'Acesso Restrito'
-                      : 'Lançar Recebimento'}
-                </Button>
-              </div>
-              
-            </form>
-          </Form>
+            </div>
 
-        </div>
+            {/* PARTE 5: Rodapé Fixo */}
+            <div className="px-6 py-4 border-t border-border bg-background flex flex-col sm:flex-row justify-end gap-3 shrink-0">
+              <Button 
+                type="button" 
+                variant="outline" 
+                onClick={() => onOpenChange(false)}
+                className="w-full sm:w-auto"
+              >
+                Cancelar
+              </Button>
+              <Button
+                type="submit"
+                disabled={createTransacao.isPending || updateStatus.isPending || !canConfirm}
+                className="w-full sm:w-auto shadow-lg shadow-primary/10"
+              >
+                {createTransacao.isPending || updateStatus.isPending
+                  ? 'Salvando...'
+                  : !canConfirm 
+                    ? 'Acesso Restrito'
+                    : 'Lançar Recebimento'}
+              </Button>
+            </div>
+            
+          </form>
+        </Form>
+
       </DialogContent>
     </Dialog>
   )
