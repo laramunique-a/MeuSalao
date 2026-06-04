@@ -21,7 +21,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { useTransacoesByDate, useCaixaSummary, useCaixaAberto, useEstornarTransacao } from '@/hooks/useCaixa'
+import { useTransacoesByDate, useCaixaSummary, useCaixaAberto, useEstornarTransacao, useSaldoCaixaAberto } from '@/hooks/useCaixa'
 import { useAgendamentosEmAtendimento } from '@/hooks/useAgendamentos'
 import { format, startOfDay, endOfDay, subDays, isBefore, parseISO } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
@@ -53,6 +53,7 @@ export default function Caixa() {
   const { data: transacoes, isLoading: loadingTrans } = useTransacoesByDate(dataInicio, dataFim)
   const { data: resumen } = useCaixaSummary(dataInicio, dataFim)
   const { data: caixaAberto, isLoading: loadingStatus } = useCaixaAberto()
+  const { data: saldoRealCaixa = 0 } = useSaldoCaixaAberto(caixaAberto?.id)
   
   // Buscar pendências de até 7 dias atrás
   const [dataPendenciasInicio] = useState(subDays(startOfDay(new Date()), 7).toISOString())
@@ -463,7 +464,7 @@ export default function Caixa() {
         open={isFecharOpen && !!caixaAberto} 
         onOpenChange={setIsFecharOpen} 
         caixaId={caixaAberto?.id || ''} 
-        saldoSistema={resumen?.saldo || 0}
+        saldoSistema={saldoRealCaixa}
         dataAbertura={caixaAberto?.data_abertura}
         hasPendencias={!!pendencias && pendencias.length > 0}
       />

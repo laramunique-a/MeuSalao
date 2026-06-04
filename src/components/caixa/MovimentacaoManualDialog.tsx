@@ -33,6 +33,7 @@ type SubTipoAjuste = 'positivo' | 'negativo'
 export function MovimentacaoManualDialog({ open, onOpenChange }: MovimentacaoManualDialogProps) {
   const { toast } = useToast()
   const createTransacao = useCreateTransacao()
+  const { isAdmin } = useAuthStore()
   
   const [tipoMovimento, setTipoMovimento] = useState<TipoMovimento>('entrada')
   const [subTipoAjuste, setSubTipoAjuste] = useState<SubTipoAjuste>('positivo')
@@ -50,8 +51,6 @@ export function MovimentacaoManualDialog({ open, onOpenChange }: MovimentacaoMan
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    
-    const { isAdmin } = useAuthStore.getState()
     
     if ((tipoMovimento === 'saida' || tipoMovimento === 'retirada' || tipoMovimento === 'ajuste') && !isAdmin) {
       toast({

@@ -179,21 +179,32 @@ export const caixaService = {
 
     if (errorCaixa) throw errorCaixa
 
-    // Criar transação de entrada para o valor inicial
-    await this.create({
-      caixa_id: (novoCaixa as any).id,
-      tipo: 'entrada',
-      valor: valorInicial,
-      forma_pagamento: 'dinheiro',
-      categoria: 'Abertura de Caixa',
-      descricao: `Abertura de caixa - Saldo inicial`,
-      data_hora: new Date().toISOString(),
-      status: 'ativo',
-      agendamento_id: null
-    })
+    // Criar transação de entrada para o valor inicial.
+    // Se falhar, fazemos rollback do caixa para evitar estado inconsistente.
+    try {
+      await this.create({
+        caixa_id: (novoCaixa as any).id,
+        tipo: 'entrada',
+        valor: valorInicial,
+        forma_pagamento: 'dinheiro',
+        categoria: 'Abertura de Caixa',
+        descricao: `Abertura de caixa - Saldo inicial`,
+        data_hora: new Date().toISOString(),
+        status: 'ativo',
+        agendamento_id: null
+      })
+    } catch (transacaoError) {
+      // Rollback: remover o caixa_diario criado para não ficar em estado inconsistente
+      await (supabase
+        .from('caixa_diario') as any)
+        .delete()
+        .eq('id', (novoCaixa as any).id)
+      throw new Error('Falha ao registrar a transação de abertura. O caixa foi revertido. Tente novamente.')
+    }
 
     return novoCaixa as unknown as CaixaDiario
   },
+
 
   async fecharCaixa(caixaId: string, valorInformado: number, observacoes?: string) {
     const usuario = useAuthStore.getState().usuario

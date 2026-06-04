@@ -198,6 +198,7 @@ export function DarBaixaDialog({ open, onOpenChange, agendamento }: DarBaixaDial
           categoria: 'Serviço',
           descricao: `[1/2] ${servico?.nome} - ${agendamento.cliente?.nome}`,
           comissao_valor: comissao1,
+          taxa_cartao: taxaVal1,
           data_hora: new Date().toISOString(),
           status: 'ativo',
           caixa_id: null,
@@ -224,6 +225,7 @@ export function DarBaixaDialog({ open, onOpenChange, agendamento }: DarBaixaDial
           categoria: 'Serviço',
           descricao: `[2/2] ${servico?.nome} - ${agendamento.cliente?.nome}`,
           comissao_valor: comissao2,
+          taxa_cartao: taxaVal2,
           data_hora: new Date().toISOString(),
           status: 'ativo',
           caixa_id: null,
@@ -252,6 +254,7 @@ export function DarBaixaDialog({ open, onOpenChange, agendamento }: DarBaixaDial
           categoria: 'Serviço',
           descricao: `${servico?.nome} - ${agendamento.cliente?.nome}`,
           comissao_valor: comissaoUnica,
+          taxa_cartao: taxaVal1,
           data_hora: new Date().toISOString(),
           status: 'ativo',
           caixa_id: null,
@@ -259,10 +262,8 @@ export function DarBaixaDialog({ open, onOpenChange, agendamento }: DarBaixaDial
         })
       }
 
-      await updateStatus.mutateAsync({
-        id: agendamento.id,
-        status: 'concluido',
-      })
+      // O status do agendamento é atualizado automaticamente dentro do caixaService.create
+      // quando agendamento_id é fornecido — não é necessário chamar updateStatus aqui.
 
       toast({
         title: 'Baixa realizada!',

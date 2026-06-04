@@ -152,8 +152,11 @@ export function HistoricoCaixa() {
 
   const { isAdmin } = useAuthStore()
 
+  // Para caixas fechados usa o saldo do sistema; para abertos usa o valor inicial como referência mínima
   const totalEntradas = caixas?.reduce(
-    (acc, c) => acc + (c.valor_fechamento_sistema != null ? Number(c.valor_fechamento_sistema) : 0), 0
+    (acc, c) => acc + (c.valor_fechamento_sistema != null
+      ? Number(c.valor_fechamento_sistema)
+      : Number(c.valor_inicial)), 0
   ) ?? 0
 
   const totalAberturas = caixas?.reduce(

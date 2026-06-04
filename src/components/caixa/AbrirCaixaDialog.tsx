@@ -69,7 +69,8 @@ export function AbrirCaixaDialog({ open, onOpenChange }: AbrirCaixaDialogProps) 
       effectiveValue = suggestedValue
     } else {
       const normalized = normalizeValue(manualInput)
-      effectiveValue = Number(normalized.replace(',', '.'))
+      // Remove thousand separators (dots) before replacing decimal comma
+      effectiveValue = Number(normalized.replace(/\./g, '').replace(',', '.'))
     }
 
     if (isNaN(effectiveValue) || effectiveValue < 0) {
