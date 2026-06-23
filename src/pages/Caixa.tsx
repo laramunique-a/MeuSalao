@@ -23,7 +23,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { useTransacoesByDate, useCaixaSummary, useCaixaAberto, useEstornarTransacao, useSaldoCaixaAberto } from '@/hooks/useCaixa'
-import { useAgendamentosEmAtendimento } from '@/hooks/useAgendamentos'
+import { useAgendamentosEmAtendimento, usePendenciasGlobais } from '@/hooks/useAgendamentos'
 import { format, startOfDay, endOfDay, subDays, isBefore, parseISO } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { Badge } from '@/components/ui/badge'
@@ -35,6 +35,7 @@ import { MovimentacaoManualDialog } from '@/components/caixa/MovimentacaoManualD
 import { DarBaixaDialog } from '@/components/caixa/DarBaixaDialog'
 import { HistoricoCaixa } from '@/components/caixa/HistoricoCaixa'
 import { EditarAberturaDialog } from '@/components/caixa/EditarAberturaDialog'
+import { DebitosPassadosDialog } from '@/components/caixa/DebitosPassadosDialog'
 import type { Agendamento } from '@/types/models'
 import { cn } from '@/lib/utils'
 
@@ -55,6 +56,7 @@ export default function Caixa() {
   const [isEditarAberturaOpen, setIsEditarAberturaOpen] = useState(false)
   const [selectedAberturaId, setSelectedAberturaId] = useState<string | null>(null)
   const [selectedAberturaValor, setSelectedAberturaValor] = useState<number>(0)
+  const [isDebitosPassadosOpen, setIsDebitosPassadosOpen] = useState(false)
 
   const { data: transacoes, isLoading: loadingTrans } = useTransacoesByDate(dataInicio, dataFim)
   const { data: resumen } = useCaixaSummary(dataInicio, dataFim)
@@ -65,6 +67,13 @@ export default function Caixa() {
   const [dataPendenciasInicio] = useState(subDays(startOfDay(new Date()), 7).toISOString())
   const { data: pendencias } = useAgendamentosEmAtendimento(dataPendenciasInicio, dataFim)
   const estornar = useEstornarTransacao()
+
+  const { data: pendenciasGlobais = [] } = usePendenciasGlobais()
+
+  const pendenciasPassadas = pendenciasGlobais.filter(p => {
+    if (!caixaAberto) return false
+    return new Date(p.data_hora) < new Date(caixaAberto.data_abertura)
+  })
 
   // Calcular comissões por profissional (dos agendamentos concluídos no período)
   const comissoesPorProfissional = transacoes?.reduce((acc: any, t) => {
@@ -138,6 +147,27 @@ export default function Caixa() {
               Recomendamos fechar este caixa antes de processar as vendas de hoje.
             </p>
           </div>
+        </div>
+      )}
+      {caixaAberto && pendenciasPassadas.length > 0 && (
+        <div className="mb-6 p-4 border border-red-500/20 bg-red-500/10 dark:bg-red-500/20 rounded-lg flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-foreground">
+          <div className="flex items-center gap-3 text-xs uppercase tracking-wider">
+            <AlertCircle className="h-5 w-5 text-red-500 shrink-0" />
+            <div>
+              <p className="font-semibold text-red-600">Débitos de Caixas Anteriores Pendentes</p>
+              <p className="text-muted-foreground mt-0.5">
+                Existem {pendenciasPassadas.length} {pendenciasPassadas.length === 1 ? 'atendimento' : 'atendimentos'} de dias anteriores pendentes de quitação (Total: R$ {pendenciasPassadas.reduce((acc, p) => acc + Number(p.valor), 0).toFixed(2).replace('.', ',')}).
+              </p>
+            </div>
+          </div>
+          <Button
+            size="sm"
+            variant="outline"
+            className="text-xs uppercase tracking-wider h-8 text-red-500 hover:text-red-600 border-red-500/20 hover:bg-red-500/10 self-start sm:self-center bg-transparent"
+            onClick={() => setIsDebitosPassadosOpen(true)}
+          >
+            Visualizar Débitos
+          </Button>
         </div>
       )}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
@@ -485,7 +515,7 @@ export default function Caixa() {
         caixaId={caixaAberto?.id || ''} 
         saldoSistema={saldoRealCaixa}
         dataAbertura={caixaAberto?.data_abertura}
-        hasPendencias={!!pendencias && pendencias.length > 0}
+        pendencias={pendencias}
       />
       <MovimentacaoManualDialog 
         open={isMovimentacaoOpen} 
@@ -501,6 +531,15 @@ export default function Caixa() {
         onOpenChange={setIsEditarAberturaOpen}
         transacaoId={selectedAberturaId}
         valorAtual={selectedAberturaValor}
+      />
+      <DebitosPassadosDialog
+        open={isDebitosPassadosOpen}
+        onOpenChange={setIsDebitosPassadosOpen}
+        pendencias={pendenciasPassadas}
+        onReceber={(ag) => {
+          setSelectedAgendamento(ag)
+          setIsDarBaixaOpen(true)
+        }}
       />
     </div>
   )

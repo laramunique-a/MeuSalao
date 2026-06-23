@@ -46,3 +46,4 @@ fix_*.sql
 
 # Arquivos de debug
 debug_types.ts
+.vercel

@@ -239,6 +239,21 @@ export const agendamentoService = {
     if (error) throw error
   },
 
+  async getPendenciasGlobais() {
+    const usuario = useAuthStore.getState().usuario
+    if (!usuario || !usuario.salao_id) throw new Error('Usuário não autenticado')
+
+    const { data, error } = await supabase
+      .from('agendamento')
+      .select(AGENDAMENTO_SELECT)
+      .eq('salao_id', usuario.salao_id)
+      .eq('status', 'pendente_caixa')
+      .order('data_hora', { ascending: false })
+
+    if (error) throw error
+    return data as unknown as Agendamento[]
+  },
+
   async checkConflict(
     profissionalId: string,
     dataHora: string,

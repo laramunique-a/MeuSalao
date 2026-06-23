@@ -106,3 +106,10 @@ export function useHasPendencias() {
     refetchInterval: 30000,
   })
 }
+
+export function usePendenciasGlobais() {
+  return useQuery({
+    queryKey: ['agendamentos', 'pendencias-globais'],
+    queryFn: () => agendamentoService.getPendenciasGlobais(),
+  })
+}

@@ -8,3 +8,10 @@ export function useClienteReport(clienteId: string | null) {
     enabled: !!clienteId,
   })
 }
+
+export function useCaixaPendenciasReport() {
+  return useQuery({
+    queryKey: ['caixa-pendencias-report'],
+    queryFn: () => relatoriosService.getCaixaPendenciasReport(),
+  })
+}

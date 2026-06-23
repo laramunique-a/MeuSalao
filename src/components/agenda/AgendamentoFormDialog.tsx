@@ -41,7 +41,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 
-import { useCreateAgendamento, useUpdateAgendamento } from '@/hooks/useAgendamentos'
+import { useCreateAgendamento, useUpdateAgendamento, usePendenciasGlobais } from '@/hooks/useAgendamentos'
 import { useAdvancedConflictCheck } from '@/hooks/useAdvancedConflictCheck'
 import { useCheckBloqueio } from '@/hooks/useBloqueios'
 import { useClientes } from '@/hooks/useClientes'
@@ -51,7 +51,7 @@ import { useToast } from '@/hooks/use-toast'
 import { useEffect, useState } from 'react'
 import type { Agendamento } from '@/types/models'
 import { format } from 'date-fns'
-import { Check, ChevronsUpDown, UserPlus } from 'lucide-react'
+import { Check, ChevronsUpDown, UserPlus, AlertCircle } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { ClienteFormDialog } from '@/components/clientes/ClienteFormDialog'
 import { ConflictWarningDialog } from './ConflictWarningDialog'
@@ -78,6 +78,7 @@ export function AgendamentoFormDialog({
   const { data: clientes = [] } = useClientes()
   const { data: servicos = [] } = useServicos()
   const { data: profissionais = [] } = useProfissionais()
+  const { data: pendenciasGlobais = [] } = usePendenciasGlobais()
 
   const [selectedServico, setSelectedServico] = useState<string>('')
   const [clienteNaoCadastrado, setClienteNaoCadastrado] = useState<string | null>(null)
@@ -99,6 +100,11 @@ export function AgendamentoFormDialog({
       observacoes: '',
     },
   })
+
+  const selectedClienteId = form.watch('cliente_id')
+  const clientHasDebt = selectedClienteId
+    ? pendenciasGlobais.some((p) => p.cliente_id === selectedClienteId)
+    : false
 
   useEffect(() => {
     if (agendamento) {
@@ -353,6 +359,18 @@ export function AgendamentoFormDialog({
                   )
                 }}
               />
+
+              {clientHasDebt && (
+                <div className="p-3 bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900/30 rounded-lg text-amber-800 dark:text-amber-200 text-xs flex items-start gap-2">
+                  <AlertCircle className="h-4 w-4 shrink-0 text-amber-600 mt-0.5" />
+                  <div>
+                    <p className="font-semibold text-amber-700 dark:text-amber-400">Cliente com Débito Pendente</p>
+                    <p className="text-[10px] text-muted-foreground mt-0.5">
+                      Este cliente possui pagamentos pendentes de atendimentos anteriores no sistema.
+                    </p>
+                  </div>
+                </div>
+              )}
 
               <FormField
                 control={form.control}
