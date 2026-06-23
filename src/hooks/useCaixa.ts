@@ -150,3 +150,18 @@ export function useEstornarTransacao() {
     },
   })
 }
+
+export function useUpdateAberturaCaixa() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ transacaoId, novoValor }: { transacaoId: string; novoValor: number }) =>
+      caixaService.updateAberturaCaixa(transacaoId, novoValor),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['transacoes'] })
+      queryClient.invalidateQueries({ queryKey: ['caixa-summary'] })
+      queryClient.invalidateQueries({ queryKey: ['caixa-aberto'] })
+      queryClient.invalidateQueries({ queryKey: ['saldo-caixa-aberto'] })
+      queryClient.invalidateQueries({ queryKey: ['transacoes-caixa'] })
+    },
+  })
+}

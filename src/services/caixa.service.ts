@@ -307,4 +307,34 @@ export const caixaService = {
     if (error) throw error
     return data as unknown as TransacaoCaixa[]
   },
+
+  async updateAberturaCaixa(transacaoId: string, novoValor: number) {
+    const usuario = useAuthStore.getState().usuario
+    if (!usuario || !usuario.salao_id) throw new Error('Usuário não autenticado')
+
+    // 1. Buscar a transação para obter o caixa_id
+    const transacao = await this.getById(transacaoId)
+    if (transacao.categoria !== 'Abertura de Caixa') {
+      throw new Error('Esta transação não é uma abertura de caixa.')
+    }
+
+    const caixaId = transacao.caixa_id
+    if (!caixaId) throw new Error('Caixa não identificado.')
+
+    // 2. Atualizar o valor_inicial na tabela caixa_diario
+    const { error: errorCaixa } = await (supabase
+      .from('caixa_diario') as any)
+      .update({ valor_inicial: novoValor })
+      .eq('id', caixaId)
+
+    if (errorCaixa) throw errorCaixa
+
+    // 3. Atualizar o valor na tabela transacao_caixa
+    const { error: errorTrans } = await (supabase
+      .from('transacao_caixa') as any)
+      .update({ valor: novoValor })
+      .eq('id', transacaoId)
+
+    if (errorTrans) throw errorTrans
+  },
 }

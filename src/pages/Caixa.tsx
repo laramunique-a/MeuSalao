@@ -10,7 +10,8 @@ import {
   AlertCircle,
   DollarSign,
   User,
-  History
+  History,
+  Pencil
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -33,6 +34,7 @@ import { FecharCaixaDialog } from '@/components/caixa/FecharCaixaDialog'
 import { MovimentacaoManualDialog } from '@/components/caixa/MovimentacaoManualDialog'
 import { DarBaixaDialog } from '@/components/caixa/DarBaixaDialog'
 import { HistoricoCaixa } from '@/components/caixa/HistoricoCaixa'
+import { EditarAberturaDialog } from '@/components/caixa/EditarAberturaDialog'
 import type { Agendamento } from '@/types/models'
 import { cn } from '@/lib/utils'
 
@@ -50,6 +52,9 @@ export default function Caixa() {
   const [isDarBaixaOpen, setIsDarBaixaOpen] = useState(false)
   const [selectedAgendamento, setSelectedAgendamento] = useState<Agendamento | null>(null)
   const [activeTab, setActiveTab] = useState<'hoje' | 'historico'>('hoje')
+  const [isEditarAberturaOpen, setIsEditarAberturaOpen] = useState(false)
+  const [selectedAberturaId, setSelectedAberturaId] = useState<string | null>(null)
+  const [selectedAberturaValor, setSelectedAberturaValor] = useState<number>(0)
 
   const { data: transacoes, isLoading: loadingTrans } = useTransacoesByDate(dataInicio, dataFim)
   const { data: resumen } = useCaixaSummary(dataInicio, dataFim)
@@ -433,13 +438,27 @@ export default function Caixa() {
                                     </DropdownMenuTrigger>
                                     <DropdownMenuContent align="end" className="rounded-lg border-border">
                                       {isAdmin && (
-                                        <DropdownMenuItem 
-                                          className="text-red-500 focus:text-red-500 cursor-pointer gap-2 font-semibold text-xs uppercase tracking-wider"
-                                          onClick={() => handleEstorno(t.id)}
-                                        >
-                                          <Undo2 className="h-3.5 w-3.5" />
-                                          Estornar
-                                        </DropdownMenuItem>
+                                        t.categoria === 'Abertura de Caixa' ? (
+                                          <DropdownMenuItem 
+                                            className="cursor-pointer gap-2 font-semibold text-xs uppercase tracking-wider text-foreground focus:text-foreground"
+                                            onClick={() => {
+                                              setSelectedAberturaId(t.id)
+                                              setSelectedAberturaValor(t.valor)
+                                              setIsEditarAberturaOpen(true)
+                                            }}
+                                          >
+                                            <Pencil className="h-3.5 w-3.5" />
+                                            Editar Saldo
+                                          </DropdownMenuItem>
+                                        ) : (
+                                          <DropdownMenuItem 
+                                            className="text-red-500 focus:text-red-500 cursor-pointer gap-2 font-semibold text-xs uppercase tracking-wider"
+                                            onClick={() => handleEstorno(t.id)}
+                                          >
+                                            <Undo2 className="h-3.5 w-3.5" />
+                                            Estornar
+                                          </DropdownMenuItem>
+                                        )
                                       )}
                                     </DropdownMenuContent>
                                   </DropdownMenu>
@@ -476,6 +495,12 @@ export default function Caixa() {
         open={isDarBaixaOpen}
         onOpenChange={setIsDarBaixaOpen}
         agendamento={selectedAgendamento}
+      />
+      <EditarAberturaDialog
+        open={isEditarAberturaOpen}
+        onOpenChange={setIsEditarAberturaOpen}
+        transacaoId={selectedAberturaId}
+        valorAtual={selectedAberturaValor}
       />
     </div>
   )
