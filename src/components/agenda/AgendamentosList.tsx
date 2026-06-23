@@ -150,43 +150,49 @@ export function AgendamentosList({
                     <Badge className={cn("px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider border shadow-none", getStatusBadgeStyles(agendamento.status))}>
                       {STATUS_AGENDAMENTO_LABELS[agendamento.status]}
                     </Badge>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full hover:bg-accent">
-                          <MoreVertical className="h-4 w-4 text-muted-foreground" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end" className="w-56 border-border">
-                        <DropdownMenuLabel className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Gerenciar Agendamento</DropdownMenuLabel>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem onClick={() => onEdit(agendamento)} className="py-2.5 text-xs font-semibold uppercase tracking-wider">
-                          <Pencil className="h-4 w-4 mr-2" />
-                          Editar Detalhes
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleClienteChegou(agendamento)} className="py-2.5 text-xs font-semibold uppercase tracking-wider">
-                          <UserCheck className="h-4 w-4 mr-2" />
-                          Cliente chegou?
-                        </DropdownMenuItem>
-                        {agendamento.status === 'em_atendimento' && (
-                          <DropdownMenuItem onClick={() => onChangeStatus(agendamento, 'pendente_caixa')} className="py-2.5 text-xs font-semibold uppercase tracking-wider">
-                            <Check className="h-4 w-4 mr-2" />
-                            Finalizar Atendimento
-                          </DropdownMenuItem>
-                        )}
-                        {!['concluido', 'cancelado', 'em_atendimento', 'pendente_caixa'].includes(agendamento.status) && (
-                          <>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem
-                              onClick={() => onCancel(agendamento)}
-                              className="text-red-500 focus:text-red-500 py-2.5 text-xs font-semibold uppercase tracking-wider"
-                            >
-                              <Ban className="h-4 w-4 mr-2" />
-                              Cancelar Horário
+                    {!['concluido', 'cancelado', 'pendente_caixa'].includes(agendamento.status) && (
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full hover:bg-accent">
+                            <MoreVertical className="h-4 w-4 text-muted-foreground" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-56 border-border">
+                          <DropdownMenuLabel className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Gerenciar Agendamento</DropdownMenuLabel>
+                          <DropdownMenuSeparator />
+                          {agendamento.status !== 'em_atendimento' && (
+                            <DropdownMenuItem onClick={() => onEdit(agendamento)} className="py-2.5 text-xs font-semibold uppercase tracking-wider">
+                              <Pencil className="h-4 w-4 mr-2" />
+                              Editar Detalhes
                             </DropdownMenuItem>
-                          </>
-                        )}
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+                          )}
+                          {!['em_atendimento'].includes(agendamento.status) && (
+                            <DropdownMenuItem onClick={() => handleClienteChegou(agendamento)} className="py-2.5 text-xs font-semibold uppercase tracking-wider">
+                              <UserCheck className="h-4 w-4 mr-2" />
+                              Cliente chegou?
+                            </DropdownMenuItem>
+                          )}
+                          {agendamento.status === 'em_atendimento' && (
+                            <DropdownMenuItem onClick={() => onChangeStatus(agendamento, 'pendente_caixa')} className="py-2.5 text-xs font-semibold uppercase tracking-wider">
+                              <Check className="h-4 w-4 mr-2" />
+                              Finalizar Atendimento
+                            </DropdownMenuItem>
+                          )}
+                          {!['concluido', 'cancelado', 'em_atendimento', 'pendente_caixa'].includes(agendamento.status) && (
+                            <>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem
+                                onClick={() => onCancel(agendamento)}
+                                className="text-red-500 focus:text-red-500 py-2.5 text-xs font-semibold uppercase tracking-wider"
+                              >
+                                <Ban className="h-4 w-4 mr-2" />
+                                Cancelar Horário
+                              </DropdownMenuItem>
+                            </>
+                          )}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    )}
                   </div>
                 </div>
               </CardHeader>

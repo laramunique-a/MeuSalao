@@ -200,39 +200,43 @@ export function AgendamentosColumns({
                                 <Badge variant={getStatusBadgeVariant(agendamento.status)} className="text-xs px-1 py-0">
                                   {STATUS_AGENDAMENTO_LABELS[agendamento.status]}
                                 </Badge>
-                                <DropdownMenu>
-                                  <DropdownMenuTrigger asChild>
-                                    <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
-                                      <MoreVertical className="h-3 w-3" />
-                                    </Button>
-                                  </DropdownMenuTrigger>
-                                  <DropdownMenuContent align="end">
-                                    <DropdownMenuLabel>Ações</DropdownMenuLabel>
-                                    <DropdownMenuSeparator />
-                                    <DropdownMenuItem onClick={() => onEdit(agendamento)}>
-                                      <Pencil className="h-4 w-4 mr-2" />
-                                      Editar
-                                    </DropdownMenuItem>
-                                    {!['concluido', 'cancelado', 'em_atendimento', 'pendente_caixa'].includes(agendamento.status) && (
-                                      <>
-                                        <DropdownMenuSeparator />
-                                        {agendamento.status === 'em_atraso' && (
-                                          <DropdownMenuItem onClick={() => handleClienteChegou(agendamento)} className="text-orange-600">
-                                            <UserCheck className="h-4 w-4 mr-2" />
-                                            Cliente chegou?
-                                          </DropdownMenuItem>
-                                        )}
-                                        <DropdownMenuItem
-                                          onClick={() => onCancel(agendamento)}
-                                          className="text-red-600"
-                                        >
-                                          <Ban className="h-4 w-4 mr-2" />
-                                          Cancelar
+                                {!['concluido', 'cancelado', 'pendente_caixa'].includes(agendamento.status) && (
+                                  <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                      <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
+                                        <MoreVertical className="h-3 w-3" />
+                                      </Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent align="end">
+                                      <DropdownMenuLabel>Ações</DropdownMenuLabel>
+                                      <DropdownMenuSeparator />
+                                      {agendamento.status !== 'em_atendimento' && (
+                                        <DropdownMenuItem onClick={() => onEdit(agendamento)}>
+                                          <Pencil className="h-4 w-4 mr-2" />
+                                          Editar
                                         </DropdownMenuItem>
-                                      </>
-                                    )}
-                                  </DropdownMenuContent>
-                                </DropdownMenu>
+                                      )}
+                                      {!['concluido', 'cancelado', 'em_atendimento', 'pendente_caixa'].includes(agendamento.status) && (
+                                        <>
+                                          <DropdownMenuSeparator />
+                                          {agendamento.status === 'em_atraso' && (
+                                            <DropdownMenuItem onClick={() => handleClienteChegou(agendamento)} className="text-orange-600">
+                                              <UserCheck className="h-4 w-4 mr-2" />
+                                              Cliente chegou?
+                                            </DropdownMenuItem>
+                                          )}
+                                          <DropdownMenuItem
+                                            onClick={() => onCancel(agendamento)}
+                                            className="text-red-600"
+                                          >
+                                            <Ban className="h-4 w-4 mr-2" />
+                                            Cancelar
+                                          </DropdownMenuItem>
+                                        </>
+                                      )}
+                                    </DropdownMenuContent>
+                                  </DropdownMenu>
+                                )}
                               </div>
                             </div>
 
