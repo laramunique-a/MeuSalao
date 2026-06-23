@@ -31,7 +31,7 @@ export default function Configuracoes() {
       <div className="flex items-center justify-center min-h-[60vh]">
         <div className="flex flex-col items-center gap-4">
           <Loader2 className="h-10 w-10 animate-spin text-primary opacity-20" />
-          <p className="text-sm font-medium text-muted-foreground animate-pulse">Carregando configurações...</p>
+          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground animate-pulse">Carregando configurações...</p>
         </div>
       </div>
     )
@@ -39,9 +39,9 @@ export default function Configuracoes() {
 
   if (!salao) {
     return (
-      <div className="p-8">
-        <div className="text-center py-16 bg-red-50 dark:bg-red-950/10 rounded-2xl border border-red-100 dark:border-red-900/20">
-          <p className="text-red-600 dark:text-red-400 font-medium">
+      <div className="max-w-[1120px] mx-auto px-4 py-6">
+        <div className="text-center py-16 bg-red-500/10 rounded-lg border border-border">
+          <p className="text-red-500 font-semibold uppercase tracking-wider text-xs">
             Erro ao carregar dados do estabelecimento. Por favor, tente novamente.
           </p>
         </div>
@@ -50,37 +50,37 @@ export default function Configuracoes() {
   }
 
   return (
-    <div className="px-6 py-4 animate-in fade-in duration-500">
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-4">
+    <div className="max-w-[1120px] mx-auto px-4 py-6">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
         <div>
-          <h1 className="text-2xl font-extrabold tracking-tight">Configurações</h1>
-          <p className="text-sm text-muted-foreground font-medium mt-1">
-            Gerencie as informações do salão, equipe e identidade visual.
+          <h1 className="text-xl font-medium tracking-tight">Configurações</h1>
+          <p className="text-xs text-muted-foreground uppercase tracking-widest mt-1">
+            Gerencie as informações do salão, equipe e configurações.
           </p>
         </div>
       </div>
 
       <Tabs defaultValue="salao" className="space-y-6">
-        <div className="flex flex-col lg:flex-row items-center justify-between gap-4 mb-6 bg-gradient-to-br from-background/80 to-muted/30 backdrop-blur-md p-3 rounded-2xl border border-border/50 shadow-sm transition-all duration-300 w-fit">
+        <div className="flex items-center gap-1 bg-card border border-border p-3 rounded-lg w-fit">
           <TabsList className="bg-transparent h-9 gap-1">
             <TabsTrigger 
               value="salao" 
-              className="rounded-xl px-4 data-[state=active]:bg-background data-[state=active]:shadow-sm data-[state=active]:text-primary font-bold transition-all h-full text-xs"
+              className="rounded-lg px-4 data-[state=active]:bg-accent data-[state=active]:text-foreground font-semibold transition-colors h-full text-xs uppercase tracking-wider"
             >
               <Building2 className="h-4 w-4 mr-2" />
               Dados do Salão
             </TabsTrigger>
             <TabsTrigger 
               value="usuarios" 
-              className="rounded-xl px-4 data-[state=active]:bg-background data-[state=active]:shadow-sm data-[state=active]:text-primary font-bold transition-all h-full text-xs"
+              className="rounded-lg px-4 data-[state=active]:bg-accent data-[state=active]:text-foreground font-semibold transition-colors h-full text-xs uppercase tracking-wider"
             >
               <Users className="h-4 w-4 mr-2" />
               Usuários 
-              <span className="ml-2 px-1.5 py-0.5 bg-primary/10 text-[10px] rounded-full font-black">{usuarios.length}</span>
+              <span className="ml-2 px-1.5 py-0.5 bg-accent text-[9px] rounded-full font-bold border border-border">{usuarios.length}</span>
             </TabsTrigger>
             <TabsTrigger 
               value="financeiro" 
-              className="rounded-xl px-4 data-[state=active]:bg-background data-[state=active]:shadow-sm data-[state=active]:text-primary font-bold transition-all h-full text-xs"
+              className="rounded-lg px-4 data-[state=active]:bg-accent data-[state=active]:text-foreground font-semibold transition-colors h-full text-xs uppercase tracking-wider"
             >
               <CreditCard className="h-4 w-4 mr-2" />
               Financeiro
@@ -88,37 +88,39 @@ export default function Configuracoes() {
           </TabsList>
         </div>
 
-        <TabsContent value="salao" className="mt-0 outline-none animate-in slide-in-from-bottom-4 duration-500">
-          <SalaoForm salao={salao} />
+        <TabsContent value="salao" className="mt-0 outline-none">
+          <div className="max-w-[720px] mx-auto">
+            <SalaoForm salao={salao} />
+          </div>
         </TabsContent>
 
-        <TabsContent value="usuarios" className="mt-0 outline-none animate-in slide-in-from-bottom-4 duration-500">
-          <Card className="border-border/50 shadow-xl shadow-primary/5 overflow-hidden rounded-2xl bg-card/50 backdrop-blur-sm">
-            <CardHeader className="border-b border-border/50 bg-muted/20 py-6 px-8">
+        <TabsContent value="usuarios" className="mt-0 outline-none">
+          <Card className="border border-border overflow-hidden rounded-lg bg-card">
+            <CardHeader className="border-b border-border bg-accent/20 py-4 px-6">
               <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
                 <div className="space-y-1">
-                  <CardTitle className="text-2xl font-black tracking-tight">Equipe e Acesso</CardTitle>
-                  <p className="text-sm text-muted-foreground font-medium">Gerencie quem pode acessar o sistema e seus níveis de permissão.</p>
+                  <CardTitle className="text-sm font-semibold uppercase tracking-wider text-foreground">Equipe e Acesso</CardTitle>
+                  <p className="text-xs text-muted-foreground mt-0.5">Gerencie os acessos do sistema e níveis de permissão.</p>
                 </div>
                 <Button 
                   onClick={() => {
                     setUsuarioParaEditar(null)
                     setDialogOpen(true)
                   }}
-                  className="rounded-xl h-11 px-6 font-bold shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-all"
+                  className="h-9 px-4 text-xs font-semibold uppercase tracking-wider rounded-lg"
                 >
-                  <Plus className="h-4 w-4 mr-2 stroke-[3px]" />
+                  <Plus className="h-4 w-4 mr-2" />
                   Novo Usuário
                 </Button>
               </div>
             </CardHeader>
             <CardContent className="p-0">
               {loadingUsuarios ? (
-                <div className="flex flex-col items-center justify-center py-24 gap-4">
-                  <Loader2 className="h-10 w-10 animate-spin text-primary opacity-20" />
+                <div className="flex flex-col items-center justify-center py-20 gap-4">
+                  <Loader2 className="h-8 w-8 animate-spin text-primary opacity-20" />
                 </div>
               ) : (
-                <div className="px-4 py-6 md:px-8">
+                <div className="px-6 py-6">
                   <UsuariosTable usuarios={usuarios} onEdit={handleEdit} />
                 </div>
               )}
@@ -126,11 +128,12 @@ export default function Configuracoes() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="financeiro" className="mt-0 outline-none animate-in slide-in-from-bottom-4 duration-500">
-          <TaxasCartaoForm salao={salao} />
+        <TabsContent value="financeiro" className="mt-0 outline-none">
+          <div className="max-w-[720px] mx-auto">
+            <TaxasCartaoForm salao={salao} />
+          </div>
         </TabsContent>
       </Tabs>
-
 
       <UsuarioFormDialog 
         open={dialogOpen} 

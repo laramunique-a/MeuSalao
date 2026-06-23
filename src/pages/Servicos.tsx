@@ -45,7 +45,7 @@ export default function Servicos() {
     try {
       await deleteServico.mutateAsync(servicoToDelete.id)
       toast({
-        title: 'Serviço excluído!',
+        title: 'Service excluído!',
         description: 'O serviço foi removido com sucesso.',
       })
       setIsDeleteDialogOpen(false)
@@ -87,43 +87,40 @@ export default function Servicos() {
   const servicosInativos = servicos.filter((s) => !s.ativo).length
 
   return (
-    <div className="px-6 py-4">
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-4">
+    <div className="max-w-[1120px] mx-auto px-4 py-6">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
         <div>
-          <h1 className="text-2xl font-extrabold tracking-tight">Serviços</h1>
+          <h1 className="text-xl font-medium tracking-tight">Serviços</h1>
         </div>
-        <Button size="sm" onClick={() => setIsFormOpen(true)} className="h-9 px-3 shadow-md">
+        <Button size="sm" onClick={() => setIsFormOpen(true)} className="h-9 px-3">
           <Plus className="h-4 w-4 mr-2" />
           Novo Serviço
         </Button>
       </div>
 
-      <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 mb-6 bg-gradient-to-br from-background/80 to-muted/30 backdrop-blur-md p-3 rounded-2xl border border-border/50 shadow-sm transition-all duration-300">
+      <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 mb-6 bg-card p-3 rounded-lg border border-border">
         <div className="flex flex-wrap items-center gap-2">
-          <Badge variant="secondary" className="h-7 px-3 text-[11px] font-bold bg-background/40 backdrop-blur-sm border border-border/50 text-muted-foreground rounded-full shadow-sm">
-            Total: <span className="text-primary ml-1">{servicos.length}</span>
+          <Badge variant="secondary" className="h-7 px-3 text-[10px] font-medium border border-border text-muted-foreground bg-background rounded-full">
+            Total: <span className="font-semibold text-foreground ml-1">{servicos.length}</span>
           </Badge>
-          <Badge variant="secondary" className="h-7 px-3 text-[11px] font-bold bg-background/40 backdrop-blur-sm border border-border/50 text-muted-foreground rounded-full shadow-sm">
-            Ativos: <span className="text-green-600 ml-1">{servicosAtivos}</span>
+          <Badge variant="secondary" className="h-7 px-3 text-[10px] font-medium border border-border text-muted-foreground bg-background rounded-full">
+            Ativos: <span className="font-semibold text-foreground ml-1">{servicosAtivos}</span>
           </Badge>
-          <Badge variant="secondary" className="h-7 px-3 text-[11px] font-bold bg-background/40 backdrop-blur-sm border border-border/50 text-muted-foreground rounded-full shadow-sm">
-            Inativos: <span className="text-orange-600 ml-1">{servicosInativos}</span>
+          <Badge variant="secondary" className="h-7 px-3 text-[10px] font-medium border border-border text-muted-foreground bg-background rounded-full">
+            Inativos: <span className="font-semibold text-foreground ml-1">{servicosInativos}</span>
           </Badge>
         </div>
       </div>
 
       {isLoading ? (
-        <div className="text-center py-12">Carregando serviços...</div>
+        <div className="text-center py-12 text-xs uppercase tracking-wider text-muted-foreground">Carregando serviços...</div>
       ) : (
-        <>
-
-          <ServicosTable
-            servicos={servicos}
-            onEdit={handleEdit}
-            onDelete={handleDelete}
-            onToggleAtivo={handleToggleAtivo}
-          />
-        </>
+        <ServicosTable
+          servicos={servicos}
+          onEdit={handleEdit}
+          onDelete={handleDelete}
+          onToggleAtivo={handleToggleAtivo}
+        />
       )}
 
       <ServicoFormDialog
@@ -133,19 +130,19 @@ export default function Servicos() {
       />
 
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-        <AlertDialogContent>
+        <AlertDialogContent className="border-border rounded-lg bg-background">
           <AlertDialogHeader>
-            <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
-            <AlertDialogDescription>
+            <AlertDialogTitle className="text-sm font-semibold uppercase tracking-wider">Confirmar exclusão</AlertDialogTitle>
+            <AlertDialogDescription className="text-xs text-muted-foreground">
               Tem certeza que deseja excluir o serviço <strong>{servicoToDelete?.nome}</strong>?
               Esta ação não pode ser desfeita.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogCancel className="text-xs uppercase tracking-wider h-9">Cancelar</AlertDialogCancel>
             <AlertDialogAction
               onClick={confirmDelete}
-              className="bg-red-600 hover:bg-red-700"
+              className="text-xs uppercase tracking-wider h-9 bg-primary text-primary-foreground"
             >
               Excluir
             </AlertDialogAction>

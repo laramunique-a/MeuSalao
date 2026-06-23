@@ -34,6 +34,7 @@ import { MovimentacaoManualDialog } from '@/components/caixa/MovimentacaoManualD
 import { DarBaixaDialog } from '@/components/caixa/DarBaixaDialog'
 import { HistoricoCaixa } from '@/components/caixa/HistoricoCaixa'
 import type { Agendamento } from '@/types/models'
+import { cn } from '@/lib/utils'
 
 export default function Caixa() {
   const { toast } = useToast()
@@ -67,7 +68,6 @@ export default function Caixa() {
       const profId = profissional.id
       const profNome = profissional.nome
       
-
       // Se não for admin, mostrar apenas as comissões do próprio usuário
       if (!isAdmin && profId !== usuario?.id) {
         return acc
@@ -114,7 +114,7 @@ export default function Caixa() {
   if (loadingStatus) {
     return (
       <div className="flex h-screen items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        <div className="animate-spin rounded-full h-8 w-8 border-b border-primary"></div>
       </div>
     )
   }
@@ -122,23 +122,23 @@ export default function Caixa() {
   const isOldCaixa = caixaAberto && isBefore(startOfDay(parseISO(caixaAberto.data_abertura)), startOfDay(new Date()))
 
   return (
-    <div className="px-6 py-4">
+    <div className="max-w-[1120px] mx-auto px-4 py-6">
       {isOldCaixa && (
-        <div className="mb-4 p-4 bg-rose-50 border border-rose-200 rounded-2xl flex items-center gap-3 text-rose-800 animate-in fade-in slide-in-from-top-4 duration-500">
-          <AlertCircle className="h-5 w-5 shrink-0" />
-          <div className="text-sm">
-            <p className="font-bold">Caixa de dia anterior detectado</p>
-            <p className="text-rose-700/80">
+        <div className="mb-6 p-4 border border-border bg-card rounded-lg flex items-center gap-3 text-foreground">
+          <AlertCircle className="h-5 w-5 text-muted-foreground shrink-0" />
+          <div className="text-xs uppercase tracking-wider">
+            <p className="font-semibold">Caixa de dia anterior detectado</p>
+            <p className="text-muted-foreground mt-0.5">
               Este caixa foi aberto em {format(parseISO(caixaAberto.data_abertura), "dd/MM 'às' HH:mm")}. 
               Recomendamos fechar este caixa antes de processar as vendas de hoje.
             </p>
           </div>
         </div>
       )}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-4">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
         <div>
-          <h1 className="text-2xl font-extrabold tracking-tight">Caixa</h1>
-          <p className="text-muted-foreground text-[11px] font-medium flex items-center gap-2 mt-0.5">
+          <h1 className="text-xl font-medium tracking-tight">Caixa</h1>
+          <p className="text-xs text-muted-foreground uppercase tracking-widest mt-1">
             {format(new Date(), "EEEE, dd 'de' MMMM", { locale: ptBR })}
           </p>
         </div>
@@ -150,17 +150,17 @@ export default function Caixa() {
                 <Button 
                   variant="outline" 
                   size="sm" 
-                  className="h-9 px-3 border-rose-200 text-rose-700 hover:bg-rose-50 rounded-lg font-medium text-sm shadow-sm"
+                  className="h-9 px-3 border-border text-foreground hover:bg-accent rounded-lg"
                   onClick={() => setIsFecharOpen(true)}
                 >
-                  <Lock className="h-4 w-4 mr-2" />
+                  <Lock className="h-4 w-4 mr-2 text-muted-foreground" />
                   Fechar Caixa
                 </Button>
               )}
               {isAdmin && (
                 <Button 
                   size="sm" 
-                  className="h-9 px-3 shadow-md rounded-lg font-medium text-sm"
+                  className="h-9 px-3 rounded-lg"
                   onClick={() => {
                     setIsMovimentacaoOpen(true)
                   }}
@@ -174,7 +174,7 @@ export default function Caixa() {
             isAdmin && (
               <Button 
                 size="sm" 
-                className="h-9 px-3 bg-emerald-600 hover:bg-emerald-700 shadow-md rounded-lg font-medium text-sm"
+                className="h-9 px-3 rounded-lg"
                 onClick={() => setIsAbrirOpen(true)}
               >
                 <Unlock className="h-4 w-4 mr-2" />
@@ -186,14 +186,14 @@ export default function Caixa() {
       </div>
 
       {/* Tab Navigation + Status Bar */}
-      <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 mb-6 bg-gradient-to-br from-background/80 to-muted/30 backdrop-blur-md p-3 rounded-2xl border border-border/50 shadow-sm transition-all duration-300">
+      <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 mb-8 bg-card p-3 rounded-lg border border-border">
         {/* Tab Buttons */}
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-1 bg-background rounded-lg border border-border p-0.5">
           <button
             onClick={() => setActiveTab('hoje')}
-            className={`px-4 py-1.5 rounded-xl text-xs font-bold transition-all ${
+            className={`px-4 py-1.5 rounded-lg text-xs font-semibold uppercase tracking-wider transition-colors ${
               activeTab === 'hoje'
-                ? 'bg-background shadow-sm text-primary'
+                ? 'bg-accent text-foreground font-bold'
                 : 'text-muted-foreground hover:text-foreground'
             }`}
           >
@@ -204,9 +204,9 @@ export default function Caixa() {
           </button>
           <button
             onClick={() => setActiveTab('historico')}
-            className={`px-4 py-1.5 rounded-xl text-xs font-bold transition-all ${
+            className={`px-4 py-1.5 rounded-lg text-xs font-semibold uppercase tracking-wider transition-colors ${
               activeTab === 'historico'
-                ? 'bg-background shadow-sm text-primary'
+                ? 'bg-accent text-foreground font-bold'
                 : 'text-muted-foreground hover:text-foreground'
             }`}
           >
@@ -220,13 +220,13 @@ export default function Caixa() {
         {/* Status Badges — only in Hoje tab */}
         {activeTab === 'hoje' && (
           <div className="flex flex-wrap items-center gap-2">
-            <Badge variant="secondary" className={`h-7 px-3 text-[11px] font-bold border border-border/50 rounded-full shadow-sm ${caixaAberto ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700'}`}>
-              Status: <span className="ml-1 uppercase">{caixaAberto ? 'Aberto' : 'Fechado'}</span>
+            <Badge variant="secondary" className={cn("h-7 px-3 text-[10px] font-semibold border rounded-full uppercase tracking-wider", caixaAberto ? 'bg-accent border-border text-foreground' : 'bg-red-500/10 border-border text-red-500')}>
+              Status: <span className="ml-1">{caixaAberto ? 'Aberto' : 'Fechado'}</span>
             </Badge>
 
             {pendencias && pendencias.length > 0 && (
-              <Badge variant="secondary" className="h-7 px-3 text-[11px] font-bold bg-amber-50 text-amber-700 border border-amber-200 rounded-full shadow-sm animate-pulse">
-                <AlertCircle className="h-3 w-3 mr-1" />
+              <Badge variant="secondary" className="h-7 px-3 text-[10px] font-semibold bg-amber-500/10 text-amber-600 border border-border rounded-full uppercase tracking-wider">
+                <AlertCircle className="h-3.5 w-3.5 mr-1" />
                 {pendencias.length} {pendencias.length === 1 ? 'Pendência' : 'Pendências'}
               </Badge>
             )}
@@ -235,21 +235,21 @@ export default function Caixa() {
               <>
                 {isAdmin && (
                   <>
-                    <Badge variant="secondary" className="h-7 px-3 text-[11px] font-bold bg-background/40 backdrop-blur-sm border border-border/50 text-muted-foreground rounded-full shadow-sm">
-                      Entradas: <span className="text-emerald-600 ml-1">R$ {resumen?.entradas.toFixed(2).replace('.', ',')}</span>
+                    <Badge variant="secondary" className="h-7 px-3 text-[10px] font-semibold bg-background border border-border text-muted-foreground rounded-full">
+                      Entradas: <span className="text-foreground ml-1">R$ {resumen?.entradas.toFixed(2).replace('.', ',')}</span>
                     </Badge>
-                    <Badge variant="secondary" className="h-7 px-3 text-[11px] font-bold bg-background/40 backdrop-blur-sm border border-border/50 text-muted-foreground rounded-full shadow-sm">
-                      Saídas: <span className="text-rose-600 ml-1">R$ {resumen?.saidas.toFixed(2).replace('.', ',')}</span>
+                    <Badge variant="secondary" className="h-7 px-3 text-[10px] font-semibold bg-background border border-border text-muted-foreground rounded-full">
+                      Saídas: <span className="text-foreground ml-1">R$ {resumen?.saidas.toFixed(2).replace('.', ',')}</span>
                     </Badge>
                   </>
                 )}
                 
-                <Badge variant="secondary" className="h-7 px-3 text-[11px] font-bold bg-background/40 backdrop-blur-sm border border-border/50 text-muted-foreground rounded-full shadow-sm">
-                  Comissões: <span className="text-blue-600 ml-1">R$ {totalComissoes.toFixed(2).replace('.', ',')}</span>
+                <Badge variant="secondary" className="h-7 px-3 text-[10px] font-semibold bg-background border border-border text-muted-foreground rounded-full">
+                  Comissões: <span className="text-foreground ml-1">R$ {totalComissoes.toFixed(2).replace('.', ',')}</span>
                 </Badge>
 
                 {isAdmin && (
-                  <Badge variant="secondary" className="h-7 px-3 text-[11px] font-bold bg-primary/10 text-primary border border-primary/20 rounded-full shadow-sm">
+                  <Badge variant="secondary" className="h-7 px-3 text-[10px] font-semibold bg-primary text-primary-foreground border border-transparent rounded-full">
                     Saldo: <span className="ml-1">R$ {resumen?.saldo.toFixed(2).replace('.', ',')}</span>
                   </Badge>
                 )}
@@ -263,16 +263,16 @@ export default function Caixa() {
       {activeTab === 'historico' ? (
         <HistoricoCaixa />
       ) : (
-        <div className="space-y-6">
+        <div className="space-y-8">
           {/* Seção de Pendências de Pagamento - Sempre visível se houver algo a receber */}
           {pendencias && pendencias.length > 0 && (
-            <div className="animate-in slide-in-from-top-4 duration-500">
-              <div className="flex items-center gap-2 mb-3">
-                <div className="p-1 bg-amber-100 rounded-lg">
-                  <AlertCircle className="h-4 w-4 text-amber-600" />
+            <div>
+              <div className="flex items-center gap-2 mb-4">
+                <div className="p-1 bg-accent rounded-lg border border-border">
+                  <AlertCircle className="h-4 w-4 text-muted-foreground" />
                 </div>
-                <h3 className="text-sm font-bold text-slate-700 uppercase tracking-wider">Pendente de Pagamento</h3>
-                <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">
+                <h3 className="text-xs font-bold text-foreground uppercase tracking-widest">Pendente de Pagamento</h3>
+                <Badge variant="outline" className="bg-accent/50 text-foreground border-border text-[10px] font-bold">
                   {pendencias.length}
                 </Badge>
               </div>
@@ -281,23 +281,23 @@ export default function Caixa() {
                 {pendencias
                   .filter(ag => isAdmin || ag.profissional_id === useAuthStore.getState().usuario?.id)
                   .map((ag) => (
-                  <Card key={ag.id} className="border-amber-100 bg-amber-50/20 hover:bg-amber-50/40 transition-colors shadow-none">
-                    <CardContent className="p-4">
-                      <div className="flex justify-between items-start mb-2">
+                  <Card key={ag.id} className="border-border bg-card shadow-none">
+                    <CardContent className="p-4 flex flex-col justify-between h-full">
+                      <div className="flex justify-between items-start mb-3">
                         <div>
-                          <p className="font-bold text-sm text-slate-800">{ag.cliente?.nome}</p>
-                          <p className="text-[11px] text-muted-foreground">{ag.servico?.nome}</p>
+                          <p className="font-semibold text-xs text-foreground uppercase tracking-wider">{ag.cliente?.nome}</p>
+                          <p className="text-xs text-muted-foreground mt-0.5">{ag.servico?.nome}</p>
                         </div>
-                        <p className="font-bold text-emerald-600">R$ {ag.valor.toFixed(2).replace('.', ',')}</p>
+                        <p className="font-bold text-sm text-foreground">R$ {ag.valor.toFixed(2).replace('.', ',')}</p>
                       </div>
                       <div className="flex items-center justify-between mt-4">
-                        <div className="flex items-center gap-1.5 text-[10px] font-medium text-muted-foreground">
-                          <User className="h-3 w-3" />
+                        <div className="flex items-center gap-1.5 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
+                          <User className="h-3.5 w-3.5" />
                           {ag.profissional?.nome}
                         </div>
                         <Button 
                           size="sm" 
-                          className="h-8 px-4 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg text-[11px]"
+                          className="h-8 px-4 text-[10px] font-semibold uppercase tracking-wider rounded-lg"
                           disabled={!caixaAberto}
                           onClick={() => {
                             setSelectedAgendamento(ag)
@@ -316,34 +316,34 @@ export default function Caixa() {
           )}
 
           {!caixaAberto ? (
-            <div className="flex flex-col items-center justify-center py-20 bg-white/30 dark:bg-slate-900/10 rounded-3xl border border-dashed border-slate-200 animate-in fade-in duration-500">
-              <Wallet className="h-12 w-12 text-muted-foreground/30 mb-4" />
-              <h2 className="text-lg font-bold text-muted-foreground">O caixa está fechado</h2>
-              <p className="text-sm text-muted-foreground/60 mb-6">Inicie o caixa no botão superior para registrar movimentações.</p>
+            <div className="flex flex-col items-center justify-center py-20 bg-card rounded-lg border border-dashed border-border">
+              <Wallet className="h-10 w-10 text-muted-foreground opacity-40 mb-4" />
+              <h2 className="text-sm font-semibold uppercase tracking-widest text-foreground">O caixa está fechado</h2>
+              <p className="text-xs text-muted-foreground mt-1 mb-6">Inicie o caixa no botão superior para registrar movimentações.</p>
             </div>
           ) : (
-            <div className="flex flex-col gap-6">
+            <div className="flex flex-col gap-8">
               {/* Sidebar de Comissões movida para cima para dar largura 100% à tabela */}
               <div className="w-full space-y-4">
-                <Card className="rounded-2xl border shadow-sm border-slate-100 overflow-hidden">
-                  <div className="p-4 border-b bg-slate-50/50 flex flex-col sm:flex-row justify-between sm:items-center gap-2">
-                    <h4 className="font-bold flex items-center gap-2 text-xs uppercase tracking-wider text-muted-foreground">
-                      <User className="h-3.5 w-3.5 text-primary" />
+                <Card className="rounded-lg border border-border overflow-hidden bg-card">
+                  <div className="p-4 border-b border-border bg-card flex flex-col sm:flex-row justify-between sm:items-center gap-2">
+                    <h4 className="font-bold flex items-center gap-2 text-[10px] uppercase tracking-widest text-muted-foreground">
+                      <User className="h-3.5 w-3.5 text-muted-foreground" />
                       Comissões de Hoje
                     </h4>
-                    <span className="text-[10px] text-muted-foreground italic">Comissões automáticas baseadas nas configurações dos serviços.</span>
+                    <span className="text-[10px] text-muted-foreground uppercase tracking-wider">Lançadas automaticamente.</span>
                   </div>
                   <CardContent className="p-4">
                     {Object.keys(comissoesPorProfissional || {}).length === 0 ? (
-                      <p className="text-[10px] text-muted-foreground text-center py-4">
+                      <p className="text-[10px] text-muted-foreground uppercase tracking-wider text-center py-4">
                         Aguardando finalizações...
                       </p>
                     ) : (
                       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                         {Object.values(comissoesPorProfissional as any).map((prof: any, i: number) => (
-                          <div key={i} className="flex justify-between items-center bg-slate-50 p-3 rounded-xl border border-slate-100">
-                            <span className="text-xs font-bold text-slate-700 truncate mr-2">{prof.nome}</span>
-                            <Badge variant="outline" className="font-bold text-[10px] bg-blue-50/50 border-blue-100 text-blue-600 whitespace-nowrap">
+                          <div key={i} className="flex justify-between items-center bg-background p-3 rounded-lg border border-border">
+                            <span className="text-xs font-semibold text-foreground uppercase tracking-wider truncate mr-2">{prof.nome}</span>
+                            <Badge variant="outline" className="font-semibold text-[10px] bg-accent border-border text-foreground whitespace-nowrap">
                               R$ {prof.total.toFixed(2).replace('.', ',')}
                             </Badge>
                           </div>
@@ -356,85 +356,85 @@ export default function Caixa() {
 
               {/* Extrato de Transações */}
               <div className="w-full space-y-4">
-                <div className="bg-white dark:bg-slate-950 rounded-2xl border shadow-sm overflow-hidden">
-                  <div className="p-4 border-b bg-slate-50/50 flex flex-col sm:flex-row gap-4 items-center justify-between">
+                <div className="bg-card rounded-lg border border-border overflow-hidden">
+                  <div className="p-4 border-b border-border bg-card flex flex-col sm:flex-row gap-4 items-center justify-between">
                     <div className="relative w-full sm:max-w-xs">
                       <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                       <Input
-                        className="pl-9 h-9 rounded-lg border-slate-200 text-sm"
+                        className="pl-9 h-9 rounded-lg border-border bg-background text-xs"
                         placeholder="Pesquisar movimentação..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                       />
                     </div>
-                    <div className="flex items-center gap-2 text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
-                      <History className="h-3 w-3" />
+                    <div className="flex items-center gap-2 text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
+                      <History className="h-3.5 w-3.5" />
                       Últimas Movimentações
                     </div>
                   </div>
 
-                  <div className="w-full overflow-hidden">
-                    <table className="w-full text-sm">
+                  <div className="w-full overflow-x-auto">
+                    <table className="w-full text-xs text-left">
                       <thead>
-                        <tr className="text-left text-muted-foreground font-bold text-[10px] uppercase bg-slate-50/50 border-b">
-                          <th className="px-2 sm:px-4 py-3">Horário</th>
-                          <th className="px-2 sm:px-4 py-3">Descrição</th>
-                          <th className="px-2 sm:px-4 py-3 text-center">Operador</th>
-                          <th className="px-2 sm:px-4 py-3">Categoria</th>
-                          <th className="px-2 sm:px-4 py-3 hidden md:table-cell">Forma</th>
-                          <th className="px-2 sm:px-4 py-3 text-right">Valor</th>
-                          <th className="px-2 sm:px-4 py-3 hidden sm:table-cell">Status</th>
+                        <tr className="text-muted-foreground font-bold text-[9px] uppercase bg-accent/20 border-b border-border">
+                          <th className="px-4 py-3">Horário</th>
+                          <th className="px-4 py-3">Descrição</th>
+                          <th className="px-4 py-3 text-center">Operador</th>
+                          <th className="px-4 py-3">Categoria</th>
+                          <th className="px-4 py-3 hidden md:table-cell">Forma</th>
+                          <th className="px-4 py-3 text-right">Valor</th>
+                          <th className="px-4 py-3 hidden sm:table-cell">Status</th>
                           <th className="px-2 py-3 w-8"></th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-slate-100">
+                      <tbody className="divide-y divide-border">
                         {loadingTrans ? (
-                          <tr><td colSpan={8} className="p-8 text-center text-xs">Carregando transações...</td></tr>
+                          <tr><td colSpan={8} className="p-8 text-center text-xs text-muted-foreground uppercase tracking-wider">Carregando transações...</td></tr>
                         ) : filteredTransacoes?.length === 0 ? (
-                          <tr><td colSpan={8} className="p-12 text-center text-muted-foreground text-xs">Nenhuma movimentação encontrada.</td></tr>
+                          <tr><td colSpan={8} className="p-12 text-center text-muted-foreground text-xs uppercase tracking-wider">Nenhuma movimentação encontrada.</td></tr>
                         ) : (
                           filteredTransacoes?.map((t) => (
-                            <tr key={t.id} className={`hover:bg-slate-50/30 transition-colors ${t.status !== 'ativo' ? 'opacity-40 grayscale' : ''}`}>
-                              <td className="px-2 sm:px-4 py-3 whitespace-nowrap text-[10px] sm:text-[11px] font-medium text-muted-foreground">
+                            <tr key={t.id} className={`hover:bg-accent/10 transition-colors ${t.status !== 'ativo' ? 'opacity-40 grayscale' : ''}`}>
+                              <td className="px-4 py-3.5 whitespace-nowrap text-[10px] font-semibold text-muted-foreground">
                                 {format(new Date(t.data_hora), 'HH:mm')}
                               </td>
-                              <td className="px-2 sm:px-4 py-3 font-medium text-[11px] sm:text-xs">
-                                <span className="line-clamp-2">{t.descricao}</span>
-                                {t.agendamento && <span className="block text-[8px] sm:text-[9px] text-blue-500 font-bold uppercase mt-0.5">Automático</span>}
+                              <td className="px-4 py-3.5 font-medium text-xs">
+                                <span className="line-clamp-2 text-foreground font-semibold uppercase tracking-wider">{t.descricao}</span>
+                                {t.agendamento && <span className="block text-[8px] text-muted-foreground font-bold uppercase mt-0.5">Automático</span>}
                               </td>
-                              <td className="px-2 sm:px-4 py-3 text-[10px] sm:text-[11px] text-muted-foreground text-center font-semibold">
+                              <td className="px-4 py-3.5 text-[10px] text-muted-foreground text-center font-semibold uppercase tracking-wider">
                                 <span className="line-clamp-2">{t.agendamento?.profissional?.nome || t.usuario?.nome || '—'}</span>
                               </td>
-                              <td className="px-2 sm:px-4 py-3">
-                                <Badge variant="outline" className="text-[8px] sm:text-[9px] font-bold rounded-lg px-1.5 sm:px-2 h-auto py-0.5 sm:h-5 border-slate-200 uppercase whitespace-normal text-center leading-tight">
+                              <td className="px-4 py-3.5">
+                                <Badge variant="outline" className="text-[8px] font-bold rounded-lg px-2 h-5 border-border uppercase bg-background text-muted-foreground leading-tight">
                                   {t.categoria || 'Geral'}
                                 </Badge>
                               </td>
-                              <td className="px-2 sm:px-4 py-3 capitalize text-[10px] sm:text-[11px] text-muted-foreground hidden md:table-cell">
+                              <td className="px-4 py-3.5 capitalize text-[10px] text-muted-foreground hidden md:table-cell uppercase tracking-wider">
                                 {t.forma_pagamento.replace('_', ' ')}
                               </td>
-                              <td className={`px-2 sm:px-4 py-3 text-right font-bold text-[11px] sm:text-xs whitespace-nowrap ${t.tipo === 'entrada' ? 'text-emerald-600' : 'text-rose-600'}`}>
+                              <td className={`px-4 py-3.5 text-right font-bold text-xs whitespace-nowrap ${t.tipo === 'entrada' ? 'text-foreground' : 'text-red-500'}`}>
                                 {t.tipo === 'entrada' ? '+' : '-'} R$ {t.valor.toFixed(2).replace('.', ',')}
                               </td>
-                              <td className="px-2 sm:px-4 py-3 hidden sm:table-cell whitespace-nowrap">
+                              <td className="px-4 py-3.5 hidden sm:table-cell whitespace-nowrap">
                                 {t.status === 'ativo' ? (
-                                  <Badge className="bg-emerald-100 text-emerald-700 hover:bg-emerald-100 border-none rounded-full text-[8px] sm:text-[9px] font-bold px-1.5 sm:px-2 h-4 sm:h-5">Ativo</Badge>
+                                  <Badge className="bg-accent border border-border text-foreground hover:bg-accent rounded-full text-[8px] font-semibold px-2 h-5 uppercase tracking-wider">Ativo</Badge>
                                 ) : (
-                                  <Badge variant="outline" className="text-rose-600 border-rose-100 rounded-full text-[8px] sm:text-[9px] font-bold px-1.5 sm:px-2 h-4 sm:h-5 capitalize truncate">{t.status}</Badge>
+                                  <Badge variant="outline" className="text-red-500 border-border bg-red-500/10 rounded-full text-[8px] font-semibold px-2 h-5 uppercase tracking-wider capitalize truncate">{t.status}</Badge>
                                 )}
                               </td>
-                              <td className="px-1 sm:px-2 py-3 text-right">
+                              <td className="px-2 py-3.5 text-right">
                                 {t.status === 'ativo' && (
                                   <DropdownMenu>
                                     <DropdownMenuTrigger asChild>
-                                      <Button variant="ghost" size="icon" className="h-6 w-6 sm:h-7 sm:w-7 rounded-lg">
-                                        <MoreVertical className="h-3 sm:h-3.5 w-3 sm:w-3.5" />
+                                      <Button variant="ghost" size="icon" className="h-6 w-6 rounded-lg hover:bg-accent">
+                                        <MoreVertical className="h-3.5 w-3.5 text-muted-foreground" />
                                       </Button>
                                     </DropdownMenuTrigger>
-                                    <DropdownMenuContent align="end" className="rounded-xl">
+                                    <DropdownMenuContent align="end" className="rounded-lg border-border">
                                       {isAdmin && (
                                         <DropdownMenuItem 
-                                          className="text-amber-600 focus:text-amber-600 cursor-pointer gap-2 font-bold text-xs"
+                                          className="text-red-500 focus:text-red-500 cursor-pointer gap-2 font-semibold text-xs uppercase tracking-wider"
                                           onClick={() => handleEstorno(t.id)}
                                         >
                                           <Undo2 className="h-3.5 w-3.5" />

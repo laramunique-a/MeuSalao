@@ -12,9 +12,9 @@ export default function MainLayout() {
     <div className="min-h-screen bg-background">
       <Header onMenuClick={() => setSidebarOpen(!sidebarOpen)} />
       <Sidebar open={sidebarOpen} setOpen={setSidebarOpen} />
-      <div className="lg:pl-64 pt-16 lg:pt-0">
+      <div className="pt-14">
         <main className="py-6">
-          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="mx-auto px-4 sm:px-6 lg:px-8">
             <Outlet />
           </div>
         </main>

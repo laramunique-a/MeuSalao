@@ -70,7 +70,6 @@ export default function MasterDashboard() {
     setIsSubmitting(true)
 
     try {
-      // 1. Criar o Salão
       const { error: salaoError } = await supabase
         .from('salao')
         .insert({
@@ -107,7 +106,6 @@ export default function MasterDashboard() {
     
     setSwitchingId(salaoId)
     try {
-      // 1. Atualizar o vínculo do administrador no banco de dados
       const { error } = await (supabase
         .from('usuario') as any)
         .update({ salao_id: salaoId })
@@ -115,14 +113,11 @@ export default function MasterDashboard() {
 
       if (error) throw error
 
-      // 2. Recarregar perfil do usuário para atualizar o contexto local (salao_id)
       await authService.getCurrentUser()
 
-      // 3. Limpar cache do salão e localStorage para forçar atualização total da UI
       await queryClient.resetQueries({ queryKey: ['salao'] })
-      queryClient.invalidateQueries() // Invalida todas as outras listas (clientes, agendamentos, etc)
+      queryClient.invalidateQueries()
       
-      // Limpar os dados prévios do localStorage que podem estar sendo exibidos no header
       localStorage.removeItem('salao_nome')
       localStorage.removeItem('salao_logo')
       localStorage.removeItem('salao_cor')
@@ -132,7 +127,6 @@ export default function MasterDashboard() {
         description: 'Contexto de gerenciamento alterado com sucesso.',
       })
 
-      // 4. Voltar para a agenda/dashboard do novo estabelecimento
       navigate('/')
     } catch (error: any) {
       toast({
@@ -145,44 +139,53 @@ export default function MasterDashboard() {
     }
   }
 
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[50vh]">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground opacity-20" />
+      </div>
+    )
+  }
+
   return (
-    <div className="space-y-6">
+    <div className="max-w-[1120px] mx-auto px-4 py-6 space-y-6 animate-in fade-in duration-500">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Painel Master</h1>
-          <p className="text-muted-foreground">
+          <h1 className="text-xl font-medium tracking-tight">Painel Master</h1>
+          <p className="text-xs text-muted-foreground uppercase tracking-widest mt-1">
             Gerenciamento global de todos os salões da plataforma.
           </p>
         </div>
 
         <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
           <DialogTrigger asChild>
-            <Button className="flex items-center gap-2">
+            <Button size="sm" className="flex items-center gap-2">
               <Plus className="h-4 w-4" />
               Novo Salão
             </Button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-[425px]">
+          <DialogContent className="sm:max-w-[400px] border-border bg-background">
             <form onSubmit={handleCreateSalao}>
               <DialogHeader>
-                <DialogTitle>Novo Salão</DialogTitle>
-                <DialogDescription>
+                <DialogTitle className="text-sm font-semibold uppercase tracking-wider">Novo Salão</DialogTitle>
+                <DialogDescription className="text-xs text-muted-foreground">
                   Cadastre um novo salão na plataforma. O dono receberá um convite por e-mail.
                 </DialogDescription>
               </DialogHeader>
-              <div className="grid gap-4 py-4">
+              <div className="grid gap-4 py-4 text-xs">
                 <div className="grid gap-2">
-                  <Label htmlFor="nome">Nome do Salão</Label>
+                  <Label htmlFor="nome" className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Nome do Salão</Label>
                   <Input
                     id="nome"
                     required
                     value={formData.nome}
                     onChange={e => setFormData({ ...formData, nome: e.target.value })}
                     placeholder="Ex: Salão da Maria"
+                    className="h-10 rounded-lg border-border bg-background text-xs"
                   />
                 </div>
                 <div className="grid gap-2">
-                  <Label htmlFor="email">E-mail do Dono</Label>
+                  <Label htmlFor="email" className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">E-mail do Dono</Label>
                   <Input
                     id="email"
                     type="email"
@@ -190,29 +193,32 @@ export default function MasterDashboard() {
                     value={formData.email_dono}
                     onChange={e => setFormData({ ...formData, email_dono: e.target.value })}
                     placeholder="exemplo@email.com"
+                    className="h-10 rounded-lg border-border bg-background text-xs"
                   />
                 </div>
                 <div className="grid gap-2">
-                  <Label htmlFor="telefone">Telefone</Label>
+                  <Label htmlFor="telefone" className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Telefone</Label>
                   <Input
                     id="telefone"
                     value={formData.telefone}
                     onChange={e => setFormData({ ...formData, telefone: e.target.value })}
                     placeholder="(00) 00000-0000"
+                    className="h-10 rounded-lg border-border bg-background text-xs"
                   />
                 </div>
                 <div className="grid gap-2">
-                  <Label htmlFor="endereco">Endereço (opcional)</Label>
+                  <Label htmlFor="endereco" className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Endereço (opcional)</Label>
                   <Input
                     id="endereco"
                     value={formData.endereco}
                     onChange={e => setFormData({ ...formData, endereco: e.target.value })}
                     placeholder="Rua, Número, Bairro"
+                    className="h-10 rounded-lg border-border bg-background text-xs"
                   />
                 </div>
               </div>
               <DialogFooter>
-                <Button type="submit" disabled={isSubmitting}>
+                <Button type="submit" disabled={isSubmitting} className="text-xs uppercase tracking-wider h-9">
                   {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                   Cadastrar Salão
                 </Button>
@@ -224,28 +230,28 @@ export default function MasterDashboard() {
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {saloes.map((salao) => (
-          <Card key={salao.id} className="hover:shadow-md transition-shadow">
+          <Card key={salao.id} className="border border-border bg-card">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
+              <CardTitle className="text-xs font-semibold uppercase tracking-wider text-foreground">
                 {salao.nome}
               </CardTitle>
               <Scissors className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-xs font-medium text-primary mb-1">
+              <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1 truncate">
                 Dono: { (salao as any).email_dono || 'Não vinculado' }
               </div>
-              <div className="text-xs text-muted-foreground">
+              <div className="text-xs text-muted-foreground line-clamp-2">
                 {salao.endereco || 'Endereço não informado'}
               </div>
               
-              <div className="flex gap-4 mt-4 text-xs">
+              <div className="flex gap-4 mt-4 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
                 <div className="flex items-center gap-1">
-                  <Users className="h-3 w-3" />
+                  <Users className="h-3.5 w-3.5" />
                   -- clientes
                 </div>
                 <div className="flex items-center gap-1">
-                  <Calendar className="h-3 w-3" />
+                  <Calendar className="h-3.5 w-3.5" />
                   -- agendamentos
                 </div>
               </div>
@@ -256,10 +262,11 @@ export default function MasterDashboard() {
                   size="sm"
                   onClick={() => handleGerenciar(salao.id)}
                   disabled={switchingId === salao.id || currentSalaoId === salao.id}
+                  className="text-[10px] uppercase tracking-wider h-8"
                 >
-                  {switchingId === salao.id ? <Loader2 className="h-4 w-4 animate-spin" /> : currentSalaoId === salao.id ? "Ativo" : "Gerenciar"}
+                  {switchingId === salao.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : currentSalaoId === salao.id ? "Ativo" : "Gerenciar"}
                 </Button>
-                <Button variant="secondary" size="sm">
+                <Button variant="secondary" size="sm" className="text-[10px] uppercase tracking-wider h-8">
                   Convidar
                 </Button>
               </div>
@@ -269,8 +276,8 @@ export default function MasterDashboard() {
       </div>
       
       {saloes.length === 0 && !loading && (
-        <div className="text-center py-12 bg-muted/20 rounded-lg border-2 border-dashed">
-          <p className="text-muted-foreground">Nenhum salão cadastrado ainda.</p>
+        <div className="text-center py-12 bg-card rounded-lg border border-dashed border-border">
+          <p className="text-xs text-muted-foreground uppercase tracking-wider">Nenhum salão cadastrado ainda.</p>
         </div>
       )}
     </div>

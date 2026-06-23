@@ -3,7 +3,6 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { salaoSchema, type SalaoFormData } from '@/schemas/salao.schema'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { ColorPicker } from '@/components/ui/color-picker'
 import {
   Form,
   FormControl,
@@ -15,7 +14,7 @@ import {
 import { Card, CardContent } from '@/components/ui/card'
 import { useUpdateSalao, useUploadLogo } from '@/hooks/useSalao'
 import { useToast } from '@/hooks/use-toast'
-import { Upload, Store, MapPin, Palette, Loader2, Save } from 'lucide-react'
+import { Upload, Store, MapPin, Loader2, Save } from 'lucide-react'
 import { useState, useRef, useEffect } from 'react'
 import { Salao } from '@/types/models'
 import { cn } from '@/lib/utils'
@@ -152,11 +151,8 @@ export function SalaoForm({ salao }: SalaoFormProps) {
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          
-          {/* Coluna Esquerda: Dados Básicos */}
-          <div className="lg:col-span-2 space-y-6">
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 max-w-[720px] mx-auto">
+        <div className="space-y-6">
             <Card className="border-border/50 shadow-md rounded-xl overflow-hidden bg-card/50 backdrop-blur-sm">
               <div className="bg-muted/30 px-5 py-3 border-b border-border/50 flex items-center gap-2">
                 <Store className="h-4 w-4 text-primary" />
@@ -363,29 +359,6 @@ export function SalaoForm({ salao }: SalaoFormProps) {
                 </div>
               </CardContent>
             </Card>
-          </div>
-
-          {/* Coluna Direita: Identidade Visual */}
-          <div className="lg:col-span-1 space-y-6">
-            <Card className="border-border/50 shadow-md rounded-xl overflow-hidden bg-card/50 backdrop-blur-sm h-full">
-              <div className="bg-muted/30 px-5 py-3 border-b border-border/50 flex items-center gap-2">
-                <Palette className="h-4 w-4 text-primary" />
-                <h3 className="font-bold text-sm">Identidade Visual</h3>
-              </div>
-              <CardContent className="p-5 h-full flex flex-col">
-                <FormField
-                  control={form.control}
-                  name="cor_primaria"
-                  render={({ field }) => (
-                    <FormItem className="flex-1">
-                      <ColorPicker value={field.value || '#9333ea'} onChange={field.onChange} />
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </CardContent>
-            </Card>
-          </div>
         </div>
 
         <div className="flex justify-end items-center gap-4 pt-4 border-t border-border/20">

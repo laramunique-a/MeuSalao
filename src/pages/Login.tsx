@@ -52,12 +52,12 @@ export default function Login() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/5 to-primary/10 dark:from-gray-900 dark:to-gray-800 p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="space-y-1">
-          <CardTitle className="text-2xl font-bold text-center">MeuSalão</CardTitle>
-          <CardDescription className="text-center">
-            Sistema de Gestão de Salão de Beleza
+    <div className="min-h-screen flex items-center justify-center bg-background p-4">
+      <Card className="w-full max-w-sm border-border bg-card">
+        <CardHeader className="space-y-1.5 pb-4">
+          <CardTitle className="text-xl font-medium text-center tracking-tight">MeuSalão</CardTitle>
+          <CardDescription className="text-center text-xs text-muted-foreground uppercase tracking-widest">
+            Sistema de Gestão
           </CardDescription>
         </CardHeader>
         <CardContent>

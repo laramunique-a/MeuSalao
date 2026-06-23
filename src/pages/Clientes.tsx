@@ -66,41 +66,41 @@ export default function Clientes() {
   }
 
   return (
-    <div className="px-6 py-4">
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-4">
+    <div className="max-w-[1120px] mx-auto px-4 py-6">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
         <div>
-          <h1 className="text-2xl font-extrabold tracking-tight">Clientes</h1>
+          <h1 className="text-xl font-medium tracking-tight">Clientes</h1>
         </div>
-        <Button size="sm" onClick={() => setIsFormOpen(true)} className="h-9 px-3 shadow-md">
+        <Button size="sm" onClick={() => setIsFormOpen(true)} className="h-9 px-3">
           <Plus className="h-4 w-4 mr-2" />
           Novo Cliente
         </Button>
       </div>
 
-      <div className="flex flex-col lg:flex-row items-center justify-between gap-4 mb-6 bg-gradient-to-br from-background/80 to-muted/30 backdrop-blur-md p-3 rounded-2xl border border-border/50 shadow-sm transition-all duration-300">
+      <div className="flex flex-col lg:flex-row items-center justify-between gap-4 mb-6 bg-card p-3 rounded-lg border border-border">
         <div className="flex flex-col sm:flex-row items-center gap-4 w-full">
           <div className="relative w-full sm:w-72 lg:w-96 group">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               placeholder="Buscar por nome, telefone ou email..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10 h-10 bg-background/50 border-border group-focus-within:border-primary/50 transition-all rounded-xl shadow-none focus-visible:ring-1 focus-visible:ring-primary/20"
+              className="pl-10 h-10 bg-background border-border rounded-lg text-xs"
             />
           </div>
 
-          <div className="h-6 w-[1px] bg-border/40 mx-1 hidden sm:block" />
+          <div className="h-6 w-[1px] bg-border mx-1 hidden sm:block" />
 
-          <div className="flex items-center gap-1 w-full overflow-x-auto no-scrollbar scroll-smooth pb-1 sm:pb-0">
+          <div className="flex items-center gap-1 w-full overflow-x-auto pb-1 sm:pb-0">
             <Button
               variant="ghost"
               size="sm"
               onClick={() => setSelectedLetter(null)}
               className={cn(
-                "h-8 px-4 text-[10px] uppercase font-bold transition-all shrink-0",
+                "h-8 px-3 text-[10px] uppercase font-semibold transition-colors shrink-0",
                 selectedLetter === null 
-                  ? "text-primary bg-primary/15 shadow-[0_2px_10px_-3px_rgba(var(--primary),0.3)] ring-1 ring-primary/20" 
-                  : "text-muted-foreground hover:text-foreground hover:bg-background/60"
+                  ? "text-foreground bg-accent" 
+                  : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
               )}
             >
               Todos
@@ -114,10 +114,10 @@ export default function Clientes() {
                   size="sm"
                   onClick={() => setSelectedLetter(letter)}
                   className={cn(
-                    "h-8 w-8 text-[11px] p-0 font-extrabold transition-all shrink-0",
+                    "h-8 w-8 text-[10px] p-0 font-semibold transition-colors shrink-0",
                     selectedLetter === letter 
-                      ? "text-primary bg-primary/15 shadow-[0_2px_10px_-3px_rgba(var(--primary),0.3)] ring-1 ring-primary/20" 
-                      : "text-muted-foreground hover:text-foreground hover:bg-background/60"
+                      ? "text-foreground bg-accent" 
+                      : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
                   )}
                 >
                   {letter}
@@ -129,12 +129,12 @@ export default function Clientes() {
       </div>
 
       {isLoading ? (
-        <div className="text-center py-12">Carregando clientes...</div>
+        <div className="text-center py-12 text-xs uppercase tracking-wider text-muted-foreground">Carregando clientes...</div>
       ) : (
         <>
           <div className="mb-4">
-            <Badge variant="secondary" className="h-7 px-3 text-[11px] font-bold bg-muted/40 backdrop-blur-sm border border-border/50 text-muted-foreground rounded-full shadow-sm">
-              <span className="text-primary mr-1">{displayedClientes.length}</span>
+            <Badge variant="secondary" className="h-7 px-3 text-[10px] font-medium border border-border text-muted-foreground bg-background rounded-full">
+              <span className="font-semibold text-foreground mr-1">{displayedClientes.length}</span>
               {displayedClientes.length === 1 ? 'cliente' : 'clientes'}
               {searchTerm && ' encontrado(s)'}
             </Badge>

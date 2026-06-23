@@ -255,30 +255,30 @@ export default function Agenda() {
   const isToday = format(selectedDate, 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd')
 
   return (
-    <div className="px-6 py-4">
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-4">
+    <div className="max-w-[1120px] mx-auto px-4 py-6">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
         <div>
-          <h1 className="text-2xl font-extrabold tracking-tight">Agenda</h1>
+          <h1 className="text-xl font-medium tracking-tight">Agenda</h1>
         </div>
         <div className="flex items-center gap-2">
           <Button variant="outline" size="sm" onClick={() => setIsBloqueioFormOpen(true)} className="h-9 px-3">
             <Ban className="h-4 w-4 mr-2" />
             Bloquear
           </Button>
-          <Button size="sm" onClick={() => setIsFormOpen(true)} className="h-9 px-3 shadow-md">
+          <Button size="sm" onClick={() => setIsFormOpen(true)} className="h-9 px-3">
             <Plus className="h-4 w-4 mr-2" />
             Novo
           </Button>
         </div>
       </div>
-      <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 mb-6 bg-gradient-to-br from-background/80 to-muted/30 backdrop-blur-md p-3 rounded-2xl border border-border/50 shadow-sm transition-all duration-300">
+      <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 mb-6 bg-card p-3 rounded-lg border border-border">
         <div className="flex flex-wrap items-center gap-3">
-          <div className="flex items-center bg-background/50 backdrop-blur-sm rounded-xl border border-border/40 p-1 shadow-sm group hover:border-primary/30 transition-all">
+          <div className="flex items-center bg-background rounded-lg border border-border p-0.5">
             <Button 
               variant="ghost" 
               size="icon" 
               onClick={handlePrevious} 
-              className="h-8 w-8 hover:bg-primary/10 hover:text-primary"
+              className="h-8 w-8 hover:bg-accent/50 text-foreground"
             >
               <ChevronLeft className="h-4 w-4" />
             </Button>
@@ -287,21 +287,21 @@ export default function Agenda() {
               variant="ghost"
               onClick={handleToday}
               className={cn(
-                "h-8 px-4 text-xs font-bold relative overflow-hidden",
+                "h-8 px-4 text-xs font-semibold relative overflow-hidden",
                 isToday 
-                  ? "text-primary bg-primary/10 shadow-[inset_0_0_0_1px_rgba(var(--primary),0.2)]" 
+                  ? "text-foreground bg-accent" 
                   : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
               )}
             >
               Hoje
-              {isToday && <span className="absolute bottom-1 left-1/2 -translate-x-1/2 w-0.5 h-0.5 rounded-full bg-primary" />}
+              {isToday && <span className="absolute bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-foreground" />}
             </Button>
             
             <Button 
               variant="ghost" 
               size="icon" 
               onClick={handleNext} 
-              className="h-8 w-8 hover:bg-primary/10 hover:text-primary"
+              className="h-8 w-8 hover:bg-accent/50 text-foreground"
             >
               <ChevronRight className="h-4 w-4" />
             </Button>
@@ -311,26 +311,20 @@ export default function Agenda() {
             <PopoverTrigger asChild>
               <Button 
                 variant="ghost" 
-                className={cn(
-                  "h-10 px-3 gap-2 rounded-xl transition-all duration-300 shadow-none hover:shadow-none",
-                  "hover:bg-primary/5 active:scale-95",
-                  "group border border-transparent hover:border-primary/20"
-                )}
+                className="h-10 px-3 gap-2 rounded-lg hover:bg-accent/50 text-foreground border border-transparent hover:border-border"
               >
-                <div className="bg-primary/10 p-1.5 rounded-lg group-hover:bg-primary group-hover:text-primary-foreground transition-all duration-300">
-                  <CalendarIcon className="h-4 w-4" />
-                </div>
+                <CalendarIcon className="h-4 w-4 text-muted-foreground" />
                 <div className="flex flex-col items-start leading-none">
-                  <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-tight">
+                  <span className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest">
                     {format(selectedDate, "EEEE", { locale: ptBR })}
                   </span>
-                  <span className="text-base font-bold tracking-tight">
+                  <span className="text-sm font-semibold tracking-tight mt-0.5">
                     {format(selectedDate, "dd 'de' MMMM", { locale: ptBR })}
                   </span>
                 </div>
               </Button>
             </PopoverTrigger>
-            <PopoverContent className="w-auto p-0 border-none shadow-2xl rounded-2xl overflow-hidden" align="start">
+            <PopoverContent className="w-auto p-0 border border-border rounded-lg" align="start">
               <Calendar
                 mode="single"
                 selected={selectedDate}
@@ -342,12 +336,12 @@ export default function Agenda() {
             </PopoverContent>
           </Popover>
 
-          <Badge variant="secondary" className="h-7 px-3 text-[11px] font-bold bg-background/40 backdrop-blur-sm border border-border/50 text-muted-foreground rounded-full shadow-sm">
+          <Badge variant="secondary" className="h-7 px-3 text-[10px] font-medium border border-border text-muted-foreground bg-background rounded-full">
             {agendamentosOrdenados.length === 0 ? (
               <span>Nenhum agendamento</span>
             ) : (
               <>
-                <span className="text-primary mr-1">{agendamentosOrdenados.length}</span>
+                <span className="font-semibold text-foreground mr-1">{agendamentosOrdenados.length}</span>
                 {agendamentosOrdenados.length === 1 ? 'agendamento' : 'agendamentos'}
               </>
             )}
