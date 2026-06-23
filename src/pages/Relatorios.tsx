@@ -512,16 +512,16 @@ export default function Relatorios() {
           <div className="p-4 bg-card rounded-lg border border-border flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
               <h2 className="text-sm font-semibold uppercase tracking-wider text-foreground">Relatório de Caixa (Pendências Financeiras)</h2>
-              <p className="text-xs text-muted-foreground mt-0.5">Monitore os débitos gerados por sessão de caixa e acompanhe se/onde foram quitados.</p>
+              <p className="text-xs text-muted-foreground mt-0.5">Monitore os débitos em aberto gerados por sessão de caixa.</p>
             </div>
-            <div className="flex gap-4 text-xs">
-              <div className="flex items-center gap-1.5 bg-background border border-border px-3 py-1.5 rounded-lg font-semibold text-red-500">
+            <div className="flex gap-4 text-xs font-semibold">
+              <div className="flex items-center gap-1.5 bg-background border border-border px-3 py-1.5 rounded-lg text-red-500">
                 <AlertCircle className="h-4 w-4" />
-                <span>Pendentes: {caixaReport.filter((r) => r.status === 'pendente').length}</span>
+                <span>Pendentes: {caixaReport.length}</span>
               </div>
-              <div className="flex items-center gap-1.5 bg-background border border-border px-3 py-1.5 rounded-lg font-semibold text-green-600">
-                <Check className="h-4 w-4" />
-                <span>Quitados: {caixaReport.filter((r) => r.status === 'quitado').length}</span>
+              <div className="flex items-center gap-1.5 bg-background border border-border px-3 py-1.5 rounded-lg text-foreground">
+                <DollarSign className="h-4 w-4 text-muted-foreground" />
+                <span>Total em Aberto: {formatCurrency(caixaReport.reduce((acc, r) => acc + Number(r.valor), 0))}</span>
               </div>
             </div>
           </div>
@@ -535,73 +535,68 @@ export default function Relatorios() {
                     <th className="px-4 py-3">Cliente</th>
                     <th className="px-4 py-3">Serviço / Profissional</th>
                     <th className="px-4 py-3">Caixa Origem (Gerado)</th>
-                    <th className="px-4 py-3">Caixa Quitação (Pago)</th>
+                    <th className="px-4 py-3 text-center">Tempo em Aberto</th>
                     <th className="px-4 py-3 text-right">Valor</th>
-                    <th className="px-4 py-3 text-center">Status</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
                   {loadingCaixaReport ? (
                     <tr>
-                      <td colSpan={7} className="p-8 text-center text-muted-foreground uppercase tracking-wider">
+                      <td colSpan={6} className="p-8 text-center text-muted-foreground uppercase tracking-wider">
                         Carregando relatório de pendências...
                       </td>
                     </tr>
                   ) : caixaReport.length === 0 ? (
                     <tr>
-                      <td colSpan={7} className="p-12 text-center text-muted-foreground uppercase tracking-wider">
-                        Nenhuma pendência financeira encontrada.
+                      <td colSpan={6} className="p-12 text-center text-muted-foreground uppercase tracking-wider">
+                        Nenhuma pendência financeira em aberto.
                       </td>
                     </tr>
                   ) : (
-                    caixaReport.map((item) => (
-                      <tr key={item.id} className={cn("hover:bg-accent/10 transition-colors", item.status === 'pendente' && 'bg-red-500/[0.01]')}>
-                        <td className="px-4 py-3.5 whitespace-nowrap text-[10px] font-semibold text-muted-foreground">
-                          {format(new Date(item.data_hora), "dd/MM/yyyy 'às' HH:mm")}
-                        </td>
-                        <td className="px-4 py-3.5 font-bold text-foreground uppercase tracking-wider">
-                          {item.cliente}
-                        </td>
-                        <td className="px-4 py-3.5 text-muted-foreground">
-                          <span className="block font-semibold text-foreground uppercase tracking-wider">{item.servico}</span>
-                          <span className="block text-[9px] uppercase tracking-wider mt-0.5">Por: {item.profissional}</span>
-                        </td>
-                        <td className="px-4 py-3.5 text-muted-foreground text-[10px]">
-                          {item.caixa_origem ? (
-                            <>
-                              <span className="block font-semibold text-foreground">Caixa #{item.caixa_origem.id.slice(0, 6).toUpperCase()}</span>
-                              <span className="block text-[8px] uppercase mt-0.5">Aberto: {format(new Date(item.caixa_origem.data_abertura), 'dd/MM/yyyy')}</span>
-                            </>
-                          ) : (
-                            <span className="text-red-500 font-semibold uppercase">Fora de Sessão</span>
-                          )}
-                        </td>
-                        <td className="px-4 py-3.5 text-muted-foreground text-[10px]">
-                          {item.caixa_quitacao ? (
-                            <>
-                              <span className="block font-semibold text-green-600">Caixa #{item.caixa_quitacao.id.slice(0, 6).toUpperCase()}</span>
-                              <span className="block text-[8px] uppercase mt-0.5">Pago: {format(new Date(item.caixa_quitacao.data_abertura), 'dd/MM/yyyy')}</span>
-                            </>
-                          ) : (
-                            <span className="text-red-500 font-semibold uppercase">—</span>
-                          )}
-                        </td>
-                        <td className="px-4 py-3.5 text-right font-bold text-foreground whitespace-nowrap">
-                          {formatCurrency(item.valor)}
-                        </td>
-                        <td className="px-4 py-3.5 text-center whitespace-nowrap">
-                          {item.status === 'pendente' ? (
-                            <Badge className="border-red-500/20 bg-red-500/10 dark:bg-red-500/20 text-red-500 hover:bg-red-500/10 rounded-full text-[8px] font-bold px-2 h-5 uppercase tracking-wider shadow-none">
-                              Pendente
-                            </Badge>
-                          ) : (
-                            <Badge className="border-green-500/20 bg-green-500/10 dark:bg-green-500/20 text-green-600 hover:bg-green-500/10 rounded-full text-[8px] font-bold px-2 h-5 uppercase tracking-wider shadow-none">
-                              Quitada
-                            </Badge>
-                          )}
-                        </td>
-                      </tr>
-                    ))
+                    caixaReport.map((item) => {
+                      const diasAtraso = (() => {
+                        const date = new Date(item.data_hora)
+                        const today = new Date()
+                        date.setHours(0,0,0,0)
+                        today.setHours(0,0,0,0)
+                        const diffTime = today.getTime() - date.getTime()
+                        const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24))
+                        if (diffDays <= 0) return 'Hoje'
+                        if (diffDays === 1) return '1 dia'
+                        return `${diffDays} dias`
+                      })()
+
+                      return (
+                        <tr key={item.id} className="hover:bg-accent/10 transition-colors bg-red-500/[0.01]">
+                          <td className="px-4 py-3.5 whitespace-nowrap text-[10px] font-semibold text-muted-foreground">
+                            {format(new Date(item.data_hora), "dd/MM/yyyy 'às' HH:mm")}
+                          </td>
+                          <td className="px-4 py-3.5 font-bold text-foreground uppercase tracking-wider">
+                            {item.cliente}
+                          </td>
+                          <td className="px-4 py-3.5 text-muted-foreground">
+                            <span className="block font-semibold text-foreground uppercase tracking-wider">{item.servico}</span>
+                            <span className="block text-[9px] uppercase tracking-wider mt-0.5">Por: {item.profissional}</span>
+                          </td>
+                          <td className="px-4 py-3.5 text-muted-foreground text-[10px]">
+                            {item.caixa_origem ? (
+                              <>
+                                <span className="block font-semibold text-foreground">Caixa #{item.caixa_origem.id.slice(0, 6).toUpperCase()}</span>
+                                <span className="block text-[8px] uppercase mt-0.5">Aberto: {format(new Date(item.caixa_origem.data_abertura), 'dd/MM/yyyy')}</span>
+                              </>
+                            ) : (
+                              <span className="text-red-500 font-semibold uppercase">Fora de Sessão</span>
+                            )}
+                          </td>
+                          <td className="px-4 py-3.5 text-center font-bold text-amber-600 uppercase text-[10px]">
+                            {diasAtraso}
+                          </td>
+                          <td className="px-4 py-3.5 text-right font-bold text-foreground whitespace-nowrap">
+                            {formatCurrency(item.valor)}
+                          </td>
+                        </tr>
+                      )
+                    })
                   )}
                 </tbody>
               </table>

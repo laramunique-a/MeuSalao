@@ -56,7 +56,7 @@ export const relatoriosService = {
     if (errorCaixas) throw errorCaixas
     const caixasList = (caixas || []) as any[]
 
-    // 2. Buscar todos os agendamentos pendentes ou concluídos
+    // 2. Buscar todos os agendamentos pendentes (débitos ativos)
     const { data: agendamentos, error: errorAg } = await supabase
       .from('agendamento')
       .select(`
@@ -65,22 +65,12 @@ export const relatoriosService = {
         profissional:profissional_id (id, nome),
         servico:servico_id (id, nome)
       `)
-      .in('status', ['pendente_caixa', 'concluido'])
+      .eq('status', 'pendente_caixa')
       .order('data_hora', { ascending: false })
 
     if (errorAg) throw errorAg
 
-    // 3. Buscar todas as transações ativas vinculadas a agendamentos
-    const { data: transacoes, error: errorTrans } = await supabase
-      .from('transacao_caixa')
-      .select('*, agendamento_id, caixa:caixa_id(*)')
-      .eq('status', 'ativo')
-      .not('agendamento_id', 'is', null)
-
-    if (errorTrans) throw errorTrans
-    const transacoesList = (transacoes || []) as any[]
-
-    // Mapear cada atendimento para a sessão de caixa em que foi gerado e onde foi pago
+    // Mapear cada atendimento para a sessão de caixa em que foi gerado
     const reportItems = (agendamentos || []).map((ag: any) => {
       const agDate = new Date(ag.data_hora)
 
@@ -91,10 +81,6 @@ export const relatoriosService = {
         return agDate >= ab && (!fc || agDate <= fc)
       })
 
-      // Achar transação de quitação (se houver)
-      const transacao = transacoesList.find((t: any) => t.agendamento_id === ag.id)
-      const caixaQuitacao = transacao?.caixa
-
       return {
         id: ag.id,
         data_hora: ag.data_hora,
@@ -102,15 +88,11 @@ export const relatoriosService = {
         valor: ag.valor,
         profissional: ag.profissional?.nome || 'Funcionário Removido',
         servico: ag.servico?.nome || 'Serviço Removido',
-        status: ag.status === 'pendente_caixa' ? 'pendente' : 'quitado',
+        status: 'pendente',
         caixa_origem: caixaOrigem ? {
           id: caixaOrigem.id,
           data_abertura: caixaOrigem.data_abertura,
           usuario_abertura: caixaOrigem.usuario_abertura?.nome
-        } : null,
-        caixa_quitacao: caixaQuitacao ? {
-          id: caixaQuitacao.id,
-          data_abertura: caixaQuitacao.data_abertura,
         } : null
       }
     })
