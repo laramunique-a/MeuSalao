@@ -15,3 +15,10 @@ export function useCaixaPendenciasReport() {
     queryFn: () => relatoriosService.getCaixaPendenciasReport(),
   })
 }
+
+export function useFolhaPagamentoReport() {
+  return useQuery({
+    queryKey: ['folha-pagamento-report'],
+    queryFn: () => relatoriosService.getFolhaPagamentoReport(),
+  })
+}

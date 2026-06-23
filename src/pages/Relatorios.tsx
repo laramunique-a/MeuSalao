@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useClientes } from '@/hooks/useClientes'
-import { useClienteReport, useCaixaPendenciasReport } from '@/hooks/useRelatorios'
+import { useClienteReport, useCaixaPendenciasReport, useFolhaPagamentoReport } from '@/hooks/useRelatorios'
+import { useProfissionais } from '@/hooks/useProfissionais'
 import {
   Popover,
   PopoverContent,
@@ -18,6 +19,13 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import {
   Check,
   ChevronsUpDown,
@@ -67,11 +75,14 @@ export default function Relatorios() {
   const [selectedClienteId, setSelectedClienteId] = useState<string | null>(null)
   const [openCombobox, setOpenCombobox] = useState(false)
   const [search, setSearch] = useState('')
-  const [activeReportTab, setActiveReportTab] = useState<'cliente' | 'caixa'>('cliente')
+  const [activeReportTab, setActiveReportTab] = useState<'cliente' | 'caixa' | 'folha'>('cliente')
+  const [selectedProfissionalIdForFolha, setSelectedProfissionalIdForFolha] = useState<string>('all')
 
   const { data: clientes = [] } = useClientes()
   const { data: reportData, isLoading: loadingReport } = useClienteReport(selectedClienteId)
   const { data: caixaReport = [], isLoading: loadingCaixaReport } = useCaixaPendenciasReport()
+  const { data: folhaData = [], isLoading: loadingFolha } = useFolhaPagamentoReport()
+  const { data: profissionais = [] } = useProfissionais()
 
   const selectedCliente = clientes.find((c) => c.id === selectedClienteId)
 
@@ -98,6 +109,25 @@ export default function Relatorios() {
     : 0
 
   const ultimoAtendimento = agendamentos.length > 0 ? agendamentos[0] : null
+
+  // Filtrar dados da folha de pagamento pelo profissional selecionado
+  const filteredFolhaData = folhaData.filter((item: any) => {
+    if (selectedProfissionalIdForFolha === 'all') return true
+    return item.metadata?.profissional_id === selectedProfissionalIdForFolha
+  })
+
+  const totalPagoFolha = filteredFolhaData
+    .filter((t: any) => t.status === 'ativo')
+    .reduce((acc: number, t: any) => acc + Number(t.valor), 0)
+
+  // Achar a forma de pagamento predominante (PIX ou Dinheiro)
+  const counts = filteredFolhaData.reduce((acc: any, t: any) => {
+    if (t.status === 'ativo') {
+      acc[t.forma_pagamento] = (acc[t.forma_pagamento] || 0) + 1
+    }
+    return acc
+  }, {} as any)
+  const predominantPaymentMethod = counts.pix > (counts.dinheiro || 0) ? 'PIX' : (counts.dinheiro > 0 ? 'Dinheiro' : 'Nenhuma')
 
   return (
     <div className="max-w-[1120px] mx-auto px-4 py-6 space-y-6">
@@ -134,10 +164,15 @@ export default function Relatorios() {
           Pendências por Caixa
         </button>
         <button
-          disabled
-          className="px-4 py-1.5 rounded-lg text-xs font-semibold uppercase tracking-wider text-muted-foreground/40 cursor-not-allowed flex items-center gap-1"
+          onClick={() => setActiveReportTab('folha')}
+          className={cn(
+            "px-4 py-1.5 rounded-lg text-xs font-semibold uppercase tracking-wider transition-colors",
+            activeReportTab === 'folha'
+              ? 'bg-accent text-foreground font-bold'
+              : 'text-muted-foreground hover:text-foreground'
+          )}
         >
-          Comissões <span className="text-[8px] px-1 bg-accent rounded text-muted-foreground font-normal">Breve</span>
+          Folha de Pagamento
         </button>
       </div>
 
@@ -567,6 +602,151 @@ export default function Relatorios() {
                         </td>
                       </tr>
                     ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </Card>
+        </div>
+      )}
+
+      {/* RENDER - Relatório de Folha de Pagamento */}
+      {activeReportTab === 'folha' && (
+        <div className="space-y-6 animate-in fade-in duration-300">
+          {/* Header & Filter Section */}
+          <div className="bg-card rounded-lg border border-border p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="space-y-1">
+              <h2 className="text-sm font-semibold uppercase tracking-widest text-foreground">Folha de Pagamento</h2>
+              <p className="text-xs text-muted-foreground mt-0.5">Histórico de comissões pagas manualmente para os profissionais do salão.</p>
+            </div>
+
+            {/* Filter by Professional */}
+            <div className="flex flex-col gap-1 w-full sm:w-60">
+              <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Filtrar Profissional</label>
+              <Select value={selectedProfissionalIdForFolha} onValueChange={setSelectedProfissionalIdForFolha}>
+                <SelectTrigger className="h-9 text-xs rounded-lg border-border bg-background">
+                  <SelectValue placeholder="Todos os profissionais" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos os profissionais</SelectItem>
+                  {profissionais.map((p) => (
+                    <SelectItem key={p.id} value={p.id}>{p.nome}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          {/* KPIs Section */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <Card className="border-border bg-card shadow-none">
+              <CardContent className="p-4 flex items-center justify-between">
+                <div>
+                  <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Total Pago (Comissões)</p>
+                  <h3 className="text-xl font-bold mt-1 text-foreground">
+                    {formatCurrency(totalPagoFolha)}
+                  </h3>
+                </div>
+                <div className="p-2.5 bg-emerald-500/10 rounded-lg">
+                  <DollarSign className="h-5 w-5 text-emerald-600" />
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="border-border bg-card shadow-none">
+              <CardContent className="p-4 flex items-center justify-between">
+                <div>
+                  <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Lançamentos</p>
+                  <h3 className="text-xl font-bold mt-1 text-foreground">
+                    {filteredFolhaData.length}
+                  </h3>
+                </div>
+                <div className="p-2.5 bg-accent rounded-lg border border-border">
+                  <Calendar className="h-5 w-5 text-muted-foreground" />
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="border-border bg-card shadow-none">
+              <CardContent className="p-4 flex items-center justify-between">
+                <div>
+                  <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Forma Predominante</p>
+                  <h3 className="text-sm font-bold mt-2.5 text-foreground uppercase tracking-wider">
+                    {predominantPaymentMethod}
+                  </h3>
+                </div>
+                <div className="p-2.5 bg-accent rounded-lg border border-border">
+                  <TrendingUp className="h-5 w-5 text-muted-foreground" />
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Detailed Table */}
+          <Card className="border-border bg-card shadow-none rounded-lg overflow-hidden">
+            <div className="w-full overflow-x-auto">
+              <table className="w-full text-xs text-left">
+                <thead>
+                  <tr className="text-muted-foreground font-bold text-[9px] uppercase bg-accent/20 border-b border-border">
+                    <th className="px-4 py-3">Data Lançamento</th>
+                    <th className="px-4 py-3">Profissional</th>
+                    <th className="px-4 py-3 text-center">Forma</th>
+                    <th className="px-4 py-3">Operador</th>
+                    <th className="px-4 py-3">Descrição / Observações</th>
+                    <th className="px-4 py-3 text-right">Valor</th>
+                    <th className="px-4 py-3 text-center">Status</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border">
+                  {loadingFolha ? (
+                    <tr>
+                      <td colSpan={7} className="p-8 text-center text-muted-foreground uppercase tracking-wider">
+                        Carregando folha de pagamento...
+                      </td>
+                    </tr>
+                  ) : filteredFolhaData.length === 0 ? (
+                    <tr>
+                      <td colSpan={7} className="p-12 text-center text-muted-foreground uppercase tracking-wider">
+                        Nenhum pagamento registrado.
+                      </td>
+                    </tr>
+                  ) : (
+                    filteredFolhaData.map((item) => {
+                      const profNome = item.metadata?.profissional_nome || item.descricao.replace('Comissão: ', '').split(' - ')[0] || 'Profissional'
+                      return (
+                        <tr key={item.id} className={cn("hover:bg-accent/10 transition-colors", item.status !== 'ativo' && 'opacity-40 grayscale')}>
+                          <td className="px-4 py-3.5 whitespace-nowrap text-[10px] font-semibold text-muted-foreground">
+                            {format(new Date(item.data_hora), "dd/MM/yyyy 'às' HH:mm")}
+                          </td>
+                          <td className="px-4 py-3.5 font-bold text-foreground uppercase tracking-wider">
+                            {profNome}
+                          </td>
+                          <td className="px-4 py-3.5 capitalize text-muted-foreground font-semibold uppercase tracking-wider text-center text-[10px]">
+                            {item.forma_pagamento}
+                          </td>
+                          <td className="px-4 py-3.5 text-muted-foreground text-[10px] uppercase font-semibold">
+                            {item.usuario?.nome || 'Administrador'}
+                          </td>
+                          <td className="px-4 py-3.5 text-muted-foreground truncate max-w-[200px]" title={item.descricao}>
+                            {item.descricao}
+                          </td>
+                          <td className="px-4 py-3.5 text-right font-bold text-foreground whitespace-nowrap">
+                            {formatCurrency(item.valor)}
+                          </td>
+                          <td className="px-4 py-3.5 text-center whitespace-nowrap">
+                            {item.status === 'ativo' ? (
+                              <Badge className="border-green-500/20 bg-green-500/10 dark:bg-green-500/20 text-green-600 hover:bg-green-500/10 rounded-full text-[8px] font-bold px-2 h-5 uppercase tracking-wider shadow-none">
+                                Pago
+                              </Badge>
+                            ) : (
+                              <Badge className="border-red-500/20 bg-red-500/10 dark:bg-red-500/20 text-red-500 hover:bg-red-500/10 rounded-full text-[8px] font-bold px-2 h-5 uppercase tracking-wider shadow-none">
+                                Estornado
+                              </Badge>
+                            )}
+                          </td>
+                        </tr>
+                      )
+                    })
                   )}
                 </tbody>
               </table>

@@ -117,4 +117,15 @@ export const relatoriosService = {
 
     return reportItems
   },
+
+  async getFolhaPagamentoReport() {
+    const { data: transacoes, error } = await supabase
+      .from('transacao_caixa')
+      .select('*, usuario:usuario_id(nome)')
+      .eq('categoria', 'Pagamento de Comissão')
+      .order('data_hora', { ascending: false })
+
+    if (error) throw error
+    return (transacoes || []) as any[]
+  },
 }
