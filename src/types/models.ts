@@ -26,7 +26,7 @@ export interface Usuario {
   auth_user_id: string
   nome: string
   email: string
-  perfil: 'administrador' | 'funcionario' | 'super_admin'
+  perfil: 'administrador' | 'profissional' | 'super_admin'
   comissao_percentual?: number
   ativo: boolean
   created_at: string

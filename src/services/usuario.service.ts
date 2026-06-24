@@ -25,7 +25,7 @@ export const usuarioService = {
   async createUsuario(input: {
     nome: string
     email: string
-    perfil: 'administrador' | 'funcionario'
+    perfil: 'administrador' | 'profissional'
     senha: string
     comissao_percentual?: number
   }): Promise<Usuario> {

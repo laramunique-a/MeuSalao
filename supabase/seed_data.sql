@@ -103,7 +103,7 @@ VALUES
   ('COLE-O-ID-DO-SALAO-AQUI', 'Roberto Martins', '(11) 91098-7654', NULL, 'Preferência por atendimento rápido');
 
 -- ================================================================
--- PASSO 5 (OPCIONAL): Adicionar Funcionário de Exemplo
+-- PASSO 5 (OPCIONAL): Adicionar Profissional de Exemplo
 -- ================================================================
 -- IMPORTANTE: Antes de executar, você precisa:
 -- 1. Criar um novo usuário no Supabase Authentication
@@ -113,10 +113,10 @@ VALUES
 INSERT INTO usuario (salao_id, auth_user_id, nome, email, perfil, ativo)
 VALUES (
   'COLE-O-ID-DO-SALAO-AQUI',              -- ID do salão
-  'COLE-O-USER-UID-DO-FUNCIONARIO-AQUI',  -- User UID do funcionário (criar em Authentication)
-  'Maria Aparecida Silva',                 -- Nome do funcionário
-  'maria.funcionaria@meusalao.com',        -- Email (mesmo do Supabase Auth)
-  'funcionario',                           -- Perfil de funcionário
+  'COLE-O-USER-UID-DO-PROFISSIONAL-AQUI', -- User UID do profissional (criar em Authentication)
+  'Maria Aparecida Silva',                 -- Nome do profissional
+  'maria.profissional@meusalao.com',       -- Email (mesmo do Supabase Auth)
+  'profissional',                          -- Perfil de profissional
   true                                     -- Usuário ativo
 );
 

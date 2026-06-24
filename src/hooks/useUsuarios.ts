@@ -18,7 +18,7 @@ export function useCreateUsuario() {
     mutationFn: (input: {
       nome: string
       email: string
-      perfil: 'administrador' | 'funcionario'
+      perfil: 'administrador' | 'profissional'
       senha: string
       comissao_percentual?: number
     }) => usuarioService.createUsuario(input),

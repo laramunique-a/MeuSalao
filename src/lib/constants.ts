@@ -3,7 +3,7 @@ export const APP_DESCRIPTION = 'Sistema de Gestão de Salão de Beleza'
 
 export const PERFIS = {
   ADMINISTRADOR: 'administrador' as const,
-  FUNCIONARIO: 'funcionario' as const,
+  PROFISSIONAL: 'profissional' as const,
 }
 
 export const STATUS_AGENDAMENTO = {

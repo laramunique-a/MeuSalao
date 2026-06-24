@@ -50,7 +50,7 @@ export function UsuarioFormDialog({ open, onOpenChange, usuario }: UsuarioFormDi
     defaultValues: {
       nome: '',
       email: '',
-      perfil: 'funcionario',
+      perfil: 'profissional',
       senha: '',
       comissao_percentual: '0',
     },
@@ -70,7 +70,7 @@ export function UsuarioFormDialog({ open, onOpenChange, usuario }: UsuarioFormDi
         form.reset({
           nome: '',
           email: '',
-          perfil: 'funcionario',
+          perfil: 'profissional',
           senha: '',
           comissao_percentual: '0',
         })
@@ -142,7 +142,7 @@ export function UsuarioFormDialog({ open, onOpenChange, usuario }: UsuarioFormDi
           <DialogDescription>
             {isEditing 
               ? 'Atualize os dados e configurações do usuário.' 
-              : 'Adicione um novo funcionário ou administrador ao sistema.'}
+              : 'Adicione um novo profissional ou administrador ao sistema.'}
           </DialogDescription>
         </DialogHeader>
 
@@ -203,7 +203,7 @@ export function UsuarioFormDialog({ open, onOpenChange, usuario }: UsuarioFormDi
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="funcionario">Funcionário</SelectItem>
+                      <SelectItem value="profissional">Profissional</SelectItem>
                       <SelectItem value="administrador">Administrador</SelectItem>
                     </SelectContent>
                   </Select>
