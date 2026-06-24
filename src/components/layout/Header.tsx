@@ -51,10 +51,10 @@ export function Header({ onMenuClick }: HeaderProps) {
     <header className="fixed top-0 left-0 right-0 z-20 h-14 bg-background border-b border-border transition-all duration-300">
       <div className="flex h-full items-center justify-between px-6">
         <div className="flex items-center gap-6 min-w-0">
-          {/* Menu Hambúrguer (Apenas Mobile) */}
+          {/* Menu Hambúrguer (Apenas Mobile - Ocultado em prol do BottomTabBar) */}
           <button
             onClick={onMenuClick}
-            className="lg:hidden p-2 -ml-2 text-muted-foreground hover:text-foreground rounded-lg transition-colors shrink-0"
+            className="hidden p-2 -ml-2 text-muted-foreground hover:text-foreground rounded-lg transition-colors shrink-0"
           >
             <Menu className="h-5 w-5" />
           </button>
