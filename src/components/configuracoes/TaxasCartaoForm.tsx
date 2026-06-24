@@ -202,7 +202,7 @@ export function TaxasCartaoForm({ salao }: TaxasCartaoFormProps) {
                           disabled={!isEditable}
                           value={field.value === 0 ? '' : field.value} 
                           onChange={e => field.onChange(parseFloat(e.target.value) || 0)}
-                          className="h-10 pl-4 pr-10 text-sm font-semibold rounded-md border-border bg-background focus:ring-primary/20"
+                          className="h-10 pl-4 pr-10 text-sm font-semibold rounded-md border-border bg-white focus:ring-primary/20"
                           placeholder="Ex: 3.99"
                         />
                         <Percent className="absolute right-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground opacity-50" />
@@ -233,7 +233,7 @@ export function TaxasCartaoForm({ salao }: TaxasCartaoFormProps) {
                                 disabled={!isEditable}
                                 value={field.value === 0 ? '' : field.value} 
                                 onChange={e => field.onChange(parseFloat(e.target.value) || 0)}
-                                className="h-10 pr-9 rounded-md border-border bg-background focus:ring-primary/20 font-medium"
+                                className="h-10 pr-9 rounded-md border-border bg-white focus:ring-primary/20 font-medium"
                                 placeholder={`Taxa de ${bandeira}...`}
                               />
                               <Percent className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground opacity-50" />
