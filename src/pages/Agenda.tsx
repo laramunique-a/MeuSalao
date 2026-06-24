@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { Plus, Calendar as CalendarIcon, Filter, ChevronLeft, ChevronRight, List, CalendarRange, Ban } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { AgendaButton, AgendaFilterButton } from '@/components/agenda/AgendaComponents'
 import { Badge } from '@/components/ui/badge'
 import { Calendar } from '@/components/ui/calendar'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
@@ -261,24 +262,24 @@ export default function Agenda() {
           <h1 className="text-xl font-medium tracking-tight">Agenda</h1>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" onClick={() => setIsBloqueioFormOpen(true)} className="h-9 px-3">
+          <AgendaButton variant="outline" onClick={() => setIsBloqueioFormOpen(true)}>
             <Ban className="h-4 w-4 mr-2" />
             Bloquear
-          </Button>
-          <Button size="sm" onClick={() => setIsFormOpen(true)} className="h-9 px-3">
+          </AgendaButton>
+          <AgendaButton onClick={() => setIsFormOpen(true)}>
             <Plus className="h-4 w-4 mr-2" />
             Novo
-          </Button>
+          </AgendaButton>
         </div>
       </div>
       <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 mb-6 bg-card p-3 rounded-lg border border-border">
         <div className="flex flex-wrap items-center gap-3">
-          <div className="flex items-center bg-background rounded-lg border border-border p-0.5">
+          <div className="flex items-center bg-background rounded-xl border border-border p-0.5 h-10">
             <Button 
               variant="ghost" 
               size="icon" 
               onClick={handlePrevious} 
-              className="h-8 w-8 hover:bg-accent/50 text-foreground"
+              className="h-9 w-9 rounded-lg hover:bg-accent/80 text-foreground active:scale-95"
             >
               <ChevronLeft className="h-4 w-4" />
             </Button>
@@ -287,10 +288,10 @@ export default function Agenda() {
               variant="ghost"
               onClick={handleToday}
               className={cn(
-                "h-8 px-4 text-xs font-semibold relative overflow-hidden",
+                "h-9 px-4 text-xs font-semibold relative overflow-hidden rounded-lg active:scale-95",
                 isToday 
-                  ? "text-foreground bg-accent" 
-                  : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
+                  ? "text-foreground bg-accent font-bold" 
+                  : "text-muted-foreground hover:text-foreground hover:bg-accent/80"
               )}
             >
               Hoje
@@ -301,7 +302,7 @@ export default function Agenda() {
               variant="ghost" 
               size="icon" 
               onClick={handleNext} 
-              className="h-8 w-8 hover:bg-accent/50 text-foreground"
+              className="h-9 w-9 rounded-lg hover:bg-accent/80 text-foreground active:scale-95"
             >
               <ChevronRight className="h-4 w-4" />
             </Button>
@@ -309,9 +310,9 @@ export default function Agenda() {
 
           <Popover>
             <PopoverTrigger asChild>
-              <Button 
-                variant="ghost" 
-                className="h-10 px-3 gap-2 rounded-lg hover:bg-accent/50 text-foreground border border-transparent hover:border-border"
+              <AgendaFilterButton 
+                active={false}
+                className="h-10 px-4 gap-2 rounded-xl"
               >
                 <CalendarIcon className="h-4 w-4 text-muted-foreground" />
                 <div className="flex flex-col items-start leading-none">
@@ -322,7 +323,7 @@ export default function Agenda() {
                     {format(selectedDate, "dd 'de' MMMM", { locale: ptBR })}
                   </span>
                 </div>
-              </Button>
+              </AgendaFilterButton>
             </PopoverTrigger>
             <PopoverContent className="w-auto p-0 border border-border rounded-lg" align="start">
               <Calendar
@@ -351,7 +352,7 @@ export default function Agenda() {
         <div className="flex flex-wrap items-center gap-2 sm:gap-3 w-full md:w-auto">
           <div className="flex items-center gap-2 flex-1 md:flex-none min-w-0">
             <Select value={filterProfissional} onValueChange={setFilterProfissional}>
-              <SelectTrigger className="w-full md:w-[180px] h-10 bg-background border-border">
+              <SelectTrigger className="w-full md:w-[180px] h-10 bg-background border-border rounded-xl">
                 <SelectValue placeholder="Profissional" />
               </SelectTrigger>
               <SelectContent>
@@ -366,7 +367,10 @@ export default function Agenda() {
 
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="outline" className="h-10 border-border bg-background gap-2">
+                <AgendaFilterButton 
+                  active={filterStatus.length < Object.values(STATUS_AGENDAMENTO).length} 
+                  className="gap-2"
+                >
                   <Filter className="h-4 w-4 text-muted-foreground" />
                   Status
                   {filterStatus.length < Object.values(STATUS_AGENDAMENTO).length && (
@@ -374,7 +378,7 @@ export default function Agenda() {
                       {filterStatus.length}
                     </Badge>
                   )}
-                </Button>
+                </AgendaFilterButton>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56">
                 <DropdownMenuLabel>Filtrar por Status</DropdownMenuLabel>
@@ -412,12 +416,12 @@ export default function Agenda() {
             type="single" 
             value={viewMode} 
             onValueChange={(value) => value && setViewMode(value as any)}
-            className="bg-background border border-border p-1 rounded-lg"
+            className="bg-background border border-border p-0.5 rounded-xl h-10 flex items-center gap-1"
           >
-            <ToggleGroupItem value="list" className="h-7 w-7 p-0" aria-label="Lista">
+            <ToggleGroupItem value="list" className="h-9 w-9 p-0 rounded-lg" aria-label="Lista">
               <List className="h-4 w-4" />
             </ToggleGroupItem>
-            <ToggleGroupItem value="week" className="h-7 w-7 p-0" aria-label="Semana">
+            <ToggleGroupItem value="week" className="h-9 w-9 p-0 rounded-lg" aria-label="Semana">
               <CalendarRange className="h-4 w-4" />
             </ToggleGroupItem>
           </ToggleGroup>
@@ -470,7 +474,7 @@ export default function Agenda() {
       />
 
       <AlertDialog open={isCancelDialogOpen} onOpenChange={setIsCancelDialogOpen}>
-        <AlertDialogContent>
+        <AlertDialogContent className="border-border rounded-lg bg-background">
           <AlertDialogHeader>
             <AlertDialogTitle>Cancelar agendamento</AlertDialogTitle>
             <AlertDialogDescription>
@@ -478,9 +482,16 @@ export default function Agenda() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Voltar</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmCancel} className="bg-red-600 hover:bg-red-700">
-              Cancelar Agendamento
+            <AlertDialogCancel asChild>
+              <AgendaButton variant="outline">Voltar</AgendaButton>
+            </AlertDialogCancel>
+            <AlertDialogAction asChild>
+              <AgendaButton 
+                onClick={confirmCancel}
+                className="bg-red-600 hover:bg-red-700 text-white hover:translate-y-[-1px]"
+              >
+                Cancelar Agendamento
+              </AgendaButton>
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

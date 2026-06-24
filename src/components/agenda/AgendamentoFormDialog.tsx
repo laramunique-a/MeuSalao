@@ -2,6 +2,7 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { agendamentoSchema, type AgendamentoFormData } from '@/schemas/agendamento.schema'
 import { Button } from '@/components/ui/button'
+import { AgendaButton } from './AgendaComponents'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { TimePicker } from '@/components/ui/time-picker'
@@ -491,10 +492,10 @@ export function AgendamentoFormDialog({
               />
 
               <div className="flex justify-end gap-3 pt-4">
-                <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+                <AgendaButton type="button" variant="outline" onClick={() => onOpenChange(false)}>
                   Cancelar
-                </Button>
-                <Button
+                </AgendaButton>
+                <AgendaButton
                   type="submit"
                   disabled={
                     createAgendamento.isPending ||
@@ -505,9 +506,9 @@ export function AgendamentoFormDialog({
                   {createAgendamento.isPending || updateAgendamento.isPending || checkConflict.isPending
                     ? 'Salvando...'
                     : agendamento
-                      ? 'Atualizar'
-                      : 'Agendar'}
-                </Button>
+                      ? 'Atualizar Agendamento'
+                      : 'Criar Agendamento'}
+                </AgendaButton>
               </div>
             </form>
           </Form>

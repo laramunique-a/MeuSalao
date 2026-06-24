@@ -82,6 +82,22 @@ O projeto utiliza a família tipográfica **Outfit** carregada do Google Fonts:
 *   Todos os cards usam fundo branco puro (`#ffffff` no Light Mode), sem bordas grossas, mas com sombras táteis e arredondamento generoso de `24px` (`rounded-3xl`).
 *   No Modo Escuro, os cards usam o tom cinza-escuro tátil `#17181a` (`rounded-3xl` com sombra e borda fina).
 
+### 3.4. Componentes e Contêineres do Módulo Agenda
+
+Para unificar o visual da Agenda e manter a consistência tátil 3D, todos os elementos interativos de primeiro nível seguem o padrão de **40px de altura (`h-10`)** e **20px de raio de curvatura (`rounded-xl`)**.
+
+*   **AgendaButton**:
+    *   **Propósito**: Ações principais do módulo (ex: "Novo", "Bloquear", botões de rodapé de formulários e modais).
+    *   **Estética**: 40px de altura, cantos `rounded-xl` (20px), texto uppercase, peso `font-bold`, espaçamento `tracking-wider` e efeitos táteis:
+        *   *Hover*: Leve elevação com tradução de `-1px` no eixo Y (`hover:translate-y-[-1px]`) com transição suave.
+        *   *Active*: Encolhimento dinâmico de feedback para `scale-[0.98]`.
+*   **AgendaFilterButton**:
+    *   **Propósito**: Acionadores de filtros e dropdowns (ex: Calendário, Status, Profissional).
+    *   **Estética**: Borda sutil, fundo tátil que reage ao estado de ativo (`active` adiciona destaque de cor e peso).
+*   **Regra de Hierarquia Geométrica (Nested Radii)**:
+    *   Para botões internos agrupados (como seletores de data e alternadores de visualização) inseridos em contêineres externos `rounded-xl` com padding sutil (`p-0.5` ou `p-1`), os botões internos devem usar **arredondamento proporcional de `16px` (`rounded-lg`)** e altura interna proporcional (como `h-9` ou `h-8`).
+    *   Isso segue a fórmula: $R_{\text{externo}} = R_{\text{interno}} + P$ (Raio Externo = Raio Interno + Padding), garantindo que as curvas interna e externa permaneçam geometricamente concêntricas e visualmente harmônicas.
+
 ---
 
 ## 4. Animações e Navegação

@@ -1,7 +1,7 @@
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { bloqueioAgendaSchema, type BloqueioAgendaFormData } from '@/schemas/bloqueio-agenda.schema'
-import { Button } from '@/components/ui/button'
+import { AgendaButton } from './AgendaComponents'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { TimePicker } from '@/components/ui/time-picker'
@@ -249,10 +249,10 @@ export function BloqueioFormDialog({ open, onOpenChange, bloqueio }: BloqueioFor
             />
 
             <div className="flex justify-end gap-3 pt-4">
-              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+              <AgendaButton type="button" variant="outline" onClick={() => onOpenChange(false)}>
                 Cancelar
-              </Button>
-              <Button
+              </AgendaButton>
+              <AgendaButton
                 type="submit"
                 disabled={createBloqueio.isPending || updateBloqueio.isPending}
               >
@@ -261,7 +261,7 @@ export function BloqueioFormDialog({ open, onOpenChange, bloqueio }: BloqueioFor
                   : bloqueio
                     ? 'Atualizar'
                     : 'Criar Bloqueio'}
-              </Button>
+              </AgendaButton>
             </div>
           </form>
         </Form>

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Button } from '@/components/ui/button'
+import { AgendaButton } from './AgendaComponents'
 import { Calendar } from '@/components/ui/calendar'
 import {
   AlertDialog,
@@ -113,7 +113,7 @@ export function ConflictWarningDialog({
               {suggestedTimes.length > 0 ? (
                 <div className="grid grid-cols-3 gap-2">
                   {suggestedTimes.map((time) => (
-                    <Button
+                    <AgendaButton
                       key={time}
                       variant="outline"
                       onClick={() => {
@@ -124,7 +124,7 @@ export function ConflictWarningDialog({
                     >
                       <Clock className="h-4 w-4 mr-2" />
                       {time}
-                    </Button>
+                    </AgendaButton>
                   ))}
                 </div>
               ) : (
@@ -159,10 +159,10 @@ export function ConflictWarningDialog({
         </div>
 
         <AlertDialogFooter className="flex-col sm:flex-row gap-2">
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
+          <AgendaButton variant="outline" onClick={() => onOpenChange(false)}>
             Cancelar
-          </Button>
-          <Button
+          </AgendaButton>
+          <AgendaButton
             variant="destructive"
             onClick={() => {
               onForceConfirm()
@@ -170,7 +170,7 @@ export function ConflictWarningDialog({
             disabled={isLoading}
           >
             {isLoading ? 'Salvando...' : 'Confirmar Mesmo Assim'}
-          </Button>
+          </AgendaButton>
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>
