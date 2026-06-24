@@ -52,6 +52,7 @@ export interface Database {
           nome: string
           email: string
           perfil: 'administrador' | 'profissional' | 'super_admin'
+          pode_atender: boolean
           comissao_percentual: number
           ativo: boolean
           created_at: string
@@ -63,6 +64,7 @@ export interface Database {
           nome: string
           email: string
           perfil?: 'administrador' | 'profissional' | 'super_admin'
+          pode_atender?: boolean
           comissao_percentual?: number
           ativo?: boolean
           created_at?: string
@@ -74,6 +76,7 @@ export interface Database {
           nome?: string
           email?: string
           perfil?: 'administrador' | 'profissional' | 'super_admin'
+          pode_atender?: boolean
           comissao_percentual?: number
           ativo?: boolean
           created_at?: string

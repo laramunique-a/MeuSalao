@@ -3,6 +3,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { usuarioSchema, type UsuarioFormData } from '@/schemas/usuario.schema'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { Switch } from '@/components/ui/switch'
 import {
   Select,
   SelectContent,
@@ -28,6 +29,7 @@ import {
 import { useEffect } from 'react'
 import { useCreateUsuario, useUpdateUsuario } from '@/hooks/useUsuarios'
 import { useToast } from '@/hooks/use-toast'
+import { CalendarCheck } from 'lucide-react'
 import type { Database } from '@/types/database.types'
 
 type Usuario = Database['public']['Tables']['usuario']['Row']
@@ -51,10 +53,14 @@ export function UsuarioFormDialog({ open, onOpenChange, usuario }: UsuarioFormDi
       nome: '',
       email: '',
       perfil: 'profissional',
+      pode_atender: true,
       senha: '',
       comissao_percentual: '0',
     },
   })
+
+  const perfilAtual = form.watch('perfil')
+  const isAdmin = perfilAtual === 'administrador'
 
   useEffect(() => {
     if (open) {
@@ -63,6 +69,7 @@ export function UsuarioFormDialog({ open, onOpenChange, usuario }: UsuarioFormDi
           nome: usuario.nome,
           email: usuario.email,
           perfil: usuario.perfil as any,
+          pode_atender: (usuario as any).pode_atender ?? (usuario.perfil === 'profissional'),
           senha: '',
           comissao_percentual: (usuario as any).comissao_percentual?.toString() || '0',
         })
@@ -71,6 +78,7 @@ export function UsuarioFormDialog({ open, onOpenChange, usuario }: UsuarioFormDi
           nome: '',
           email: '',
           perfil: 'profissional',
+          pode_atender: true,
           senha: '',
           comissao_percentual: '0',
         })
@@ -78,14 +86,24 @@ export function UsuarioFormDialog({ open, onOpenChange, usuario }: UsuarioFormDi
     }
   }, [open, usuario, form])
 
+  // Quando muda para profissional, força pode_atender = true
+  useEffect(() => {
+    if (perfilAtual === 'profissional') {
+      form.setValue('pode_atender', true)
+    }
+  }, [perfilAtual, form])
+
   async function onSubmit(data: UsuarioFormData) {
+    // profissional sempre pode atender
+    const podeAtender = data.perfil === 'profissional' ? true : data.pode_atender
+
     try {
       if (isEditing) {
-        // Prepare updates WITHOUT the password (passwords are handled by Auth, not the public table)
         const updates: any = {
           nome: data.nome,
           email: data.email,
           perfil: data.perfil,
+          pode_atender: podeAtender,
           comissao_percentual: parseFloat(data.comissao_percentual?.replace(',', '.') || '0'),
         }
 
@@ -94,9 +112,6 @@ export function UsuarioFormDialog({ open, onOpenChange, usuario }: UsuarioFormDi
           updates
         })
 
-        // NOTE: Actually changing another user's password requires Admin API
-        // which isn't safe to expose in the frontend directly.
-        // We only update the public profile here.
         if (data.senha) {
           toast({
             title: 'Perfil atualizado',
@@ -113,6 +128,7 @@ export function UsuarioFormDialog({ open, onOpenChange, usuario }: UsuarioFormDi
           nome: data.nome,
           email: data.email,
           perfil: data.perfil,
+          pode_atender: podeAtender,
           comissao_percentual: parseFloat(data.comissao_percentual?.replace(',', '.') || '0'),
           senha: data.senha || '',
         })
@@ -140,8 +156,8 @@ export function UsuarioFormDialog({ open, onOpenChange, usuario }: UsuarioFormDi
         <DialogHeader>
           <DialogTitle>{isEditing ? 'Editar Usuário' : 'Novo Usuário'}</DialogTitle>
           <DialogDescription>
-            {isEditing 
-              ? 'Atualize os dados e configurações do usuário.' 
+            {isEditing
+              ? 'Atualize os dados e configurações do usuário.'
               : 'Adicione um novo profissional ou administrador ao sistema.'}
           </DialogDescription>
         </DialogHeader>
@@ -212,6 +228,36 @@ export function UsuarioFormDialog({ open, onOpenChange, usuario }: UsuarioFormDi
               )}
             />
 
+            {/* Toggle: visível apenas quando perfil = administrador */}
+            {isAdmin && (
+              <FormField
+                control={form.control}
+                name="pode_atender"
+                render={({ field }) => (
+                  <FormItem>
+                    <div className="flex items-start gap-3 rounded-lg border border-border bg-accent/5 p-3">
+                      <CalendarCheck className="h-4 w-4 mt-0.5 text-primary shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <FormLabel className="text-sm font-semibold text-foreground cursor-pointer">
+                          Pode realizar atendimentos
+                        </FormLabel>
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                          Permite que este administrador apareça na agenda e receba comissões como profissional
+                        </p>
+                      </div>
+                      <FormControl>
+                        <Switch
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                        />
+                      </FormControl>
+                    </div>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
+
             <FormField
               control={form.control}
               name="comissao_percentual"
@@ -219,9 +265,9 @@ export function UsuarioFormDialog({ open, onOpenChange, usuario }: UsuarioFormDi
                 <FormItem>
                   <FormLabel>Comissão (%)</FormLabel>
                   <FormControl>
-                    <Input 
-                      placeholder="0" 
-                      {...field} 
+                    <Input
+                      placeholder="0"
+                      {...field}
                       onFocus={(e) => {
                         if (e.target.value === '0') {
                           field.onChange('')
@@ -244,8 +290,8 @@ export function UsuarioFormDialog({ open, onOpenChange, usuario }: UsuarioFormDi
                 Cancelar
               </Button>
               <Button type="submit" disabled={createUsuario.isPending || updateUsuario.isPending}>
-                {createUsuario.isPending || updateUsuario.isPending 
-                  ? (isEditing ? 'Salvando...' : 'Cadastrando...') 
+                {createUsuario.isPending || updateUsuario.isPending
+                  ? (isEditing ? 'Salvando...' : 'Cadastrando...')
                   : (isEditing ? 'Salvar Alterações' : 'Cadastrar')}
               </Button>
             </div>

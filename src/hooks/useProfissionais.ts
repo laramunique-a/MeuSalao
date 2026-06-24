@@ -12,7 +12,7 @@ async function getProfissionais(): Promise<Usuario[]> {
     .select('*')
     .eq('salao_id', usuario.salao_id)
     .eq('ativo', true)
-    .neq('perfil', 'super_admin')
+    .eq('pode_atender', true)
     .order('nome', { ascending: true })
 
   if (error) throw error

@@ -4,6 +4,7 @@ export const usuarioSchema = z.object({
   nome: z.string().min(3, 'Nome deve ter no mínimo 3 caracteres'),
   email: z.string().email('Email inválido'),
   perfil: z.enum(['administrador', 'profissional']),
+  pode_atender: z.boolean().default(false),
   comissao_percentual: z.string().optional().default('0').refine(
     (val) => {
       const num = parseFloat(val.replace(',', '.'));

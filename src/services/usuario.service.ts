@@ -26,6 +26,7 @@ export const usuarioService = {
     nome: string
     email: string
     perfil: 'administrador' | 'profissional'
+    pode_atender: boolean
     senha: string
     comissao_percentual?: number
   }): Promise<Usuario> {
@@ -67,6 +68,7 @@ export const usuarioService = {
       nome: input.nome,
       email: input.email,
       perfil: input.perfil,
+      pode_atender: input.pode_atender,
       comissao_percentual: input.comissao_percentual || 0,
       ativo: true,
     }

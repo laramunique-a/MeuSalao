@@ -19,6 +19,7 @@ export function useCreateUsuario() {
       nome: string
       email: string
       perfil: 'administrador' | 'profissional'
+      pode_atender: boolean
       senha: string
       comissao_percentual?: number
     }) => usuarioService.createUsuario(input),

@@ -78,11 +78,16 @@ export function UsuariosTable({ usuarios, onEdit }: UsuariosTableProps) {
                       <>
                         <Shield className="h-3.5 w-3.5 text-primary" />
                         <span className="font-medium text-foreground">Administrador</span>
+                        {(usuario as any).pode_atender && (
+                          <span className="ml-1 text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800/50">
+                            + Atende
+                          </span>
+                        )}
                       </>
                     ) : (
                       <>
                         <User className="h-3.5 w-3.5 text-muted-foreground" />
-                        <span className="font-medium text-foreground">Funcionário</span>
+                        <span className="font-medium text-foreground">Profissional</span>
                       </>
                     )}
                   </div>
