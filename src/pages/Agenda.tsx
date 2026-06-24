@@ -274,68 +274,73 @@ export default function Agenda() {
       </div>
       <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 mb-6 bg-card p-3 rounded-lg border border-border">
         <div className="flex flex-wrap items-center gap-3">
-          <div className="flex items-center bg-background rounded-xl border border-border p-0.5 h-10">
+          <div className="flex items-center bg-background rounded-xl border border-border p-0.5 h-10 select-none">
             <Button 
               variant="ghost" 
               size="icon" 
               onClick={handlePrevious} 
-              className="h-9 w-9 rounded-lg hover:bg-accent/80 text-foreground active:scale-95"
+              className="h-9 w-9 rounded-lg hover:bg-accent/80 text-foreground active:scale-95 transition-all"
             >
               <ChevronLeft className="h-4 w-4" />
             </Button>
-            
-            <Button
-              variant="ghost"
-              onClick={handleToday}
-              className={cn(
-                "h-9 px-4 text-xs font-semibold relative overflow-hidden rounded-lg active:scale-95",
-                isToday 
-                  ? "text-foreground bg-accent font-bold" 
-                  : "text-muted-foreground hover:text-foreground hover:bg-accent/80"
-              )}
-            >
-              Hoje
-              {isToday && <span className="absolute bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-foreground" />}
-            </Button>
-            
+
+            <Popover>
+              <PopoverTrigger asChild>
+                <div className="flex items-center gap-2 h-9 px-2 rounded-lg hover:bg-accent/50 transition-all cursor-pointer">
+                  {/* Calendar Icon adjacent to 'Hoje' */}
+                  <CalendarIcon className="h-4 w-4 text-muted-foreground" />
+                  
+                  <span 
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      handleToday()
+                    }}
+                    className={cn(
+                      "text-xs font-semibold px-2 py-0.5 rounded-md hover:bg-accent text-muted-foreground hover:text-foreground active:scale-95 transition-all cursor-pointer relative",
+                      isToday && "text-foreground font-bold bg-accent"
+                    )}
+                  >
+                    Hoje
+                    {isToday && (
+                      <span className="absolute bottom-[2px] left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-foreground" />
+                    )}
+                  </span>
+
+                  {/* Vertical separator */}
+                  <div className="h-5 w-[1px] bg-border mx-1" />
+
+                  {/* Date text (day of week and current day/month) */}
+                  <div className="flex flex-col items-start leading-none pr-1">
+                    <span className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest">
+                      {format(selectedDate, "EEEE", { locale: ptBR }).toUpperCase()}
+                    </span>
+                    <span className="text-[11px] font-bold text-foreground uppercase tracking-tight mt-0.5">
+                      {format(selectedDate, "dd 'de' MMMM", { locale: ptBR }).toUpperCase()}
+                    </span>
+                  </div>
+                </div>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0 border border-border rounded-lg" align="start">
+                <Calendar
+                  mode="single"
+                  selected={selectedDate}
+                  onSelect={(date) => date && setSelectedDate(date)}
+                  initialFocus
+                  locale={ptBR}
+                  className="p-3"
+                />
+              </PopoverContent>
+            </Popover>
+
             <Button 
               variant="ghost" 
               size="icon" 
               onClick={handleNext} 
-              className="h-9 w-9 rounded-lg hover:bg-accent/80 text-foreground active:scale-95"
+              className="h-9 w-9 rounded-lg hover:bg-accent/80 text-foreground active:scale-95 transition-all"
             >
               <ChevronRight className="h-4 w-4" />
             </Button>
           </div>
-
-          <Popover>
-            <PopoverTrigger asChild>
-              <AgendaFilterButton 
-                active={false}
-                className="h-10 px-4 gap-2 rounded-xl"
-              >
-                <CalendarIcon className="h-4 w-4 text-muted-foreground" />
-                <div className="flex flex-col items-start leading-none">
-                  <span className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest">
-                    {format(selectedDate, "EEEE", { locale: ptBR })}
-                  </span>
-                  <span className="text-sm font-semibold tracking-tight mt-0.5">
-                    {format(selectedDate, "dd 'de' MMMM", { locale: ptBR })}
-                  </span>
-                </div>
-              </AgendaFilterButton>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0 border border-border rounded-lg" align="start">
-              <Calendar
-                mode="single"
-                selected={selectedDate}
-                onSelect={(date) => date && setSelectedDate(date)}
-                initialFocus
-                locale={ptBR}
-                className="p-3"
-              />
-            </PopoverContent>
-          </Popover>
 
           <Badge variant="secondary" className="h-7 px-3 text-[10px] font-medium border border-border text-muted-foreground bg-background rounded-full">
             {agendamentosOrdenados.length === 0 ? (
