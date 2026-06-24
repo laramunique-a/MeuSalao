@@ -36,7 +36,7 @@ export function Sidebar({ open, setOpen }: SidebarProps) {
 
   const navLinkClass = ({ isActive }: { isActive: boolean }) =>
     cn(
-      'group flex items-center px-3 py-2.5 text-xs font-semibold uppercase tracking-wider rounded-lg transition-all duration-200',
+      'group flex items-center px-3 py-2.5 text-xs font-semibold uppercase tracking-wider rounded-lg transition-all duration-200 border border-transparent',
       isActive
         ? 'bg-primary text-primary-foreground font-bold active-menu-item'
         : 'text-muted-foreground hover:bg-accent/80 hover:text-foreground hover:translate-x-1'

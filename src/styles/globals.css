@@ -138,22 +138,32 @@
   /* Animação para Menus Ativos / Selecionados */
   @keyframes active-menu-highlight {
     0%, 100% {
-      transform: scale(1);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
       filter: brightness(1);
     }
     50% {
-      transform: scale(1.02);
-      filter: brightness(1.05);
+      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
+      filter: brightness(1.08);
+    }
+  }
+
+  @keyframes active-menu-highlight-dark {
+    0%, 100% {
+      box-shadow: 0 4px 12px rgba(255, 255, 255, 0.02);
+      filter: brightness(1);
+    }
+    50% {
+      box-shadow: 0 6px 16px rgba(255, 255, 255, 0.06);
+      filter: brightness(1.12);
     }
   }
 
   .active-menu-item {
-    animation: active-menu-highlight 2s infinite ease-in-out;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05) !important;
-    border: 1px solid rgba(0, 0, 0, 0.05) !important;
+    animation: active-menu-highlight 2.5s infinite ease-in-out;
+    border-color: rgba(0, 0, 0, 0.08) !important;
   }
   .dark .active-menu-item {
-    box-shadow: 0 4px 12px rgba(255, 255, 255, 0.05) !important;
-    border: 1px solid rgba(255, 255, 255, 0.05) !important;
+    animation: active-menu-highlight-dark 2.5s infinite ease-in-out;
+    border-color: rgba(255, 255, 255, 0.08) !important;
   }
 }
