@@ -163,7 +163,7 @@ export function TaxasCartaoForm({ salao }: TaxasCartaoFormProps) {
                   >
                     <Label 
                       htmlFor="unica" 
-                      className={`flex items-start space-x-3 p-4 rounded-lg border transition-all cursor-pointer ${field.value === 'unica' ? 'border-primary bg-accent/50' : 'border-border bg-background hover:bg-accent/30'}`}
+                      className={`flex items-start space-x-3 p-4 rounded-lg border transition-all cursor-pointer ${field.value === 'unica' ? 'border-primary bg-white shadow-sm' : 'border-border bg-white hover:bg-accent/30'}`}
                     >
                       <RadioGroupItem value="unica" id="unica" className="mt-1" />
                       <div className="space-y-1">
@@ -174,7 +174,7 @@ export function TaxasCartaoForm({ salao }: TaxasCartaoFormProps) {
                     
                     <Label 
                       htmlFor="bandeira" 
-                      className={`flex items-start space-x-3 p-4 rounded-lg border transition-all cursor-pointer ${field.value === 'bandeira' ? 'border-primary bg-accent/50' : 'border-border bg-background hover:bg-accent/30'}`}
+                      className={`flex items-start space-x-3 p-4 rounded-lg border transition-all cursor-pointer ${field.value === 'bandeira' ? 'border-primary bg-white shadow-sm' : 'border-border bg-white hover:bg-accent/30'}`}
                     >
                       <RadioGroupItem value="bandeira" id="bandeira" className="mt-1" />
                       <div className="space-y-1">
