@@ -72,10 +72,11 @@ O projeto utiliza a família tipográfica **Outfit** carregada do Google Fonts:
 
 ### 3.2. Inputs e Campos de Formulário
 
-*   Altura padrão: `40px` (`h-10`).
-*   Arredondamento: `12px` (`rounded-xl`).
-*   Borda fina sutil (`#ECECEC` ou HSL `15 10% 93%`).
-*   Focus: Borda se sobressai no tom de destaque com anel de foco minimalista.
+*   **Altura padrão**: `40px` (`h-10`).
+*   **Arredondamento**: `12px` (`rounded-md` no Tailwind, dado que `borderRadius.md` está mapeado como `12px` no arquivo de configuração).
+*   **Rótulos (Labels)**: Estilo condensado tátil: `font-bold text-[10px] uppercase tracking-wider text-muted-foreground mb-2 block` para uma legibilidade limpa e foco estrutural.
+*   **Borda**: Fina e sutil (`border border-border` ou HSL `15 10% 93%`).
+*   **Focus**: A borda destaca-se no tom de destaque da aplicação, com anel de foco tátil suave.
 
 ### 3.3. Cards e Superfícies
 
@@ -97,6 +98,24 @@ Para unificar o visual da Agenda e manter a consistência tátil 3D, todos os el
 *   **Regra de Hierarquia Geométrica (Nested Radii)**:
     *   Para botões internos agrupados (como seletores de data e alternadores de visualização) inseridos em contêineres externos `rounded-xl` com padding sutil (`p-0.5` ou `p-1`), os botões internos devem usar **arredondamento proporcional de `16px` (`rounded-lg`)** e altura interna proporcional (como `h-9` ou `h-8`).
     *   Isso segue a fórmula: $R_{\text{externo}} = R_{\text{interno}} + P$ (Raio Externo = Raio Interno + Padding), garantindo que as curvas interna e externa permaneçam geometricamente concêntricas e visualmente harmônicas.
+
+### 3.5. Tabelas e Listagens
+
+Para garantir a consistência visual no gerenciamento de listagens e dados tabulares (ex: Serviços, Usuários):
+
+*   **Contêiner Responsivo**:
+    -   Toda tabela deve ser envolta por um contêiner com rolagem horizontal no mobile: `className="rounded-md border overflow-x-auto w-full"`.
+    -   A tabela em si deve ter largura mínima para evitar encolhimento de colunas: `className="min-w-[600px] md:min-w-full"`.
+*   **Cabeçalho da Tabela (`TableHead`)**:
+    -   Altura fixa: `40px` (`h-10`).
+    -   Estilo de fonte condensada: `text-[10px] font-bold uppercase tracking-wider text-muted-foreground`.
+*   **Linhas e Células (`TableRow` / `TableCell`)**:
+    -   Altura padrão de linha confortável: padding vertical de `12px` (`py-3`) nas células corporais.
+    -   Alinhamento: dados básicos alinhados à esquerda, ações e controle de status alinhados à direita (text-right).
+*   **Coluna de Status**:
+    -   Controles de ativação/desativação e seus badges de estado devem ficar juntos na mesma célula para otimização de espaço, em escala reduzida: `flex items-center gap-2 scale-90 origin-left`.
+*   **Botões de Ação**:
+    -   Ghost buttons arredondados e de tamanho reduzido: `h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-accent/80 transition-all rounded-lg` com ícones `h-3.5 w-3.5` (ex: `Pencil`, `Trash2`).
 
 ---
 

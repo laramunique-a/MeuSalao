@@ -29,35 +29,35 @@ export function ServicosTable({ servicos, onEdit, onDelete, onToggleAtivo }: Ser
   }
 
   return (
-    <div className="rounded-md border">
-      <Table>
+    <div className="rounded-md border overflow-x-auto w-full">
+      <Table className="min-w-[600px] md:min-w-full">
         <TableHeader>
           <TableRow>
-            <TableHead className="py-2 h-10">Serviço</TableHead>
-            <TableHead className="py-2 h-10">Descrição</TableHead>
-            <TableHead className="py-2 h-10">Valor</TableHead>
-            <TableHead className="py-2 h-10">Duração</TableHead>
-            <TableHead className="py-2 h-10">Status</TableHead>
-            <TableHead className="text-right py-2 h-10">Ações</TableHead>
+            <TableHead className="h-10 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Serviço</TableHead>
+            <TableHead className="h-10 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Descrição</TableHead>
+            <TableHead className="h-10 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Valor</TableHead>
+            <TableHead className="h-10 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Duração</TableHead>
+            <TableHead className="h-10 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Status</TableHead>
+            <TableHead className="text-right h-10 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Ações</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {servicos.map((servico) => (
             <TableRow key={servico.id} className="hover:bg-muted/30">
-              <TableCell className="font-medium py-2">{servico.nome}</TableCell>
-              <TableCell className="max-w-[200px] truncate text-xs text-muted-foreground py-2">
+              <TableCell className="font-medium py-3 text-sm">{servico.nome}</TableCell>
+              <TableCell className="max-w-[200px] truncate text-xs text-muted-foreground py-3">
                 {servico.descricao || '-'}
               </TableCell>
-              <TableCell className="font-semibold py-2 text-xs">
+              <TableCell className="font-semibold py-3 text-xs">
                 R$ {servico.valor.toFixed(2)}
               </TableCell>
-              <TableCell className="py-2">
+              <TableCell className="py-3">
                 <div className="flex items-center gap-1.5 text-xs text-muted-foreground whitespace-nowrap">
-                  <Clock className="h-3 w-3" />
+                  <Clock className="h-3.5 w-3.5" />
                   {servico.duracao_minutos} min
                 </div>
               </TableCell>
-              <TableCell className="py-2">
+              <TableCell className="py-3">
                 <div className="flex items-center gap-2 scale-90 origin-left">
                   <Switch
                     checked={servico.ativo}
@@ -68,12 +68,12 @@ export function ServicosTable({ servicos, onEdit, onDelete, onToggleAtivo }: Ser
                   </Badge>
                 </div>
               </TableCell>
-              <TableCell className="text-right py-1">
+              <TableCell className="text-right py-2">
                 <div className="flex justify-end gap-1">
                   <Button
                     size="icon"
                     variant="ghost"
-                    className="h-8 w-8"
+                    className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-accent/80 transition-all rounded-lg"
                     onClick={() => onEdit(servico)}
                   >
                     <Pencil className="h-3.5 w-3.5" />
@@ -81,7 +81,7 @@ export function ServicosTable({ servicos, onEdit, onDelete, onToggleAtivo }: Ser
                   <Button
                     size="icon"
                     variant="ghost"
-                    className="h-8 w-8 text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30"
+                    className="h-8 w-8 text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 transition-all rounded-lg"
                     onClick={() => onDelete(servico)}
                   >
                     <Trash2 className="h-3.5 w-3.5" />

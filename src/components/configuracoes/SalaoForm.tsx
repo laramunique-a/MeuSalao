@@ -104,8 +104,8 @@ export function SalaoForm({ salao }: SalaoFormProps) {
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
         <div className="space-y-6">
-            <Card className="border-border/50 shadow-md rounded-xl overflow-hidden bg-card/50 backdrop-blur-sm">
-              <div className="bg-muted/30 px-5 py-3 border-b border-border/50 flex items-center gap-2">
+            <Card className="border border-border rounded-xl overflow-hidden bg-card">
+              <div className="bg-accent/10 px-5 py-3 border-b border-border flex items-center gap-2">
                 <Store className="h-4 w-4 text-primary" />
                 <h3 className="font-bold text-sm">Informações do Estabelecimento</h3>
               </div>
@@ -119,7 +119,7 @@ export function SalaoForm({ salao }: SalaoFormProps) {
                       <FormItem>
                         <FormLabel className="font-bold text-[10px] uppercase tracking-wider text-muted-foreground">Nome do Salão *</FormLabel>
                         <FormControl>
-                          <Input placeholder="Nome Fantasia" {...field} className="h-10 rounded-lg border-border/50 bg-background/50 focus:ring-primary/20" />
+                          <Input placeholder="Nome Fantasia" {...field} className="h-10 rounded-md border-border bg-background focus:ring-primary/20" />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -134,7 +134,7 @@ export function SalaoForm({ salao }: SalaoFormProps) {
                         <FormItem>
                           <FormLabel className="font-bold text-[10px] uppercase tracking-wider text-muted-foreground">CNPJ</FormLabel>
                           <FormControl>
-                            <Input placeholder="00.000.000/0000-00" {...field} className="h-10 rounded-lg border-border/50 bg-background/50" />
+                            <Input placeholder="00.000.000/0000-00" {...field} className="h-10 rounded-md border-border bg-background" />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -147,7 +147,7 @@ export function SalaoForm({ salao }: SalaoFormProps) {
                         <FormItem>
                           <FormLabel className="font-bold text-[10px] uppercase tracking-wider text-muted-foreground">Telefone</FormLabel>
                           <FormControl>
-                            <Input placeholder="(00) 00000-0000" {...field} className="h-10 rounded-lg border-border/50 bg-background/50" />
+                            <Input placeholder="(00) 00000-0000" {...field} className="h-10 rounded-md border-border bg-background" />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -158,8 +158,8 @@ export function SalaoForm({ salao }: SalaoFormProps) {
               </CardContent>
             </Card>
 
-            <Card className="border-border/50 shadow-md rounded-xl overflow-hidden bg-card/50 backdrop-blur-sm">
-              <div className="bg-muted/30 px-5 py-3 border-b border-border/50 flex items-center gap-2">
+            <Card className="border border-border rounded-xl overflow-hidden bg-card">
+              <div className="bg-accent/10 px-5 py-3 border-b border-border flex items-center gap-2">
                 <MapPin className="h-4 w-4 text-primary" />
                 <h3 className="font-bold text-sm">Localização Completa</h3>
               </div>
@@ -174,7 +174,7 @@ export function SalaoForm({ salao }: SalaoFormProps) {
                           <FormLabel className="font-bold text-[10px] uppercase tracking-wider text-muted-foreground">CEP</FormLabel>
                           <FormControl>
                             <div className="relative">
-                              <Input placeholder="00000-000" {...field} className="h-10 rounded-lg border-border/50 bg-background/50" />
+                              <Input placeholder="00000-000" {...field} className="h-10 rounded-md border-border bg-background" />
                               {isFetchingCep && (
                                 <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-3 w-3 animate-spin text-primary" />
                               )}
@@ -193,7 +193,7 @@ export function SalaoForm({ salao }: SalaoFormProps) {
                         <FormItem>
                           <FormLabel className="font-bold text-[10px] uppercase tracking-wider text-muted-foreground">Logradouro (Rua/Av)</FormLabel>
                           <FormControl>
-                            <Input placeholder="Rua das Flores" {...field} className="h-10 rounded-lg border-border/50 bg-background/50" />
+                            <Input placeholder="Rua das Flores" {...field} className="h-10 rounded-md border-border bg-background" />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -210,7 +210,7 @@ export function SalaoForm({ salao }: SalaoFormProps) {
                       <FormItem>
                         <FormLabel className="font-bold text-[10px] uppercase tracking-wider text-muted-foreground">Número</FormLabel>
                         <FormControl>
-                          <Input placeholder="123" {...field} className="h-10 rounded-lg border-border/50 bg-background/50" />
+                          <Input placeholder="123" {...field} className="h-10 rounded-md border-border bg-background" />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -224,7 +224,7 @@ export function SalaoForm({ salao }: SalaoFormProps) {
                         <FormItem>
                           <FormLabel className="font-bold text-[10px] uppercase tracking-wider text-muted-foreground">Complemento</FormLabel>
                           <FormControl>
-                            <Input placeholder="Sala, Bloco, etc." {...field} className="h-10 rounded-lg border-border/50 bg-background/50" />
+                            <Input placeholder="Sala, Bloco, etc." {...field} className="h-10 rounded-md border-border bg-background" />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -241,7 +241,7 @@ export function SalaoForm({ salao }: SalaoFormProps) {
                       <FormItem>
                         <FormLabel className="font-bold text-[10px] uppercase tracking-wider text-muted-foreground">Bairro</FormLabel>
                         <FormControl>
-                          <Input placeholder="Centro" {...field} className="h-10 rounded-lg border-border/50 bg-background/50" />
+                          <Input placeholder="Centro" {...field} className="h-10 rounded-md border-border bg-background" />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -254,7 +254,7 @@ export function SalaoForm({ salao }: SalaoFormProps) {
                       <FormItem>
                         <FormLabel className="font-bold text-[10px] uppercase tracking-wider text-muted-foreground">Cidade</FormLabel>
                         <FormControl>
-                          <Input placeholder="São Paulo" {...field} className="h-10 rounded-lg border-border/50 bg-background/50" />
+                          <Input placeholder="São Paulo" {...field} className="h-10 rounded-md border-border bg-background" />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -267,7 +267,7 @@ export function SalaoForm({ salao }: SalaoFormProps) {
                       <FormItem>
                         <FormLabel className="font-bold text-[10px] uppercase tracking-wider text-muted-foreground">Estado</FormLabel>
                         <FormControl>
-                          <Input placeholder="SP" {...field} className="h-10 rounded-lg border-border/50 bg-background/50" />
+                          <Input placeholder="SP" {...field} className="h-10 rounded-md border-border bg-background" />
                         </FormControl>
                         <FormMessage />
                       </FormItem>

@@ -117,18 +117,18 @@ export function TaxasCartaoForm({ salao }: TaxasCartaoFormProps) {
       </CardHeader>
 
       <CardContent className="p-6">
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
           
           <Controller
             control={form.control}
             name="ativo"
             render={({ field }) => (
-              <div className="flex flex-row items-center justify-between rounded-2xl border border-primary/10 bg-primary/5 p-6 transition-all duration-300">
+              <div className="flex flex-row items-center justify-between rounded-xl border border-border bg-accent/5 p-5 transition-all duration-300">
                 <div className="space-y-1">
-                  <Label className="text-lg font-bold text-primary cursor-pointer" htmlFor="toggle-taxas">
+                  <Label className="text-sm font-bold text-foreground cursor-pointer" htmlFor="toggle-taxas">
                     Habilitar cálculo automático de taxas
                   </Label>
-                  <p className="text-sm text-muted-foreground font-medium">
+                  <p className="text-xs text-muted-foreground">
                     Ative para descontar automaticamente as taxas de cartão nos cálculos de caixa e comissões.
                   </p>
                 </div>
@@ -137,7 +137,7 @@ export function TaxasCartaoForm({ salao }: TaxasCartaoFormProps) {
                   checked={field.value} 
                   onCheckedChange={field.onChange} 
                   disabled={!isEditable}
-                  className="scale-125 data-[state=checked]:bg-primary"
+                  className="data-[state=checked]:bg-primary"
                 />
               </div>
             )}
@@ -145,8 +145,8 @@ export function TaxasCartaoForm({ salao }: TaxasCartaoFormProps) {
           
           <div className={`transition-all duration-500 ${!ativo ? 'opacity-40 pointer-events-none grayscale' : ''}`}>
             
-            <div className="bg-slate-50 border border-slate-100 rounded-2xl p-6 mb-8">
-              <h3 className="text-sm font-bold uppercase text-muted-foreground mb-4 tracking-wider flex items-center gap-2">
+            <div className="bg-accent/10 border border-border rounded-xl p-5 mb-6">
+              <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-4 flex items-center gap-2">
                 <Percent className="h-4 w-4" />
                 Modo de Cobrança
               </h3>
@@ -163,23 +163,23 @@ export function TaxasCartaoForm({ salao }: TaxasCartaoFormProps) {
                   >
                     <Label 
                       htmlFor="unica" 
-                      className={`flex items-start space-x-3 p-4 rounded-xl border-2 transition-all cursor-pointer ${field.value === 'unica' ? 'border-primary bg-primary/5' : 'border-transparent bg-white shadow-sm'}`}
+                      className={`flex items-start space-x-3 p-4 rounded-lg border transition-all cursor-pointer ${field.value === 'unica' ? 'border-primary bg-accent/50' : 'border-border bg-background hover:bg-accent/30'}`}
                     >
                       <RadioGroupItem value="unica" id="unica" className="mt-1" />
                       <div className="space-y-1">
-                        <span className="font-bold text-sm block cursor-pointer">Taxa Única Global</span>
-                        <p className="text-xs text-muted-foreground">Aplica exatamente a mesma porcentagem para qualquer transação em crédito.</p>
+                        <span className="font-bold text-sm block cursor-pointer text-foreground">Taxa Única Global</span>
+                        <p className="text-xs text-muted-foreground mt-0.5">Aplica exatamente a mesma porcentagem para qualquer transação em crédito.</p>
                       </div>
                     </Label>
                     
                     <Label 
                       htmlFor="bandeira" 
-                      className={`flex items-start space-x-3 p-4 rounded-xl border-2 transition-all cursor-pointer ${field.value === 'bandeira' ? 'border-primary bg-primary/5' : 'border-transparent bg-white shadow-sm'}`}
+                      className={`flex items-start space-x-3 p-4 rounded-lg border transition-all cursor-pointer ${field.value === 'bandeira' ? 'border-primary bg-accent/50' : 'border-border bg-background hover:bg-accent/30'}`}
                     >
                       <RadioGroupItem value="bandeira" id="bandeira" className="mt-1" />
                       <div className="space-y-1">
-                        <span className="font-bold text-sm block cursor-pointer">Taxa Específica por Bandeira</span>
-                        <p className="text-xs text-muted-foreground">Define taxas exatas cobradas por cada operadora de cartão. Mais preciso.</p>
+                        <span className="font-bold text-sm block cursor-pointer text-foreground">Taxa Específica por Bandeira</span>
+                        <p className="text-xs text-muted-foreground mt-0.5">Define taxas exatas cobradas por cada operadora de cartão. Mais preciso.</p>
                       </div>
                     </Label>
                   </RadioGroup>
@@ -189,8 +189,8 @@ export function TaxasCartaoForm({ salao }: TaxasCartaoFormProps) {
 
             <div className="space-y-6">
               {modo === 'unica' ? (
-                <div className="bg-white p-6 rounded-2xl border shadow-sm max-w-sm animate-in fade-in duration-300">
-                  <Label className="font-bold text-slate-700 mb-2 block">Percentual Único de Operação (%)</Label>
+                <div className="bg-card p-5 rounded-xl border border-border max-w-sm animate-in fade-in duration-300">
+                  <Label className="font-bold text-[10px] uppercase tracking-wider text-muted-foreground mb-2 block">Percentual Único de Operação (%)</Label>
                   <Controller
                     control={form.control}
                     name="taxa_unica"
@@ -202,26 +202,26 @@ export function TaxasCartaoForm({ salao }: TaxasCartaoFormProps) {
                           disabled={!isEditable}
                           value={field.value === 0 ? '' : field.value} 
                           onChange={e => field.onChange(parseFloat(e.target.value) || 0)}
-                          className="h-12 pl-4 pr-10 text-lg font-semibold rounded-xl"
+                          className="h-10 pl-4 pr-10 text-sm font-semibold rounded-md border-border bg-background focus:ring-primary/20"
                           placeholder="Ex: 3.99"
                         />
-                        <Percent className="absolute right-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground opacity-50" />
+                        <Percent className="absolute right-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground opacity-50" />
                       </div>
                     )}
                   />
-                  <p className="text-xs text-muted-foreground mt-2 px-1">Se aplicada, usaremos esta taxa para deduzir o valor de entrada automático de todo pagamento em crédito.</p>
+                  <p className="text-[11px] text-muted-foreground mt-2 px-1">Se aplicada, usaremos esta taxa para deduzir o valor de entrada automático de todo pagamento em crédito.</p>
                 </div>
               ) : (
                 <div className="animate-in fade-in duration-300">
-                  <div className="flex items-center gap-2 mb-4 bg-blue-50 text-blue-700 p-3 rounded-xl border border-blue-100">
+                  <div className="flex items-center gap-2 mb-4 bg-blue-50 dark:bg-blue-900/10 text-blue-700 dark:text-blue-300 p-3 rounded-lg border border-blue-200 dark:border-blue-900/30 text-xs font-semibold">
                     <AlertCircle className="h-4 w-4 flex-shrink-0" />
-                    <p className="text-xs font-semibold">Regra de Fallback Ativa: Caso selecione uma bandeira não catalogada na hora da baixa, o sistema aplicará obrigatoriamente a taxa "Outros".</p>
+                    <p>Regra de Fallback Ativa: Caso selecione uma bandeira não catalogada na hora da baixa, o sistema aplicará obrigatoriamente a taxa "Outros".</p>
                   </div>
                   
                   <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
                     {['Visa', 'MasterCard', 'Elo', 'Amex', 'Hipercard', 'Outros'].map((bandeira) => (
-                      <div key={bandeira} className="bg-white p-4 rounded-xl border shadow-sm">
-                        <Label className="font-bold text-slate-700 mb-2 block">{bandeira}</Label>
+                      <div key={bandeira} className="bg-card p-4 rounded-lg border border-border">
+                        <Label className="font-bold text-[10px] uppercase tracking-wider text-muted-foreground mb-2 block">{bandeira}</Label>
                         <Controller
                           control={form.control}
                           name={`taxas_bandeira.${bandeira as keyof TaxasFormData['taxas_bandeira']}`}
@@ -233,7 +233,7 @@ export function TaxasCartaoForm({ salao }: TaxasCartaoFormProps) {
                                 disabled={!isEditable}
                                 value={field.value === 0 ? '' : field.value} 
                                 onChange={e => field.onChange(parseFloat(e.target.value) || 0)}
-                                className="h-10 pr-9 rounded-lg font-medium"
+                                className="h-10 pr-9 rounded-md border-border bg-background focus:ring-primary/20 font-medium"
                                 placeholder={`Taxa de ${bandeira}...`}
                               />
                               <Percent className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground opacity-50" />
