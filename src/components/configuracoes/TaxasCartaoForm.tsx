@@ -10,7 +10,7 @@ import { Label } from '@/components/ui/label'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { useUpdateSalao } from '@/hooks/useSalao'
 import { useToast } from '@/hooks/use-toast'
-import { Save, Loader2, CreditCard, Percent, AlertCircle } from 'lucide-react'
+import { Save, Loader2, Percent, AlertCircle } from 'lucide-react'
 import { Salao } from '@/types/models'
 import { useAuthStore } from '@/store/authStore'
 
@@ -94,14 +94,11 @@ export function TaxasCartaoForm({ salao }: TaxasCartaoFormProps) {
   // Se não for admin, avisar que apenas pode visualizar
   if (!isAdmin) {
     return (
-      <Card className="border-border/50 shadow-xl shadow-primary/5 overflow-hidden rounded-2xl bg-card/50 backdrop-blur-sm">
-        <CardHeader className="border-b border-border/50 bg-muted/20 py-6 px-8 flex flex-row items-center gap-4">
-          <div className="p-3 bg-primary/10 rounded-2xl">
-            <CreditCard className="h-6 w-6 text-primary" />
-          </div>
+      <Card className="border border-border overflow-hidden rounded-lg bg-card">
+        <CardHeader className="border-b border-border bg-accent/20 py-4 px-6">
           <div className="space-y-1">
-            <CardTitle className="text-2xl font-black tracking-tight">Taxas de Cartão</CardTitle>
-            <p className="text-sm text-muted-foreground font-medium">Acesso restrito a administradores.</p>
+            <CardTitle className="text-sm font-semibold uppercase tracking-wider text-foreground">Taxas de Cartão</CardTitle>
+            <p className="text-xs text-muted-foreground mt-0.5">Acesso restrito a administradores.</p>
           </div>
         </CardHeader>
       </Card>
@@ -109,22 +106,17 @@ export function TaxasCartaoForm({ salao }: TaxasCartaoFormProps) {
   }
 
   return (
-    <Card className="border-border/50 shadow-xl shadow-primary/5 overflow-hidden rounded-2xl bg-card/50 backdrop-blur-sm">
-      <CardHeader className="border-b border-border/50 bg-muted/20 py-6 px-8">
-        <div className="flex items-center gap-4">
-          <div className="p-3 bg-primary/10 rounded-2xl">
-            <CreditCard className="h-6 w-6 text-primary" />
-          </div>
-          <div className="space-y-1">
-            <CardTitle className="text-2xl font-black tracking-tight">Taxas de Cartão</CardTitle>
-            <p className="text-sm text-muted-foreground font-medium">
-              Configure as taxas aplicadas no cartão de crédito para cálculos corretos de caixa e comissão.
-            </p>
-          </div>
+    <Card className="border border-border overflow-hidden rounded-lg bg-card">
+      <CardHeader className="border-b border-border bg-accent/20 py-4 px-6">
+        <div className="space-y-1">
+          <CardTitle className="text-sm font-semibold uppercase tracking-wider text-foreground">Taxas de Cartão</CardTitle>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            Configure as taxas aplicadas no cartão de crédito para cálculos corretos de caixa e comissão.
+          </p>
         </div>
       </CardHeader>
 
-      <CardContent className="p-8">
+      <CardContent className="p-6">
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
           
           <Controller

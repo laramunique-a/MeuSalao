@@ -131,3 +131,19 @@ Todos os submenus de abas (ex: Caixa, Relatórios, Configurações) devem seguir
    - **Inativo:** Texto cinza-médio (`text-muted-foreground`) com hover para texto escuro (`hover:text-foreground`).
    - Classes recomendadas: `px-4 py-1.5 rounded-lg text-xs font-semibold uppercase tracking-wider transition-colors`
 
+### 4.3. Padronização de Painéis de Conteúdo das Abas (Submenu Content Panels)
+
+Para garantir consistência visual em todas as páginas configuráveis com abas (ex: Configurações, Relatórios), os painéis de conteúdo (`TabsContent`) devem seguir o **Padrão Serviços** (Card Unificado):
+
+1.  **Card Principal (`Card`):**
+    -   Fundo branco ou superfície tátil (`bg-card`), arredondamento concêntrico e borda fina.
+    -   Classes: `border border-border overflow-hidden rounded-lg bg-card`
+2.  **Cabeçalho do Card (`CardHeader`):**
+    -   Fundo cinza-tátil com realce suave e borda inferior demarcada.
+    -   Classes: `border-b border-border bg-accent/20 py-4 px-6`
+    -   **Título (`CardTitle`):** Caixa alta, negrito, tamanho reduzido: `text-sm font-semibold uppercase tracking-wider text-foreground`. Sem ícones decorativos grandes no título para manter o minimalismo tátil.
+    -   **Descrição (`p`):** Tamanho extra pequeno, tom cinza-médio: `text-xs text-muted-foreground mt-0.5`.
+3.  **Área de Ações do Cabeçalho:**
+    -   Elementos de ação adicionais (ex: botões "+ Novo", badges de contagem, seletores rápidos) devem ficar alinhados à direita no cabeçalho através de um contêiner flexbox: `flex items-center gap-4`.
+4.  **Conteúdo do Card (`CardContent`):**
+    -   Classes: `p-6` (ou `p-0` se contiver tabelas ou elementos que tocam as bordas) para consistência no respiro visual.

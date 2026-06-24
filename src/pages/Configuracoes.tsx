@@ -189,7 +189,17 @@ export default function Configuracoes() {
         </div>
 
         <TabsContent value="salao" className="mt-0 outline-none">
-          <SalaoForm salao={salao} />
+          <Card className="border border-border overflow-hidden rounded-lg bg-card">
+            <CardHeader className="border-b border-border bg-accent/20 py-4 px-6">
+              <div className="space-y-1">
+                <CardTitle className="text-sm font-semibold uppercase tracking-wider text-foreground">Dados do Salão</CardTitle>
+                <p className="text-xs text-muted-foreground mt-0.5">Gerencie as informações cadastrais e a localização do seu estabelecimento.</p>
+              </div>
+            </CardHeader>
+            <CardContent className="p-6">
+              <SalaoForm salao={salao} />
+            </CardContent>
+          </Card>
         </TabsContent>
 
         <TabsContent value="servicos" className="mt-0 outline-none">
