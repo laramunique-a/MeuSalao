@@ -1,15 +1,14 @@
-# Design System & Style Guide (MeuSalão)
+# Design System & Style Guide: Luminous Salon "3D Edition" (MeuSalão)
 
-Este documento estabelece as diretrizes visuais e de interação oficiais para o projeto **MeuSalão**. Ele deve ser tratado como a **única fonte de verdade** para qualquer alteração ou criação de elementos de interface (UI).
+Este documento estabelece as diretrizes visuais e de interação oficiais para o projeto **MeuSalão** na versão **3D Edition**. Ele deve ser tratado como a **única fonte de verdade** para qualquer alteração ou criação de elementos de interface (UI).
 
 ---
 
-## 1. Princípios de Design
+## 1. Princípios de Design e Estética
 
-*   **Foco Absoluto**: Apenas uma ação principal por tela. Elementos secundários ou ações menos frequentes devem permanecer ocultos ou discretos até que o usuário interaja.
-*   **Hierarquia Clara**: A diferenciação visual das informações deve ser feita através de pesos tipográficos, tamanhos e espaçamentos (padding/margin), nunca por cores vibrantes ou sombras chamativas.
-*   **Minimalismo Funcional**: Zero ornamentos. Cada linha, borda ou espaçamento deve possuir um propósito prático de legibilidade e separação de conteúdo.
-*   **Velocidade e Resposta**: Transições de estado devem ser ultra suaves (150ms) e o feedback de interação deve parecer instantâneo para o usuário.
+*   **Minimalismo Tátil / Soft 3D**: Uma interface limpa, leve e moderna que utiliza profundidade e elevação física sutil para criar hierarquia visual, sem depender de cores vibrantes ou ruído visual.
+*   **Hierarquia por Elevação**: Os elementos interativos e principais cards flutuam sobre um fundo off-white suave, utilizando sombras amplas e desfocadas para demarcar sua importância.
+*   **Leveza Visual**: Cores neutras dominantes com acentos discretos e tons pastéis para estados de feedback.
 
 ---
 
@@ -17,123 +16,68 @@ Este documento estabelece as diretrizes visuais e de interação oficiais para o
 
 ### 2.1. Cores (Paleta Oficial)
 
-O sistema de cores baseia-se em tons neutros, quentes e sutis, divididos entre o Modo Claro e o Modo Escuro.
-
-| Elemento | Modo Claro (Hex) | Modo Claro (HSL) | Modo Escuro (Hex) | Modo Escuro (HSL) | Proporção de Uso |
+| Elemento | Modo Claro (Hex) | Modo Claro (HSL) | Modo Escuro (Hex) | Modo Escuro (HSL) | Proporção / Uso |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| **Background Principal** | `#FAFAF7` | `60 23% 97.5%` | `#0A0A0A` | `0 0% 4%` | **90%** (Superfícies) |
-| **Texto Principal** | `#0A0A0A` | `0 0% 4%` | `#ECECEC` | `0 0% 93%` | Leitura primária |
+| **Background Principal** | `#f6f3f2` | `15 10% 96%` | `#0f1011` | `210 5% 6%` | **Fundo Base (Tátil)** |
+| **Superfícies (Cards/Modais)**| `#ffffff` | `0 0% 100%` | `#17181a` | `210 6% 10%` | **Cards de Conteúdo** |
+| **Texto Principal** | `#1a1c1e` | `210 7% 11%` | `#eaebec` | `210 10% 93%` | Leitura primária |
 | **Texto Secundário** | `#6B6B6B` | `0 0% 42%` | `#8E8E8E` | `0 0% 63%` | Metadados/Muted |
-| **Bordas & Divisórias** | `#ECECEC` | `0 0% 93%` | `#1F1F1F` | `0 0% 12%` | Estrutura |
-| **Cor de Destaque (CTA)**| `#1F1F1F` | `0 0% 12%` | `#FFFFFF` | `0 0% 98%` | **10%** (Ações) |
+| **Bordas & Divisórias** | `#ECECEC` | `15 10% 93%` | `#242629` | `210 6% 16%` | Divisórias e bordas |
+| **Cor de Destaque (CTA)**| `#1a1c1e` | `210 7% 11%` | `#ffffff` | `0 0% 100%` | Botões primários / Destaque |
 
-*Nota: Não é permitido o uso de degradês, cores néon ou tons de roxo/índigo como destaque visual dominante.*
+*Nota: Tons pastéis são utilizados unicamente para badges sutilizados de feedback (verde para concluído/pago, âmbar para pendente/atraso).*
 
 ### 2.2. Tipografia
 
-O projeto utiliza duas famílias tipográficas carregadas do Google Fonts:
+O projeto utiliza a família tipográfica **Outfit** carregada do Google Fonts:
 
 *   **Títulos e Cabeçalhos (`h1` a `h6` ou `.font-title`)**:
-    *   **Fonte**: `Inter Tight`
-    *   **Peso**: `500` (Medium)
-    *   **Espaçamento (Tracking)**: Levemente reduzido (`letter-spacing: -0.025em`)
+    *   **Fonte**: `Outfit`
+    *   **Peso**: `600` (SemiBold) ou `700` (Bold)
+    *   **Espaçamento (Tracking)**: Levemente reduzido (`letter-spacing: -0.02em`)
 *   **Corpo de Texto e Parágrafos**:
-    *   **Fonte**: `Inter`
-    *   **Peso**: `400` (Regular) ou `500` (Medium para destaque de leitura)
+    *   **Fonte**: `Outfit`
+    *   **Peso**: `400` (Regular) ou `500` (Medium)
     *   **Altura da Linha (Line-height)**: `1.6`
 
 ### 2.3. Espaçamentos (Grid de 8px)
 
-Toda a diagramação horizontal e vertical segue múltiplos de 8px:
-
 *   `8px` (2xs) – Espaço entre label e input, ou entre ícone e texto.
 *   `16px` (xs) – Espaço entre campos de formulário relacionados.
 *   `24px` (md) – Padding padrão de contêineres e listas.
-*   `32px` (lg) – Distância entre grupos de formulários ou seções pequenas.
-*   `64px` a `96px` (xl/2xl) – Espaçamento grande entre grandes seções de conteúdo.
+*   `32px` (lg) – Distância entre seções ou grupos de formulários.
 
-### 2.4. Arredondamento (Bordas)
+### 2.4. Arredondamento (Bordas) & Sombras (3D)
 
-*   **Border Radius padrão**: **`10px`** (aplicado globalmente a botões, inputs, cards, modais e contêineres).
-*   **Bordas físicas**: 1px sólidas.
-*   **Sombras**: Estritamente proibidas para elementos de estrutura. Apenas permitidas sombras extremamente sutis (1px de espalhamento neutro) em popovers/dropdowns flutuantes sobrepostos.
-
----
-
-## 3. Estrutura e Layout
-
-### 3.1. Limite de Largura de Containers
-
-*   **Páginas de Detalhes, Formulários e Configurações (Conteúdo Centralizado)**:
-    *   Largura máxima: **`720px`** (otimizado para leitura e preenchimento vertical).
-*   **Listagens, Agendas, Caixa, Relatórios e Tabelas de Dados**:
-    *   Largura máxima: **`1120px`** (alta densidade de colunas e dados).
-
-### 3.2. Navegação (Top Bar)
-
-*   **Altura Fixa**: `56px` (`h-14` no Tailwind).
-*   **Visual**: Sem logotipos coloridos, apenas o nome do sistema em texto minimalista.
-*   **Itens**: Links de texto planos no lado esquerdo/centro, seletor de tema claro/escuro e avatar discreto no canto direito.
-*   **Mobile**: Menu hambúrguer no lado esquerdo que abre uma gaveta (drawer) lateral contendo os links com background `#FAFAF7` (Light) ou `#0A0A0A` (Dark).
+*   **Superfícies (Cards, Containers, Modais)**: **`16px a 24px`** (`rounded-2xl` a `rounded-3xl` no Tailwind).
+*   **Elementos menores (Botões, Inputs, Badges)**: **`12px`** (`rounded-md` ou `rounded-xl`).
+*   **Elevação de Cards (Nível 1)**: Sombras extremamente suaves e amplas para flutuação (`box-shadow: 0 10px 30px rgba(0,0,0,0.03)`).
+*   **Elevação de Hover (Nível 2)**: Cards interativos sobem levemente (`translate-y: -2px`) e a sombra se aprofunda ligeiramente no hover.
 
 ---
 
-## 4. Padrões de Componentes
+## 3. Padrões de Componentes
 
-### 4.1. Botões
+### 3.1. Botões
 
 *   **Botão Primário**:
-    *   Fundo plano `#1F1F1F` (Light) ou `#FFFFFF` (Dark).
+    *   Fundo preto sólido `#1a1c1e` (Light) ou `#ffffff` (Dark).
     *   Texto branco (Light) ou preto (Dark).
-    *   Sem sombras.
+    *   Cantos arredondados de `12px` (`rounded-xl`).
 *   **Botão Secundário / Outline**:
-    *   Fundo 100% transparente.
-    *   Borda de 1px sólida (`#ECECEC` no Light / `#1F1F1F` no Dark).
-    *   Texto cor principal (`#0A0A0A` no Light / `#ECECEC` no Dark).
-*   **Estados**:
-    *   *Hover*: Background sutilmente mais escuro em 2% (Light) ou 2% mais claro (Dark).
-    *   *Active*: Efeito de escala suave (`scale: 0.98` ou classe `active:scale-95`).
-    *   *Disabled*: Opacidade reduzida para 50%, interações desabilitadas.
+    *   Fundo cinza-claro tátil ou transparente com borda fina.
+*   **Efeito Interativo**:
+    *   *Hover*: Elevação ou escurecimento leve.
+    *   *Active*: `scale: 0.98` (classe `active:scale-95`).
 
-### 4.2. Formulários
+### 3.2. Inputs e Campos de Formulário
 
-*   **Altura padrão dos campos**: `40px` (`h-10`).
-*   **Inputs & Selects**:
-    *   Borda sólida de 1px (`#ECECEC` no Light / `#1F1F1F` no Dark).
-    *   Fundo neutro e fosco (igual ao background ou levemente translúcido).
-    *   Sem sombras internas.
-    *   *Focus*: Borda muda para o tom de destaque (`#1F1F1F` no Light / `#FFFFFF` no Dark), com anel de foco sutil de 1px (sem brilhos espalhados).
-*   **Labels**: Sempre em caixa alta (uppercase) ou legíveis com tamanho menor (`text-xs`), peso `500` ou `600`, e cor secundária (`#6B6B6B` / `#8E8E8E`).
+*   Altura padrão: `40px` (`h-10`).
+*   Arredondamento: `12px` (`rounded-xl`).
+*   Borda fina sutil (`#ECECEC` ou HSL `15 10% 93%`).
+*   Focus: Borda se sobressai no tom de destaque com anel de foco minimalista.
 
-### 4.3. Tabelas
+### 3.3. Cards e Superfícies
 
-*   **Visual**: Linhas separadas por divisórias finas de 1px.
-*   **Preenchimento**: Sem bordas verticais, apenas linhas horizontais.
-*   **Densidade**: Altura reduzida de células para acomodar mais dados sem poluição visual.
-*   **Cabeçalhos**: Texto menor, em tom secundário, alinhado à esquerda.
-
-### 4.4. Modais e Popovers
-
-*   **Rounding**: Cantos arredondados de `10px`.
-*   **Bordas**: 1px sólida na cor da borda do sistema.
-*   **Fundo**: Fundo plano opaco `#FAFAF7` (ou `#0A0A0A`).
-*   **Animação**: Entrada sutil por fade ou subida suave de 150ms.
-
----
-
-## 5. Padrões de Interação
-
-*   **Duração da Transição**: 150ms.
-*   **Curva de Transição**: `ease-out` (aceleração no início, desaceleração suave no fim).
-*   **Scroll**: Barra de rolagem minimalista (fina e arredondada, sem trilha de background visível).
-*   **Indicação de Atalhos**: Sempre que aplicável (ex: botões de busca, comandos), indicar a tecla de atalho de forma sutil, ex: `⌘K` ou `Ctrl+K` em caixa cinza discreta.
-
----
-
-## 6. Práticas Proibidas (Blacklist Visual)
-
-*   ❌ **Gradients**: Proibido o uso de degradês em backgrounds, botões ou cabeçalhos.
-*   ❌ **Efeitos de Vidro (Glassmorphism)**: Não utilizar `backdrop-blur` com cores semitransparentes vibrantes.
-*   ❌ **Neomorphism**: Sem efeitos de relevo ou sombras duplas.
-*   ❌ **Emojis**: Não utilizar emojis para decorar a interface. Priorizar ícones lineares consistentes (Lucide React).
-*   ❌ **Cores Dominantes Claras**: Roxo, azul, verde ou rosa não podem ser usados como cor dominante da UI. O visual deve ser essencialmente monocromático e neutro.
+*   Todos os cards usam fundo branco puro (`#ffffff` no Light Mode), sem bordas grossas, mas com sombras táteis e arredondamento generoso de `24px` (`rounded-3xl`).
+*   No Modo Escuro, os cards usam o tom cinza-escuro tátil `#17181a` (`rounded-3xl` com sombra e borda fina).

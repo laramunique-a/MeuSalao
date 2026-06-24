@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
 import { useToast } from '@/hooks/use-toast'
+import { Scissors } from 'lucide-react'
 
 const loginSchema = z.object({
   email: z.string().email('Email inválido'),
@@ -52,12 +53,17 @@ export default function Login() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-4">
-      <Card className="w-full max-w-sm border-border bg-card">
-        <CardHeader className="space-y-1.5 pb-4">
-          <CardTitle className="text-xl font-medium text-center tracking-tight">MeuSalão</CardTitle>
-          <CardDescription className="text-center text-xs text-muted-foreground uppercase tracking-widest">
-            Sistema de Gestão
+    <div className="min-h-screen flex items-center justify-center bg-background p-4 font-sans">
+      <Card className="w-full max-w-sm border-none bg-card shadow-2xl rounded-3xl p-3">
+        <CardHeader className="space-y-1 pb-4">
+          <div className="flex justify-center mb-3">
+            <div className="p-3 bg-accent text-foreground rounded-2xl shadow-sm border border-border/10">
+              <Scissors className="h-6 w-6" />
+            </div>
+          </div>
+          <CardTitle className="text-2xl font-semibold text-center tracking-tight text-foreground">MeuSalão</CardTitle>
+          <CardDescription className="text-center text-[10px] text-muted-foreground uppercase tracking-widest font-medium mt-1">
+            Sistema de Gestão 3D
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -68,16 +74,17 @@ export default function Login() {
                 name="email"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Email</FormLabel>
+                    <FormLabel className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Email</FormLabel>
                     <FormControl>
                       <Input
                         type="email"
                         placeholder="seu@email.com"
+                        className="rounded-xl border-border bg-background/50 h-10 px-3 text-xs"
                         {...field}
                         disabled={isLoading}
                       />
                     </FormControl>
-                    <FormMessage />
+                    <FormMessage className="text-[10px]" />
                   </FormItem>
                 )}
               />
@@ -86,21 +93,26 @@ export default function Login() {
                 name="password"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Senha</FormLabel>
+                    <FormLabel className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Senha</FormLabel>
                     <FormControl>
                       <Input
                         type="password"
                         placeholder="••••••"
+                        className="rounded-xl border-border bg-background/50 h-10 px-3 text-xs"
                         {...field}
                         disabled={isLoading}
                       />
                     </FormControl>
-                    <FormMessage />
+                    <FormMessage className="text-[10px]" />
                   </FormItem>
                 )}
               />
-              <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading ? 'Entrando...' : 'Entrar'}
+              <Button 
+                type="submit" 
+                className="w-full h-11 text-xs font-semibold uppercase tracking-wider rounded-xl shadow-md hover:shadow-lg active:scale-[0.98] transition-all bg-primary text-primary-foreground mt-2" 
+                disabled={isLoading}
+              >
+                {isLoading ? 'Entrando...' : 'Acessar Painel'}
               </Button>
             </form>
           </Form>
