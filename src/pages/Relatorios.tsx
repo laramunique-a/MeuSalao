@@ -620,7 +620,11 @@ export default function Relatorios() {
           <div className="bg-card rounded-lg border border-border p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="space-y-1">
               <h2 className="text-sm font-semibold uppercase tracking-widest text-foreground">Folha de Pagamento</h2>
-              <p className="text-xs text-muted-foreground mt-0.5">Histórico de comissões pagas manualmente para os profissionais do salão.</p>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                {isProfissional
+                  ? 'Histórico de comissões pagas'
+                  : 'Histórico de comissões pagas manualmente para os profissionais do salão.'}
+              </p>
             </div>
 
             {/* Filter by Professional */}
