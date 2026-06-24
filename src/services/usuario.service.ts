@@ -103,4 +103,18 @@ export const usuarioService = {
   async toggleAtivo(id: string, ativo: boolean): Promise<Usuario> {
     return this.updateUsuario(id, { ativo })
   },
+
+  async deleteUsuario(id: string): Promise<void> {
+    const { error } = await (supabase
+      .from('usuario') as any)
+      .delete()
+      .eq('id', id)
+
+    if (error) {
+      if (error.code === '42501') {
+        throw new Error('Erro de permissão: apenas administradores podem excluir usuários.')
+      }
+      throw error
+    }
+  },
 }

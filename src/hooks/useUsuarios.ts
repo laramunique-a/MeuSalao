@@ -52,3 +52,15 @@ export function useToggleAtivoUsuario() {
     },
   })
 }
+
+export function useDeleteUsuario() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (id: string) => usuarioService.deleteUsuario(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['usuarios'] })
+      queryClient.invalidateQueries({ queryKey: ['profissionais'] })
+    },
+  })
+}
