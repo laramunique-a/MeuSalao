@@ -102,7 +102,7 @@ export function SalaoForm({ salao }: SalaoFormProps) {
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 max-w-[720px] mx-auto">
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
         <div className="space-y-6">
             <Card className="border-border/50 shadow-md rounded-xl overflow-hidden bg-card/50 backdrop-blur-sm">
               <div className="bg-muted/30 px-5 py-3 border-b border-border/50 flex items-center gap-2">

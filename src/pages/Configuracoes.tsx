@@ -189,9 +189,7 @@ export default function Configuracoes() {
         </div>
 
         <TabsContent value="salao" className="mt-0 outline-none">
-          <div className="max-w-[720px] mx-auto">
-            <SalaoForm salao={salao} />
-          </div>
+          <SalaoForm salao={salao} />
         </TabsContent>
 
         <TabsContent value="servicos" className="mt-0 outline-none">
@@ -281,9 +279,7 @@ export default function Configuracoes() {
         </TabsContent>
 
         <TabsContent value="financeiro" className="mt-0 outline-none">
-          <div className="max-w-[720px] mx-auto">
-            <TaxasCartaoForm salao={salao} />
-          </div>
+          <TaxasCartaoForm salao={salao} />
         </TabsContent>
       </Tabs>
 
