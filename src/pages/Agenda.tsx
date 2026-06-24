@@ -296,14 +296,11 @@ export default function Agenda() {
                       handleToday()
                     }}
                     className={cn(
-                      "text-xs font-semibold px-2 py-0.5 rounded-md hover:bg-accent text-muted-foreground hover:text-foreground active:scale-95 transition-all cursor-pointer relative",
-                      isToday && "text-foreground font-bold bg-accent"
+                      "text-xs font-bold uppercase tracking-wider px-2 py-1 rounded-md hover:bg-accent text-muted-foreground hover:text-foreground active:scale-95 transition-all cursor-pointer",
+                      isToday && "text-foreground bg-accent"
                     )}
                   >
-                    Hoje
-                    {isToday && (
-                      <span className="absolute bottom-[2px] left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-foreground" />
-                    )}
+                    HOJE
                   </span>
 
                   {/* Vertical separator */}
@@ -357,7 +354,7 @@ export default function Agenda() {
         <div className="flex flex-wrap items-center gap-2 sm:gap-3 w-full md:w-auto">
           <div className="flex items-center gap-2 flex-1 md:flex-none min-w-0">
             <Select value={filterProfissional} onValueChange={setFilterProfissional}>
-              <SelectTrigger className="w-full md:w-[180px] h-10 bg-background border-border rounded-xl">
+              <SelectTrigger className="w-full md:w-[180px] h-10 bg-background border-border rounded-xl justify-center gap-2">
                 <SelectValue placeholder="Profissional" />
               </SelectTrigger>
               <SelectContent>
