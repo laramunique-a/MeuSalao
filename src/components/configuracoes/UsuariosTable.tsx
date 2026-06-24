@@ -88,7 +88,7 @@ export function UsuariosTable({ usuarios, onEdit }: UsuariosTableProps) {
                   </div>
                 </TableCell>
                 <TableCell className="py-3">
-                  <Badge variant="outline" className="text-[10px] font-bold border-blue-200 text-blue-700 bg-blue-50/30 px-2 py-0.5">
+                  <Badge variant="outline" className="text-[10px] font-bold border-blue-200 dark:border-blue-900/30 text-blue-700 dark:text-blue-300 bg-blue-50/30 dark:bg-blue-900/10 px-2 py-0.5">
                     {(usuario as any).comissao_percentual || 0}%
                   </Badge>
                 </TableCell>

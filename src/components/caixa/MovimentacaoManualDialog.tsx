@@ -19,7 +19,7 @@ import {
 } from '@/components/ui/select'
 import { useCreateTransacao } from '@/hooks/useCaixa'
 import { useToast } from '@/hooks/use-toast'
-import { MoveDown, MoveUp, ShieldAlert, SlidersHorizontal, User } from 'lucide-react'
+import { MoveDown, MoveUp, ShieldAlert, SlidersHorizontal, User, AlertCircle } from 'lucide-react'
 import { useAuthStore } from '@/store/authStore'
 import { useProfissionais } from '@/hooks/useProfissionais'
 
@@ -195,12 +195,15 @@ export function MovimentacaoManualDialog({ open, onOpenChange }: MovimentacaoMan
             </Select>
 
             {/* Explicação de Apoio */}
-            <div className="text-[11px] text-muted-foreground bg-slate-50 p-2 rounded-lg border border-slate-100">
-              {tipoMovimento === 'entrada' && "Utilize para registrar valores que entraram no caixa (receitas)."}
-              {tipoMovimento === 'saida' && "Utilize para registrar pagamentos ou despesas gerais do salão."}
-              {tipoMovimento === 'comissao' && "Utilize para registrar saídas referentes a pagamentos de comissões aos profissionais."}
-              {tipoMovimento === 'retirada' && "Utilize quando retirar dinheiro do caixa por segurança. Não é considerado despesa contábil."}
-              {tipoMovimento === 'ajuste' && "Utilize para corrigir diferenças de valores no caixa (positivas ou negativas)."}
+            <div className="flex items-start gap-2 bg-blue-50 dark:bg-blue-900/10 text-blue-700 dark:text-blue-300 p-3 rounded-lg border border-blue-200 dark:border-blue-900/30 text-xs font-semibold">
+              <AlertCircle className="h-4 w-4 flex-shrink-0 mt-0.5" />
+              <p>
+                {tipoMovimento === 'entrada' && "Utilize para registrar valores que entraram no caixa (receitas)."}
+                {tipoMovimento === 'saida' && "Utilize para registrar pagamentos ou despesas gerais do salão."}
+                {tipoMovimento === 'comissao' && "Utilize para registrar saídas referentes a pagamentos de comissões aos profissionais."}
+                {tipoMovimento === 'retirada' && "Utilize quando retirar dinheiro do caixa por segurança. Não é considerado despesa contábil."}
+                {tipoMovimento === 'ajuste' && "Utilize para corrigir diferenças de valores no caixa (positivas ou negativas)."}
+              </p>
             </div>
           </div>
 

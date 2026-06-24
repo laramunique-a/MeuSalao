@@ -117,6 +117,28 @@ Para garantir a consistência visual no gerenciamento de listagens e dados tabul
 *   **Botões de Ação**:
     -   Ghost buttons arredondados e de tamanho reduzido: `h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-accent/80 transition-all rounded-lg` com ícones `h-3.5 w-3.5` (ex: `Pencil`, `Trash2`).
 
+### 3.6. Componente de Calendário / Navegador de Datas (`DateNavigator`)
+
+O seletor e navegador de datas principal é componentizado para reutilização em telas que necessitam de controle diário/semanal ou filtragem por período de datas (ex: **Agenda** e **Caixa > Histórico**).
+*   **Estética Tátil**: Segue o padrão de pílula soft 3D com altura `h-10` e cantos arredondados de `20px` (`rounded-xl`).
+*   **Composição**:
+    1.  *Chevron Esquerdo*: Retrocede o dia/período.
+    2.  *Popover Seletor*: Abre o Popover contendo o `<Calendar />` nativo.
+        -   Contém o ícone `CalendarIcon` adjacente ao atalho (ex: `"HOJE"` ou `"ESTE MÊS"`).
+        -   Atalho em caixa alta (`font-bold uppercase tracking-wider`).
+        -   Divisor vertical fino (`h-5 w-[1px] bg-border mx-1`).
+        -   Texto explicativo formatado da data (Sub-label menor em uppercase e data principal em bold).
+    3.  *Chevron Direito*: Avança o dia/período.
+*   **Comportamento de Período (Range)**: Quando em modo `range`, as setas do navegador deslocam de forma inteligente: pulando de mês em mês caso o período selecionado seja o mês fechado, ou deslocando pela quantidade exata de dias da seleção customizada.
+
+### 3.7. Texto Informativo / Auxiliar (Alerta Azul)
+
+Para caixas e seções de textos explicativos de suporte (ex: detalhes de taxas de cartão ou informações de movimentação de caixa), deve-se utilizar exclusivamente a estilização de destaque azul do tema para evitar variações visuais.
+*   **Classes recomendadas**: `flex items-start gap-2 bg-blue-50 dark:bg-blue-900/10 text-blue-700 dark:text-blue-300 p-3 rounded-lg border border-blue-200 dark:border-blue-900/30 text-xs font-semibold`
+*   **Elementos obrigatórios**:
+    -   Ícone explicativo à esquerda: `AlertCircle` com classes `h-4 w-4 flex-shrink-0 mt-0.5`.
+    -   Texto em parágrafo (`p`), mantendo legibilidade tátil.
+
 ---
 
 ## 4. Animações e Navegação
