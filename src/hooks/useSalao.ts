@@ -13,7 +13,6 @@ export function useSalao() {
   // Sincronizar dados com localStorage para evitar flash no carregamento
   if (query.data) {
     localStorage.setItem('salao_nome', query.data.nome)
-    if (query.data.logo_url) localStorage.setItem('salao_logo', query.data.logo_url)
     if (query.data.cor_primaria) localStorage.setItem('salao_cor', query.data.cor_primaria)
   }
 
@@ -31,13 +30,3 @@ export function useUpdateSalao() {
   })
 }
 
-export function useUploadLogo() {
-  const queryClient = useQueryClient()
-
-  return useMutation({
-    mutationFn: (file: File) => salaoService.uploadLogo(file),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['salao'] })
-    },
-  })
-}

@@ -134,4 +134,26 @@
   .dark .interactive-card:hover {
     box-shadow: 0 16px 40px rgba(0, 0, 0, 0.35) !important;
   }
+
+  /* Animação para Menus Ativos / Selecionados */
+  @keyframes active-menu-highlight {
+    0%, 100% {
+      transform: scale(1);
+      filter: brightness(1);
+    }
+    50% {
+      transform: scale(1.02);
+      filter: brightness(1.05);
+    }
+  }
+
+  .active-menu-item {
+    animation: active-menu-highlight 2s infinite ease-in-out;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05) !important;
+    border: 1px solid rgba(0, 0, 0, 0.05) !important;
+  }
+  .dark .active-menu-item {
+    box-shadow: 0 4px 12px rgba(255, 255, 255, 0.05) !important;
+    border: 1px solid rgba(255, 255, 255, 0.05) !important;
+  }
 }

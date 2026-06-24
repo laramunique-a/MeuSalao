@@ -12,12 +12,11 @@ import {
   FormMessage,
 } from '@/components/ui/form'
 import { Card, CardContent } from '@/components/ui/card'
-import { useUpdateSalao, useUploadLogo } from '@/hooks/useSalao'
+import { useUpdateSalao } from '@/hooks/useSalao'
 import { useToast } from '@/hooks/use-toast'
-import { Upload, Store, MapPin, Loader2, Save } from 'lucide-react'
+import { Store, MapPin, Loader2, Save } from 'lucide-react'
 import { useState, useRef, useEffect } from 'react'
 import { Salao } from '@/types/models'
-import { cn } from '@/lib/utils'
 
 interface SalaoFormProps {
   salao: Salao
@@ -26,9 +25,6 @@ interface SalaoFormProps {
 export function SalaoForm({ salao }: SalaoFormProps) {
   const { toast } = useToast()
   const updateSalao = useUpdateSalao()
-  const uploadLogo = useUploadLogo()
-  const fileInputRef = useRef<HTMLInputElement>(null)
-  const [logoPreview, setLogoPreview] = useState<string | null>(salao.logo_url)
   const [isFetchingCep, setIsFetchingCep] = useState(false)
 
   const form = useForm<SalaoFormData>({
@@ -104,51 +100,6 @@ export function SalaoForm({ salao }: SalaoFormProps) {
     }
   }
 
-  async function handleLogoUpload(event: React.ChangeEvent<HTMLInputElement>) {
-    const file = event.target.files?.[0]
-    if (!file) return
-
-    if (!file.type.startsWith('image/')) {
-      toast({
-        title: 'Arquivo inválido',
-        description: 'Por favor, selecione uma imagem.',
-        variant: 'destructive',
-      })
-      return
-    }
-
-    if (file.size > 2 * 1024 * 1024) {
-      toast({
-        title: 'Arquivo muito grande',
-        description: 'O tamanho máximo é 2MB.',
-        variant: 'destructive',
-      })
-      return
-    }
-
-    try {
-      const previewUrl = URL.createObjectURL(file)
-      setLogoPreview(previewUrl)
-
-      const publicUrl = await uploadLogo.mutateAsync(file)
-      await updateSalao.mutateAsync({ logo_url: publicUrl })
-      
-      // Importante: Atualizar o valor no form para não sobrescrever ao Salvar no final
-      form.setValue('logo_url', publicUrl)
-
-      toast({
-        title: 'Logo atualizado!',
-        description: 'O logo do salão foi atualizado com sucesso.',
-      })
-    } catch (error: any) {
-      toast({
-        title: 'Erro ao fazer upload',
-        description: error.message,
-        variant: 'destructive',
-      })
-    }
-  }
-
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 max-w-[720px] mx-auto">
@@ -159,83 +110,49 @@ export function SalaoForm({ salao }: SalaoFormProps) {
                 <h3 className="font-bold text-sm">Informações do Estabelecimento</h3>
               </div>
               <CardContent className="p-5">
-                <div className="flex flex-col md:flex-row gap-6">
-                  {/* Logo Section */}
-                  <div className="flex flex-col items-center gap-2 pt-2">
-                    <div 
-                      className={cn(
-                        "group relative w-32 h-32 border-2 border-dashed rounded-2xl flex items-center justify-center overflow-hidden transition-all duration-300 cursor-pointer",
-                        logoPreview ? "border-primary/20 bg-background" : "border-muted-foreground/20 bg-muted/10 hover:border-primary/40"
-                      )}
-                      onClick={() => fileInputRef.current?.click()}
-                    >
-                      {logoPreview ? (
-                        <>
-                          <img src={logoPreview} alt="Logo" className="w-full h-full object-contain p-2" />
-                          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-[1px]">
-                            <span className="text-white text-xs font-bold bg-primary px-3 py-1 rounded-full">Alterar</span>
-                          </div>
-                        </>
-                      ) : (
-                        <div className="text-center p-4">
-                          <Upload className="w-6 h-6 text-muted-foreground/40 mx-auto mb-1" />
-                          <span className="text-[10px] font-bold text-muted-foreground/40 uppercase tracking-tighter">Enviar Logo</span>
-                        </div>
-                      )}
-                      {uploadLogo.isPending && (
-                        <div className="absolute inset-0 bg-background/60 backdrop-blur-sm flex items-center justify-center">
-                          <Loader2 className="h-6 w-6 animate-spin text-primary" />
-                        </div>
-                      )}
-                    </div>
-                    <p className="text-[10px] text-muted-foreground font-medium">PNG ou JPG até 2MB</p>
-                    <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleLogoUpload} />
-                  </div>
+                {/* Basic Fields */}
+                <div className="space-y-4">
+                  <FormField
+                    control={form.control}
+                    name="nome"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="font-bold text-[10px] uppercase tracking-wider text-muted-foreground">Nome do Salão *</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Nome Fantasia" {...field} className="h-10 rounded-lg border-border/50 bg-background/50 focus:ring-primary/20" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
 
-                  {/* Basic Fields */}
-                  <div className="flex-1 space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <FormField
                       control={form.control}
-                      name="nome"
+                      name="cnpj"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel className="font-bold text-[10px] uppercase tracking-wider text-muted-foreground">Nome do Salão *</FormLabel>
+                          <FormLabel className="font-bold text-[10px] uppercase tracking-wider text-muted-foreground">CNPJ</FormLabel>
                           <FormControl>
-                            <Input placeholder="Nome Fantasia" {...field} className="h-10 rounded-lg border-border/50 bg-background/50 focus:ring-primary/20" />
+                            <Input placeholder="00.000.000/0000-00" {...field} className="h-10 rounded-lg border-border/50 bg-background/50" />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
                       )}
                     />
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <FormField
-                        control={form.control}
-                        name="cnpj"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel className="font-bold text-[10px] uppercase tracking-wider text-muted-foreground">CNPJ</FormLabel>
-                            <FormControl>
-                              <Input placeholder="00.000.000/0000-00" {...field} className="h-10 rounded-lg border-border/50 bg-background/50" />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={form.control}
-                        name="telefone"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel className="font-bold text-[10px] uppercase tracking-wider text-muted-foreground">Telefone</FormLabel>
-                            <FormControl>
-                              <Input placeholder="(00) 00000-0000" {...field} className="h-10 rounded-lg border-border/50 bg-background/50" />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
+                    <FormField
+                      control={form.control}
+                      name="telefone"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="font-bold text-[10px] uppercase tracking-wider text-muted-foreground">Telefone</FormLabel>
+                          <FormControl>
+                            <Input placeholder="(00) 00000-0000" {...field} className="h-10 rounded-lg border-border/50 bg-background/50" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
                   </div>
                 </div>
               </CardContent>

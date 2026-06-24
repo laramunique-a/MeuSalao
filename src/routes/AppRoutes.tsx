@@ -8,7 +8,6 @@ import Login from '@/pages/Login'
 import Dashboard from '@/pages/Dashboard'
 import Agenda from '@/pages/Agenda'
 import Clientes from '@/pages/Clientes'
-import Servicos from '@/pages/Servicos'
 import Caixa from '@/pages/Caixa'
 import Relatorios from '@/pages/Relatorios'
 import Configuracoes from '@/pages/Configuracoes'
@@ -30,7 +29,6 @@ export default function AppRoutes() {
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/agenda" element={<Agenda />} />
             <Route path="/clientes" element={<Clientes />} />
-            <Route path="/servicos" element={<Servicos />} />
             <Route path="/caixa" element={<Caixa />} />
 
             <Route element={<AdminRoute />}>

@@ -4,7 +4,6 @@ import {
   LayoutDashboard,
   Calendar,
   Users,
-  Scissors,
   DollarSign,
   BarChart3,
   Settings,
@@ -25,27 +24,22 @@ export function Sidebar({ open, setOpen }: SidebarProps) {
 
   const navigation = [
     { name: 'Agenda', to: '/', icon: Calendar },
-    { name: 'Clientes', to: '/clientes', icon: Users },
-    ...(isAdmin ? [{ name: 'Serviços', to: '/servicos', icon: Scissors }] : []),
     { name: 'Caixa', to: '/caixa', icon: DollarSign },
-  ]
-
-  const adminNavigation = [
-    { name: 'Dashboard', to: '/dashboard', icon: LayoutDashboard },
-    { name: 'Relatórios', to: '/relatorios', icon: BarChart3 },
-    { name: 'Configurações', to: '/configuracoes', icon: Settings },
-  ]
-
-  const masterNavigation = [
-    { name: 'Painel Master', to: '/master', icon: ShieldCheck },
+    ...(isAdmin ? [{ name: 'Relatórios', to: '/relatorios', icon: BarChart3 }] : []),
+    { name: 'Clientes', to: '/clientes', icon: Users },
+    ...(isAdmin ? [
+      { name: 'Dashboard', to: '/dashboard', icon: LayoutDashboard },
+      { name: 'Configurações', to: '/configuracoes', icon: Settings },
+    ] : []),
+    ...(isSuperAdmin ? [{ name: 'Painel Master', to: '/master', icon: ShieldCheck }] : []),
   ]
 
   const navLinkClass = ({ isActive }: { isActive: boolean }) =>
     cn(
-      'group flex items-center px-3 py-2.5 text-xs font-semibold uppercase tracking-wider rounded-lg transition-colors',
+      'group flex items-center px-3 py-2.5 text-xs font-semibold uppercase tracking-wider rounded-lg transition-all duration-200',
       isActive
-        ? 'bg-primary text-primary-foreground font-bold'
-        : 'text-muted-foreground hover:bg-accent/50 hover:text-foreground'
+        ? 'bg-primary text-primary-foreground font-bold active-menu-item'
+        : 'text-muted-foreground hover:bg-accent/80 hover:text-foreground hover:translate-x-1'
     )
 
   return (
@@ -84,48 +78,6 @@ export function Sidebar({ open, setOpen }: SidebarProps) {
               {item.name}
             </NavLink>
           ))}
-
-          {isAdmin && (
-            <>
-              <div className="pt-4 pb-1">
-                <p className="px-3 text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
-                  Administração
-                </p>
-              </div>
-              {adminNavigation.map((item) => (
-                <NavLink
-                  key={item.name}
-                  to={item.to}
-                  onClick={() => setOpen(false)}
-                  className={navLinkClass}
-                >
-                  <item.icon className="mr-3 h-4 w-4 shrink-0" />
-                  {item.name}
-                </NavLink>
-              ))}
-            </>
-          )}
-
-          {isSuperAdmin && (
-            <>
-              <div className="pt-4 pb-1">
-                <p className="px-3 text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
-                  Plataforma
-                </p>
-              </div>
-              {masterNavigation.map((item) => (
-                <NavLink
-                  key={item.name}
-                  to={item.to}
-                  onClick={() => setOpen(false)}
-                  className={navLinkClass}
-                >
-                  <item.icon className="mr-3 h-4 w-4 shrink-0" />
-                  {item.name}
-                </NavLink>
-              ))}
-            </>
-          )}
         </nav>
 
         <div className="p-4 border-t border-border mt-auto">

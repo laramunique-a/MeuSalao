@@ -81,3 +81,37 @@ O projeto utiliza a família tipográfica **Outfit** carregada do Google Fonts:
 
 *   Todos os cards usam fundo branco puro (`#ffffff` no Light Mode), sem bordas grossas, mas com sombras táteis e arredondamento generoso de `24px` (`rounded-3xl`).
 *   No Modo Escuro, os cards usam o tom cinza-escuro tátil `#17181a` (`rounded-3xl` com sombra e borda fina).
+
+---
+
+## 4. Animações e Navegação
+
+### 4.1. Animação de Itens Ativos (Menu)
+
+Para manter a consistência tátil 3D, todo item de menu selecionado (ativo) deve aplicar a animação de pulso suave e elevação física:
+- **Classe CSS:** `.active-menu-item`
+- **Comportamento:** A escala do botão oscila sutilmente entre `1` e `1.02`, e a sombra tátil se expande ligeiramente de forma contínua em um ciclo de 2 segundos.
+- **Implementação:**
+  ```css
+  @keyframes active-menu-highlight {
+    0%, 100% {
+      transform: scale(1);
+    }
+    50% {
+      transform: scale(1.02);
+    }
+  }
+  ```
+
+### 4.2. Padronização de Submenus (Tabs/Navegação Secundária)
+
+Todos os submenus de abas (ex: Caixa, Relatórios, Configurações) devem seguir a estrutura tátil em camadas (soft depth):
+1. **Container Externo (Card Base):** Fundo branco (`bg-card`), arredondamento de 16px a 24px, sombra suave e borda sutil.
+   - Classes recomendadas: `bg-card p-3 rounded-lg border border-border`
+2. **Container Interno (Tabs Wrapper):** Fundo cinza tátil (`bg-background` no modo claro), recuado, com bordas finas.
+   - Classes recomendadas: `flex items-center gap-1 bg-background rounded-lg border border-border p-0.5 w-fit`
+3. **Triggers/Botões das Abas:** Estilo pílula.
+   - **Ativo:** Fundo cinza-tátil médio (`bg-accent`), texto de contraste e peso em negrito (`font-bold`).
+   - **Inativo:** Texto cinza-médio (`text-muted-foreground`) com hover para texto escuro (`hover:text-foreground`).
+   - Classes recomendadas: `px-4 py-1.5 rounded-lg text-xs font-semibold uppercase tracking-wider transition-colors`
+

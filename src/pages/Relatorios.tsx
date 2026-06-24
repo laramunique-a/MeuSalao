@@ -140,40 +140,42 @@ export default function Relatorios() {
       </div>
 
       {/* Report Types Selector (Modo Premium) */}
-      <div className="flex flex-wrap items-center gap-1.5 bg-card p-1 rounded-lg border border-border w-fit">
-        <button
-          onClick={() => setActiveReportTab('cliente')}
-          className={cn(
-            "px-4 py-1.5 rounded-lg text-xs font-semibold uppercase tracking-wider transition-colors",
-            activeReportTab === 'cliente'
-              ? 'bg-accent text-foreground font-bold'
-              : 'text-muted-foreground hover:text-foreground'
-          )}
-        >
-          Histórico do Cliente
-        </button>
-        <button
-          onClick={() => setActiveReportTab('caixa')}
-          className={cn(
-            "px-4 py-1.5 rounded-lg text-xs font-semibold uppercase tracking-wider transition-colors",
-            activeReportTab === 'caixa'
-              ? 'bg-accent text-foreground font-bold'
-              : 'text-muted-foreground hover:text-foreground'
-          )}
-        >
-          Pendências por Caixa
-        </button>
-        <button
-          onClick={() => setActiveReportTab('folha')}
-          className={cn(
-            "px-4 py-1.5 rounded-lg text-xs font-semibold uppercase tracking-wider transition-colors",
-            activeReportTab === 'folha'
-              ? 'bg-accent text-foreground font-bold'
-              : 'text-muted-foreground hover:text-foreground'
-          )}
-        >
-          Folha de Pagamento
-        </button>
+      <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 mb-8 bg-card p-3 rounded-lg border border-border">
+        <div className="flex items-center gap-1 bg-background rounded-lg border border-border p-0.5 w-fit">
+          <button
+            onClick={() => setActiveReportTab('cliente')}
+            className={cn(
+              "px-4 py-1.5 rounded-lg text-xs font-semibold uppercase tracking-wider transition-colors",
+              activeReportTab === 'cliente'
+                ? 'bg-accent text-foreground font-bold'
+                : 'text-muted-foreground hover:text-foreground'
+            )}
+          >
+            Histórico do Cliente
+          </button>
+          <button
+            onClick={() => setActiveReportTab('caixa')}
+            className={cn(
+              "px-4 py-1.5 rounded-lg text-xs font-semibold uppercase tracking-wider transition-colors",
+              activeReportTab === 'caixa'
+                ? 'bg-accent text-foreground font-bold'
+                : 'text-muted-foreground hover:text-foreground'
+            )}
+          >
+            Pendências por Caixa
+          </button>
+          <button
+            onClick={() => setActiveReportTab('folha')}
+            className={cn(
+              "px-4 py-1.5 rounded-lg text-xs font-semibold uppercase tracking-wider transition-colors",
+              activeReportTab === 'folha'
+                ? 'bg-accent text-foreground font-bold'
+                : 'text-muted-foreground hover:text-foreground'
+            )}
+          >
+            Folha de Pagamento
+          </button>
+        </div>
       </div>
 
       {/* RENDER - Relatório de Cliente */}

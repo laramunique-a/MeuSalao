@@ -31,25 +31,4 @@ export const salaoService = {
     if (error) throw error
     return data as Salao
   },
-
-  async uploadLogo(file: File): Promise<string> {
-    const usuario = useAuthStore.getState().usuario
-    if (!usuario) throw new Error('Usuário não autenticado')
-
-    const fileExt = file.name.split('.').pop()
-    const fileName = `${usuario.salao_id}.${fileExt}`
-    const filePath = `logos/${fileName}`
-
-    const { error: uploadError } = await supabase.storage
-      .from('salao-logos')
-      .upload(filePath, file, { upsert: true })
-
-    if (uploadError) throw uploadError
-
-    const { data: publicUrlData } = supabase.storage
-      .from('salao-logos')
-      .getPublicUrl(filePath)
-
-    return publicUrlData.publicUrl
-  },
 }

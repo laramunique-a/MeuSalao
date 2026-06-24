@@ -34,12 +34,11 @@ export function Header({ onMenuClick }: HeaderProps) {
 
   const navigation = [
     { name: 'Agenda', to: '/' },
-    { name: 'Clientes', to: '/clientes' },
-    ...(isAdmin ? [{ name: 'Serviços', to: '/servicos' }] : []),
     { name: 'Caixa', to: '/caixa' },
+    ...(isAdmin ? [{ name: 'Relatórios', to: '/relatorios' }] : []),
+    { name: 'Clientes', to: '/clientes' },
     ...(isAdmin ? [
       { name: 'Dashboard', to: '/dashboard' },
-      { name: 'Relatórios', to: '/relatorios' },
       { name: 'Configurações', to: '/configuracoes' },
     ] : []),
     ...(isSuperAdmin ? [{ name: 'Painel Master', to: '/master' }] : []),
@@ -65,17 +64,17 @@ export function Header({ onMenuClick }: HeaderProps) {
           </div>
 
           {/* Navegação Horizontal (Apenas Desktop) */}
-          <nav className="hidden lg:flex items-center gap-6">
+          <nav className="hidden lg:flex items-center gap-2">
             {navigation.map((item) => (
               <NavLink
                 key={item.name}
                 to={item.to}
                 className={({ isActive }) =>
                   cn(
-                    'text-xs font-medium uppercase tracking-wider transition-colors',
+                    'text-xs font-semibold uppercase tracking-wider px-3 py-2 rounded-lg transition-all duration-200',
                     isActive
-                      ? 'text-foreground font-semibold'
-                      : 'text-muted-foreground hover:text-foreground'
+                      ? 'bg-primary text-primary-foreground font-bold active-menu-item'
+                      : 'text-muted-foreground hover:bg-accent/80 hover:text-foreground'
                   )
                 }
               >
