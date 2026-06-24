@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { NavLink } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
 import {
@@ -9,9 +10,11 @@ import {
   Settings,
   ShieldCheck,
   LogOut,
+  KeyRound,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useSalao } from '@/hooks/useSalao'
+import { AlterarSenhaDialog } from '@/components/auth/AlterarSenhaDialog'
 
 interface SidebarProps {
   open: boolean
@@ -21,11 +24,12 @@ interface SidebarProps {
 export function Sidebar({ open, setOpen }: SidebarProps) {
   const { isAdmin, isSuperAdmin, logout } = useAuth()
   const { data: salao } = useSalao()
+  const [senhaDialogOpen, setSenhaDialogOpen] = useState(false)
 
   const navigation = [
     { name: 'Agenda', to: '/', icon: Calendar },
     { name: 'Caixa', to: '/caixa', icon: DollarSign },
-    ...(isAdmin ? [{ name: 'Relatórios', to: '/relatorios', icon: BarChart3 }] : []),
+    { name: 'Relatórios', to: '/relatorios', icon: BarChart3 },
     { name: 'Clientes', to: '/clientes', icon: Users },
     ...(isAdmin ? [
       { name: 'Dashboard', to: '/dashboard', icon: LayoutDashboard },
@@ -82,6 +86,13 @@ export function Sidebar({ open, setOpen }: SidebarProps) {
 
         <div className="p-4 border-t border-border mt-auto">
           <button
+            onClick={() => setSenhaDialogOpen(true)}
+            className="w-full group flex items-center px-3 py-2.5 text-xs font-semibold uppercase tracking-wider rounded-lg transition-colors text-muted-foreground hover:text-foreground hover:bg-accent/80 mb-1"
+          >
+            <KeyRound className="mr-3 h-4 w-4 shrink-0" />
+            Alterar Senha
+          </button>
+          <button
             onClick={logout}
             className="w-full group flex items-center px-3 py-2.5 text-xs font-semibold uppercase tracking-wider rounded-lg transition-colors text-destructive hover:bg-destructive/10"
           >
@@ -90,6 +101,7 @@ export function Sidebar({ open, setOpen }: SidebarProps) {
           </button>
         </div>
       </div>
+      <AlterarSenhaDialog open={senhaDialogOpen} onOpenChange={setSenhaDialogOpen} />
     </>
   )
 }

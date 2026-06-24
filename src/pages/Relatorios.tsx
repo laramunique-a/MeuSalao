@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useClientes } from '@/hooks/useClientes'
 import { useClienteReport, useCaixaPendenciasReport, useFolhaPagamentoReport } from '@/hooks/useRelatorios'
 import { useProfissionais } from '@/hooks/useProfissionais'
+import { useAuthStore } from '@/store/authStore'
 import {
   Popover,
   PopoverContent,
@@ -72,10 +73,13 @@ const getAgendamentoStatusStyles = (status: string) => {
 }
 
 export default function Relatorios() {
+  const { usuario } = useAuthStore()
+  const isProfissional = usuario?.perfil === 'profissional'
+
   const [selectedClienteId, setSelectedClienteId] = useState<string | null>(null)
   const [openCombobox, setOpenCombobox] = useState(false)
   const [search, setSearch] = useState('')
-  const [activeReportTab, setActiveReportTab] = useState<'cliente' | 'caixa' | 'folha'>('cliente')
+  const [activeReportTab, setActiveReportTab] = useState<'cliente' | 'caixa' | 'folha'>(isProfissional ? 'folha' : 'cliente')
   const [selectedProfissionalIdForFolha, setSelectedProfissionalIdForFolha] = useState<string>('all')
 
   const { data: clientes = [] } = useClientes()
@@ -140,7 +144,8 @@ export default function Relatorios() {
       </div>
 
       {/* Report Types Selector (Modo Premium) */}
-      <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 mb-8 bg-card p-3 rounded-lg border border-border">
+      {!isProfissional && (
+        <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 mb-8 bg-card p-3 rounded-lg border border-border">
         <div className="flex items-center gap-1 bg-background rounded-lg border border-border p-0.5 w-fit">
           <button
             onClick={() => setActiveReportTab('cliente')}
@@ -177,6 +182,7 @@ export default function Relatorios() {
           </button>
         </div>
       </div>
+      )}
 
       {/* RENDER - Relatório de Cliente */}
       {activeReportTab === 'cliente' && (
@@ -618,20 +624,22 @@ export default function Relatorios() {
             </div>
 
             {/* Filter by Professional */}
-            <div className="flex flex-col gap-1 w-full sm:w-60">
-              <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Filtrar Profissional</label>
-              <Select value={selectedProfissionalIdForFolha} onValueChange={setSelectedProfissionalIdForFolha}>
-                <SelectTrigger className="h-9 text-xs rounded-lg border-border bg-background">
-                  <SelectValue placeholder="Todos os profissionais" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todos os profissionais</SelectItem>
-                  {profissionais.map((p) => (
-                    <SelectItem key={p.id} value={p.id}>{p.nome}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            {!isProfissional && (
+              <div className="flex flex-col gap-1 w-full sm:w-60">
+                <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Filtrar Profissional</label>
+                <Select value={selectedProfissionalIdForFolha} onValueChange={setSelectedProfissionalIdForFolha}>
+                  <SelectTrigger className="h-9 text-xs rounded-lg border-border bg-background">
+                    <SelectValue placeholder="Todos os profissionais" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todos os profissionais</SelectItem>
+                    {profissionais.map((p) => (
+                      <SelectItem key={p.id} value={p.id}>{p.nome}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
           </div>
 
           {/* KPIs Section */}

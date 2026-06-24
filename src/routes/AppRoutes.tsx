@@ -30,9 +30,9 @@ export default function AppRoutes() {
             <Route path="/agenda" element={<Agenda />} />
             <Route path="/clientes" element={<Clientes />} />
             <Route path="/caixa" element={<Caixa />} />
+            <Route path="/relatorios" element={<Relatorios />} />
 
             <Route element={<AdminRoute />}>
-              <Route path="/relatorios" element={<Relatorios />} />
               <Route path="/configuracoes" element={<Configuracoes />} />
             </Route>
 

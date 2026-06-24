@@ -1,4 +1,5 @@
-import { Menu, Moon, Sun, LogOut } from 'lucide-react'
+import { useState } from 'react'
+import { Menu, Moon, Sun, LogOut, KeyRound } from 'lucide-react'
 import { NavLink } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
 import { useTheme } from '@/hooks/useTheme'
@@ -12,6 +13,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
+import { AlterarSenhaDialog } from '@/components/auth/AlterarSenhaDialog'
 import { cn } from '@/lib/utils'
 
 interface HeaderProps {
@@ -22,6 +24,7 @@ export function Header({ onMenuClick }: HeaderProps) {
   const { usuario, isAdmin, isSuperAdmin, logout } = useAuth()
   const { theme, toggleTheme } = useTheme()
   const { data: salao } = useSalao()
+  const [senhaDialogOpen, setSenhaDialogOpen] = useState(false)
 
   const getInitials = (name: string) => {
     return name
@@ -35,7 +38,7 @@ export function Header({ onMenuClick }: HeaderProps) {
   const navigation = [
     { name: 'Agenda', to: '/' },
     { name: 'Caixa', to: '/caixa' },
-    ...(isAdmin ? [{ name: 'Relatórios', to: '/relatorios' }] : []),
+    { name: 'Relatórios', to: '/relatorios' },
     { name: 'Clientes', to: '/clientes' },
     ...(isAdmin ? [
       { name: 'Dashboard', to: '/dashboard' },
@@ -113,6 +116,10 @@ export function Header({ onMenuClick }: HeaderProps) {
                 </div>
               </div>
               <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={() => setSenhaDialogOpen(true)} className="p-2.5 cursor-pointer m-1 rounded">
+                <KeyRound className="mr-2 h-4 w-4" />
+                <span className="font-semibold text-xs uppercase tracking-wider">Alterar Senha</span>
+              </DropdownMenuItem>
               <DropdownMenuItem onClick={logout} className="p-2.5 text-destructive focus:text-destructive focus:bg-destructive/10 cursor-pointer m-1 rounded">
                 <LogOut className="mr-2 h-4 w-4" />
                 <span className="font-semibold text-xs uppercase tracking-wider">Sair do Sistema</span>
@@ -121,6 +128,7 @@ export function Header({ onMenuClick }: HeaderProps) {
           </DropdownMenu>
         </div>
       </div>
+      <AlterarSenhaDialog open={senhaDialogOpen} onOpenChange={setSenhaDialogOpen} />
     </header>
   )
 }

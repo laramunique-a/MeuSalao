@@ -354,7 +354,11 @@ export default function Caixa() {
             <div className="flex flex-col items-center justify-center py-20 bg-card rounded-lg border border-dashed border-border">
               <Wallet className="h-10 w-10 text-muted-foreground opacity-40 mb-4" />
               <h2 className="text-sm font-semibold uppercase tracking-widest text-foreground">O caixa está fechado</h2>
-              <p className="text-xs text-muted-foreground mt-1 mb-6">Inicie o caixa no botão superior para registrar movimentações.</p>
+              <p className="text-xs text-muted-foreground mt-1 mb-6">
+                {isAdmin
+                  ? 'Inicie o caixa no botão superior para registrar movimentações.'
+                  : 'Solicite ao administrador a abertura do caixa para registrar movimentações.'}
+              </p>
             </div>
           ) : (
             <div className="flex flex-col gap-8">

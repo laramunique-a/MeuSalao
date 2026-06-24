@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase'
+import { useAuthStore } from '@/store/authStore'
 import type { Agendamento, TransacaoCaixa } from '@/types/models'
 
 export const relatoriosService = {
@@ -101,11 +102,20 @@ export const relatoriosService = {
   },
 
   async getFolhaPagamentoReport() {
-    const { data: transacoes, error } = await supabase
+    const usuario = useAuthStore.getState().usuario
+    if (!usuario) throw new Error('Usuário não autenticado')
+
+    let query = supabase
       .from('transacao_caixa')
       .select('*, usuario:usuario_id(nome)')
       .eq('categoria', 'Pagamento de Comissão')
-      .order('data_hora', { ascending: false })
+
+    // Se for profissional comum, ver apenas as próprias comissões pagas
+    if (usuario.perfil === 'profissional') {
+      query = query.eq('metadata->>profissional_id', usuario.id)
+    }
+
+    const { data: transacoes, error } = await query.order('data_hora', { ascending: false })
 
     if (error) throw error
     return (transacoes || []) as any[]
