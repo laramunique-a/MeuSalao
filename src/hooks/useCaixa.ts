@@ -37,6 +37,8 @@ export function useCreateTransacao() {
       queryClient.invalidateQueries({ queryKey: ['transacoes'] })
       queryClient.invalidateQueries({ queryKey: ['caixa-summary'] })
       queryClient.invalidateQueries({ queryKey: ['agendamentos'] })
+      queryClient.invalidateQueries({ queryKey: ['saldo-caixa-aberto'] })
+      queryClient.invalidateQueries({ queryKey: ['transacoes-caixa'] })
     },
   })
 }
@@ -50,6 +52,8 @@ export function useDeleteTransacao() {
       queryClient.invalidateQueries({ queryKey: ['transacoes'] })
       queryClient.invalidateQueries({ queryKey: ['caixa-summary'] })
       queryClient.invalidateQueries({ queryKey: ['agendamentos'] })
+      queryClient.invalidateQueries({ queryKey: ['saldo-caixa-aberto'] })
+      queryClient.invalidateQueries({ queryKey: ['transacoes-caixa'] })
     },
   })
 }
@@ -103,6 +107,8 @@ export function useAbrirCaixa() {
       queryClient.invalidateQueries({ queryKey: ['transacoes'] })
       queryClient.invalidateQueries({ queryKey: ['caixa-summary'] })
       queryClient.invalidateQueries({ queryKey: ['caixas-period'] })
+      queryClient.invalidateQueries({ queryKey: ['saldo-caixa-aberto'] })
+      queryClient.invalidateQueries({ queryKey: ['transacoes-caixa'] })
     },
   })
 }
@@ -147,6 +153,8 @@ export function useEstornarTransacao() {
       queryClient.invalidateQueries({ queryKey: ['transacoes'] })
       queryClient.invalidateQueries({ queryKey: ['caixa-summary'] })
       queryClient.invalidateQueries({ queryKey: ['agendamentos'] })
+      queryClient.invalidateQueries({ queryKey: ['saldo-caixa-aberto'] })
+      queryClient.invalidateQueries({ queryKey: ['transacoes-caixa'] })
     },
   })
 }
