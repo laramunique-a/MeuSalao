@@ -1,6 +1,7 @@
 import { supabase } from '@/lib/supabase'
 import { useAuthStore } from '@/store/authStore'
 import type { Agendamento, TransacaoCaixa } from '@/types/models'
+import { mapAgendamentoRealTimeStatus } from '@/services/agendamento.service'
 
 export const relatoriosService = {
   async getClienteReport(clienteId: string) {
@@ -66,13 +67,18 @@ export const relatoriosService = {
         profissional:profissional_id (id, nome),
         servico:servico_id (id, nome)
       `)
-      .eq('status', 'pendente_caixa')
+      .in('status', ['em_atendimento', 'pendente_caixa'])
       .order('data_hora', { ascending: false })
 
     if (errorAg) throw errorAg
 
+    // Mapear status em tempo real e filtrar apenas os que são 'pendente_caixa'
+    const mappedAgendamentos = (agendamentos || [])
+      .map(mapAgendamentoRealTimeStatus)
+      .filter((ag: any) => ag.status === 'pendente_caixa')
+
     // Mapear cada atendimento para a sessão de caixa em que foi gerado
-    const reportItems = (agendamentos || []).map((ag: any) => {
+    const reportItems = mappedAgendamentos.map((ag: any) => {
       const agDate = new Date(ag.data_hora)
 
       // Achar a sessão de caixa aberta no horário do atendimento

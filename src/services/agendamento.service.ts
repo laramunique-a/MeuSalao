@@ -9,6 +9,55 @@ const AGENDAMENTO_SELECT = `
   servico:servico_id (id, nome, valor, duracao_minutos)
 `
 
+const statusUpdateInProgress = new Set<string>()
+
+export function mapAgendamentoRealTimeStatus(ag: any): any {
+  if (!ag) return ag
+  const now = new Date()
+  const dataInicio = new Date(ag.data_hora)
+  const duracao = ag.servico?.duracao_minutos || 60
+  const dataFim = new Date(dataInicio.getTime() + duracao * 60000)
+
+  let status = ag.status
+
+  if (status === 'agendado' && dataInicio <= now) {
+    status = 'em_atendimento'
+  } else if (status === 'em_atendimento' && dataFim <= now) {
+    status = 'pendente_caixa'
+  }
+
+  if (status !== ag.status) {
+    const updated = { ...ag, status }
+    
+    // Atualizar no banco em background se não estiver em progresso
+    if (!statusUpdateInProgress.has(ag.id)) {
+      statusUpdateInProgress.add(ag.id)
+      
+      const runUpdate = async () => {
+        try {
+          const { error } = await (supabase.from('agendamento') as any)
+            .update({ status })
+            .eq('id', ag.id)
+          if (error) {
+            console.error(`Erro ao atualizar status em background para ${ag.id}:`, error)
+          }
+        } catch (err) {
+          console.error(`Erro ao atualizar status em background para ${ag.id}:`, err)
+        } finally {
+          setTimeout(() => {
+            statusUpdateInProgress.delete(ag.id)
+          }, 10000)
+        }
+      }
+      runUpdate()
+    }
+    
+    return updated
+  }
+
+  return ag
+}
+
 export const agendamentoService = {
   async getAll() {
     const usuario = useAuthStore.getState().usuario
@@ -27,7 +76,7 @@ export const agendamentoService = {
       .order('data_hora', { ascending: true })
 
     if (error) throw error
-    return data as unknown as Agendamento[]
+    return (data || []).map(mapAgendamentoRealTimeStatus) as unknown as Agendamento[]
   },
 
   async getByDate(startDate: string, endDate: string) {
@@ -49,7 +98,7 @@ export const agendamentoService = {
       .order('data_hora', { ascending: true })
 
     if (error) throw error
-    return data as unknown as Agendamento[]
+    return (data || []).map(mapAgendamentoRealTimeStatus) as unknown as Agendamento[]
   },
 
   async getByDateAndStatus(startDate: string, endDate: string, status: string) {
@@ -72,7 +121,7 @@ export const agendamentoService = {
       .order('data_hora', { ascending: true })
 
     if (error) throw error
-    return data as unknown as Agendamento[]
+    return (data || []).map(mapAgendamentoRealTimeStatus) as unknown as Agendamento[]
   },
 
   async getAgendamentosSemBaixa(startDate: string, endDate: string, profissionalId?: string) {
@@ -110,7 +159,7 @@ export const agendamentoService = {
 
     const { data, error } = await query
     if (error) throw error
-    return data as unknown as Agendamento[]
+    return (data || []).map(mapAgendamentoRealTimeStatus) as unknown as Agendamento[]
   },
 
   async hasAnyPendencia(profissionalId?: string): Promise<boolean> {
@@ -166,7 +215,7 @@ export const agendamentoService = {
       .order('data_hora', { ascending: true })
 
     if (error) throw error
-    return data as unknown as Agendamento[]
+    return (data || []).map(mapAgendamentoRealTimeStatus) as unknown as Agendamento[]
   },
 
   async getById(id: string) {
@@ -177,7 +226,7 @@ export const agendamentoService = {
       .single()
 
     if (error) throw error
-    return data as unknown as Agendamento
+    return mapAgendamentoRealTimeStatus(data) as unknown as Agendamento
   },
 
   async create(agendamento: Omit<Agendamento, 'id' | 'salao_id' | 'created_at' | 'updated_at' | 'cliente' | 'profissional' | 'servico'>) {
@@ -201,7 +250,7 @@ export const agendamentoService = {
       .single()
 
     if (error) throw error
-    return data as unknown as Agendamento
+    return mapAgendamentoRealTimeStatus(data) as unknown as Agendamento
   },
 
   async update(id: string, agendamento: Partial<Agendamento>) {
@@ -215,7 +264,7 @@ export const agendamentoService = {
       .single()
 
     if (error) throw error
-    return data as unknown as Agendamento
+    return mapAgendamentoRealTimeStatus(data) as unknown as Agendamento
   },
 
   async updateStatus(id: string, status: AgendamentoStatus) {
@@ -227,7 +276,7 @@ export const agendamentoService = {
       .single()
 
     if (error) throw error
-    return data as unknown as Agendamento
+    return mapAgendamentoRealTimeStatus(data) as unknown as Agendamento
   },
 
   async delete(id: string) {
@@ -247,11 +296,12 @@ export const agendamentoService = {
       .from('agendamento')
       .select(AGENDAMENTO_SELECT)
       .eq('salao_id', usuario.salao_id)
-      .eq('status', 'pendente_caixa')
+      .in('status', ['em_atendimento', 'pendente_caixa'])
       .order('data_hora', { ascending: false })
 
     if (error) throw error
-    return data as unknown as Agendamento[]
+    const mapped = (data || []).map(mapAgendamentoRealTimeStatus)
+    return mapped.filter((ag: any) => ag.status === 'pendente_caixa') as unknown as Agendamento[]
   },
 
   async checkConflict(
