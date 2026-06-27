@@ -365,7 +365,7 @@ export function DarBaixaDialog({ open, onOpenChange, agendamento }: DarBaixaDial
                           <FormLabel className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Método de Recebimento</FormLabel>
                           <Select onValueChange={field.onChange} value={field.value}>
                             <FormControl>
-                              <SelectTrigger className="h-10 bg-background border-border">
+                              <SelectTrigger className="h-10 border-border">
                                 <SelectValue placeholder="Selecione..." />
                               </SelectTrigger>
                             </FormControl>
@@ -418,7 +418,7 @@ export function DarBaixaDialog({ open, onOpenChange, agendamento }: DarBaixaDial
                               <FormLabel className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Forma 1</FormLabel>
                               <Select onValueChange={field.onChange} value={field.value}>
                                 <FormControl>
-                                  <SelectTrigger className="h-9 text-xs font-medium bg-background border-border">
+                                  <SelectTrigger className="h-9 text-xs font-medium border-border">
                                     <SelectValue />
                                   </SelectTrigger>
                                 </FormControl>
@@ -442,7 +442,7 @@ export function DarBaixaDialog({ open, onOpenChange, agendamento }: DarBaixaDial
                               <FormControl>
                                 <Input
                                   {...field}
-                                  className="h-9 text-xs font-bold bg-background border-border"
+                                  className="h-9 text-xs font-bold border-border"
                                   placeholder="0,00"
                                   onChange={(e: React.ChangeEvent<HTMLInputElement>) => field.onChange(e.target.value.replace(/[^\d,.]/g, ''))}
                                 />
@@ -485,7 +485,7 @@ export function DarBaixaDialog({ open, onOpenChange, agendamento }: DarBaixaDial
                               <FormLabel className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Forma 2</FormLabel>
                               <Select onValueChange={field.onChange} value={field.value}>
                                 <FormControl>
-                                  <SelectTrigger className="h-9 text-xs font-medium bg-background border-border">
+                                  <SelectTrigger className="h-9 text-xs font-medium border-border">
                                     <SelectValue />
                                   </SelectTrigger>
                                 </FormControl>

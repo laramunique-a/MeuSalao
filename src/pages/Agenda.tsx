@@ -296,7 +296,7 @@ export default function Agenda() {
         <div className="flex flex-wrap items-center gap-2 sm:gap-3 w-full md:w-auto">
           <div className="flex items-center gap-2 flex-1 md:flex-none min-w-0">
             <Select value={filterProfissional} onValueChange={setFilterProfissional}>
-              <SelectTrigger className="w-full md:w-[180px] h-10 bg-background border-border rounded-xl justify-center gap-2">
+              <SelectTrigger className="w-full md:w-[180px] h-10 border-border rounded-xl justify-center gap-2">
                 <SelectValue placeholder="Profissional" />
               </SelectTrigger>
               <SelectContent>

@@ -80,7 +80,7 @@ export function EditarAberturaDialog({
                 required
                 value={valor}
                 onChange={(e) => setValor(Number(e.target.value))}
-                className="h-10 rounded-lg border-border bg-background text-xs"
+                className="h-10 rounded-lg border-border text-xs"
               />
             </div>
           </div>

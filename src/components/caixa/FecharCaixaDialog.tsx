@@ -190,7 +190,7 @@ export function FecharCaixaDialog({
               value={valorInformado}
               onChange={(e) => setValorInformado(e.target.value)}
               required
-              className="h-10 rounded-lg border-border bg-background text-xs"
+              className="h-10 rounded-lg border-border text-xs"
             />
             <p className="text-[10px] text-muted-foreground">
               Informe o valor total físico conferido no caixa no momento do fechamento.
@@ -207,7 +207,7 @@ export function FecharCaixaDialog({
               value={observacoes}
               onChange={(e) => setObservacoes(e.target.value)}
               rows={3}
-              className="rounded-lg border-border bg-background text-xs resize-none"
+              className="rounded-lg border-border text-xs resize-none"
             />
           </div>
 
