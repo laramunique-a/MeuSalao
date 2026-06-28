@@ -71,8 +71,9 @@ export default function Agenda() {
   const viewStartDate = viewMode === 'week' ? startOfWeek(selectedDate, { locale: ptBR }) : startOfDay(selectedDate)
   const viewEndDate = viewMode === 'week' ? endOfWeek(selectedDate, { locale: ptBR }) : endOfDay(selectedDate)
 
-  const startDate = format(viewStartDate, "yyyy-MM-dd'T'HH:mm:ss")
-  const endDate = format(viewEndDate, "yyyy-MM-dd'T'HH:mm:ss")
+  // Usar toISOString() para incluir o offset UTC corretamente (ex: UTC-3 → horários até 02:00 UTC do dia seguinte)
+  const startDate = viewStartDate.toISOString()
+  const endDate = viewEndDate.toISOString()
 
   const { data: agendamentos = [], isLoading } = useAgendamentosByDate(startDate, endDate)
   const { data: bloqueios = [] } = useBloqueiosByDateRange(startDate, endDate)

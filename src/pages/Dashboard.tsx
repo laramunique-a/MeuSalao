@@ -8,8 +8,9 @@ import { ptBR } from 'date-fns/locale'
 
 export default function Dashboard() {
   const hoje = new Date()
-  const inicioHoje = format(startOfDay(hoje), "yyyy-MM-dd'T'HH:mm:ss")
-  const fimHoje = format(endOfDay(hoje), "yyyy-MM-dd'T'HH:mm:ss")
+  // toISOString() inclui o offset UTC corretamente (ex: UTC-3 → intervalo até 02:00 UTC do dia seguinte)
+  const inicioHoje = startOfDay(hoje).toISOString()
+  const fimHoje = endOfDay(hoje).toISOString()
 
   const { data: agendamentosHoje = [] } = useAgendamentosByDate(inicioHoje, fimHoje)
   const { data: summaryHoje } = useCaixaSummary(inicioHoje, fimHoje)
