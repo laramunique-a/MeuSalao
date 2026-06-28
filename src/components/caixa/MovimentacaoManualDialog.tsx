@@ -287,7 +287,6 @@ export function MovimentacaoManualDialog({ open, onOpenChange }: MovimentacaoMan
               placeholder="Descreva o motivo detalhado desta movimentação..."
               value={descricao}
               onChange={(e) => setDescricao(e.target.value)}
-              required
               rows={3}
             />
           </div>
