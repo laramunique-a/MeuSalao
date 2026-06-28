@@ -72,7 +72,11 @@ export default function Caixa() {
 
   const pendenciasPassadas = pendenciasGlobais.filter(p => {
     if (!caixaAberto) return false
-    return new Date(p.data_hora) < new Date(caixaAberto.data_abertura)
+    // Compara apenas a DATA (ignorando hora) para não incluir agendamentos
+    // do mesmo dia que foram realizados antes do horário de abertura do caixa
+    const dataAgendamento = startOfDay(new Date(p.data_hora))
+    const dataAberturaCaixa = startOfDay(new Date(caixaAberto.data_abertura))
+    return dataAgendamento < dataAberturaCaixa
   })
 
   // Calcular comissões por profissional (dos agendamentos concluídos no período)
