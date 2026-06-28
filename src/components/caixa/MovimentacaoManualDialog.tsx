@@ -44,6 +44,26 @@ export function MovimentacaoManualDialog({ open, onOpenChange }: MovimentacaoMan
   const [selectedProfissionalId, setSelectedProfissionalId] = useState<string>('')
   const [formaPagamento, setFormaPagamento] = useState<'dinheiro' | 'pix'>('dinheiro')
 
+  // Formata o valor para o padrão monetário brasileiro (ex: 10 → 10,00 | 10.5 → 10,50)
+  function normalizarValor(raw: string): string {
+    const cleaned = raw.replace(/[^\d.,]/g, '')
+    if (!cleaned) return ''
+    const lastDot = cleaned.lastIndexOf('.')
+    const lastComma = cleaned.lastIndexOf(',')
+    const lastSep = Math.max(lastDot, lastComma)
+    let intPart: string
+    let decPart: string
+    if (lastSep === -1) {
+      intPart = cleaned
+      decPart = '00'
+    } else {
+      intPart = cleaned.substring(0, lastSep).replace(/[.,]/g, '') || '0'
+      decPart = cleaned.substring(lastSep + 1).padEnd(2, '0').substring(0, 2)
+    }
+    intPart = intPart.replace(/^0+/, '') || '0'
+    return `${intPart},${decPart}`
+  }
+
   useEffect(() => {
     if (open) {
       setTipoMovimento('entrada')
@@ -265,9 +285,14 @@ export function MovimentacaoManualDialog({ open, onOpenChange }: MovimentacaoMan
               placeholder="0,00"
               value={valor}
               onChange={(e) => {
-                // Allows only positive numbers and commas/dots
+                // Permite apenas dígitos, vírgula e ponto enquanto digita
                 const val = e.target.value.replace(/[^0-9.,]/g, '')
                 setValor(val)
+              }}
+              onBlur={() => {
+                // Ao sair do campo, normaliza para o padrão brasileiro (ex: 10 → 10,00)
+                const normalizado = normalizarValor(valor)
+                if (normalizado) setValor(normalizado)
               }}
               required
             />
