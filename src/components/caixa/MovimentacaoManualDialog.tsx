@@ -138,10 +138,19 @@ export function MovimentacaoManualDialog({ open, onOpenChange }: MovimentacaoMan
 
     const prof = profissionais.find(p => p.id === selectedProfissionalId)
     const profName = prof ? prof.nome : ''
-    
+
+    // Descrições padrão usadas quando o operador não preenche o campo
+    const descricaoPadrao: Record<TipoMovimento, string> = {
+      entrada: 'Entrada Manual',
+      saida: 'Saída Manual',
+      retirada: 'Retirada de Caixa',
+      ajuste: subTipoAjuste === 'positivo' ? 'Ajuste Positivo de Caixa' : 'Ajuste Negativo de Caixa',
+      comissao: `Comissão: ${profName}`,
+    }
+
     const finalDescricao = tipoMovimento === 'comissao'
       ? `Comissão: ${profName}${descricao ? ` - ${descricao}` : ''}`
-      : descricao
+      : (descricao.trim() || descricaoPadrao[tipoMovimento])
 
     const metadata = tipoMovimento === 'comissao' && selectedProfissionalId
       ? { profissional_id: selectedProfissionalId, profissional_nome: profName }
