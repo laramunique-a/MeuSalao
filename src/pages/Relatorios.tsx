@@ -316,11 +316,6 @@ export default function Relatorios() {
                               />
                               <span className="font-semibold text-foreground">{c.nome}</span>
                             </div>
-                            {c.telefone && (
-                              <span className="text-[10px] text-muted-foreground font-medium">
-                                {c.telefone}
-                              </span>
-                            )}
                           </CommandItem>
                         ))}
                       </CommandGroup>
@@ -332,11 +327,6 @@ export default function Relatorios() {
 
             {selectedCliente && (
               <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-6 text-xs text-muted-foreground sm:ml-auto pt-2 sm:pt-0">
-                {selectedCliente.telefone && (
-                  <div className="flex items-center gap-1.5">
-                    <span className="font-semibold text-foreground">Tel:</span> {selectedCliente.telefone}
-                  </div>
-                )}
                 {selectedCliente.email && (
                   <div className="flex items-center gap-1.5">
                     <span className="font-semibold text-foreground">Email:</span> {selectedCliente.email}
