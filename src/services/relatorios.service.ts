@@ -144,6 +144,7 @@ export const relatoriosService = {
       .select(`
         comissao_valor,
         data_hora,
+        metadata,
         agendamento:agendamento_id (
           profissional_id,
           profissional:profissional_id (id, nome)
@@ -201,7 +202,7 @@ export const relatoriosService = {
 
     // Agrupar comissões geradas
     geradasData?.forEach((t: any) => {
-      const profId = t.agendamento?.profissional_id
+      const profId = t.metadata?.profissional_id || t.agendamento?.profissional_id
       if (!profId || !saldosMap[profId]) return
 
       const valor = Number(t.comissao_valor) || 0

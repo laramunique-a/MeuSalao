@@ -232,6 +232,7 @@ export function DarBaixaDialog({ open, onOpenChange, agendamento }: DarBaixaDial
         categoria: string
         valorBase: number
         comissaoPercentual: number
+        profissionalId: string | null
       }[] = []
 
       // 1. Serviço Principal com desconto proporcional
@@ -241,7 +242,8 @@ export function DarBaixaDialog({ open, onOpenChange, agendamento }: DarBaixaDial
         descricao: `${servico?.nome} - ${agendamento.cliente?.nome}`,
         categoria: 'Serviço',
         valorBase: valorPrincipalComDesconto,
-        comissaoPercentual: comissaoPercentual
+        comissaoPercentual: comissaoPercentual,
+        profissionalId: agendamento.profissional_id
       })
 
       // 2. Serviços Adicionais
@@ -255,7 +257,8 @@ export function DarBaixaDialog({ open, onOpenChange, agendamento }: DarBaixaDial
           descricao: `[Adicional] ${servObj?.nome || 'Serviço'} - ${agendamento.cliente?.nome}`,
           categoria: 'Serviço',
           valorBase: sa.valor,
-          comissaoPercentual: pctComissao
+          comissaoPercentual: pctComissao,
+          profissionalId: sa.profissionalId
         })
       })
 
@@ -266,7 +269,8 @@ export function DarBaixaDialog({ open, onOpenChange, agendamento }: DarBaixaDial
           descricao: `[Extra] ${descricaoExtra || 'Valor Extra'} - ${agendamento.cliente?.nome}`,
           categoria: 'Outros',
           valorBase: extraVal,
-          comissaoPercentual: 0
+          comissaoPercentual: 0,
+          profissionalId: null
         })
       }
 
@@ -289,7 +293,8 @@ export function DarBaixaDialog({ open, onOpenChange, agendamento }: DarBaixaDial
               bandeira_cartao: data.forma_pagamento === 'cartao_credito' ? data.bandeira_1 : null,
               valor_liquido: liquido1,
               base_comissao: liquido1
-            }
+            },
+            profissional_id: item.profissionalId
           }
 
           await createTransacao.mutateAsync({
@@ -325,7 +330,8 @@ export function DarBaixaDialog({ open, onOpenChange, agendamento }: DarBaixaDial
                 bandeira_cartao: data.forma_pagamento_2 === 'cartao_credito' ? data.bandeira_2 : null,
                 valor_liquido: liquido2,
                 base_comissao: liquido2
-              }
+              },
+              profissional_id: item.profissionalId
             }
 
             await createTransacao.mutateAsync({
