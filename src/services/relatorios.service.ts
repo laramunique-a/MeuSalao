@@ -107,7 +107,7 @@ export const relatoriosService = {
     return reportItems
   },
 
-  async getFolhaPagamentoReport() {
+  async getFolhaPagamentoReport(startDate?: string, endDate?: string) {
     const usuario = useAuthStore.getState().usuario
     if (!usuario) throw new Error('Usuário não autenticado')
 
@@ -119,6 +119,13 @@ export const relatoriosService = {
     // Se for profissional comum, ver apenas as próprias comissões pagas
     if (usuario.perfil === 'profissional') {
       query = query.eq('metadata->>profissional_id', usuario.id)
+    }
+
+    if (startDate) {
+      query = query.gte('data_hora', startDate)
+    }
+    if (endDate) {
+      query = query.lte('data_hora', endDate)
     }
 
     const { data: transacoes, error } = await query.order('data_hora', { ascending: false })

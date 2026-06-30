@@ -100,16 +100,8 @@ export function AgendamentosColumns({
     }) || null
   }
 
-  const getStatusBadgeVariant = (status: Agendamento['status']) => {
-    const colorMap: Record<string, 'default' | 'secondary' | 'destructive'> = {
-      agendado: 'default',
-      confirmado: 'default',
-      em_atendimento: 'default',
-      em_atraso: 'destructive',
-      concluido: 'secondary',
-      cancelado: 'destructive',
-    }
-    return colorMap[status] || 'default'
+  const getStatusBadgeVariant = (_status: Agendamento['status']): 'default' | 'secondary' | 'destructive' | 'outline' => {
+    return 'default'
   }
 
   function shouldShowClienteChegouPrompt(agendamento: Agendamento): boolean {

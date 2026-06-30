@@ -82,17 +82,8 @@ export function AgendamentosList({
     )
   }
 
-  const getStatusBadgeStyles = (status: Agendamento['status']) => {
-    switch (status) {
-      case 'cancelado':
-        return 'border-border text-red-500 bg-red-500/10 dark:bg-red-500/20'
-      case 'em_atraso':
-        return 'border-border text-amber-600 bg-amber-500/10 dark:bg-amber-500/20'
-      case 'concluido':
-        return 'border-border text-muted-foreground bg-accent'
-      default:
-        return 'border-border text-foreground bg-accent/50'
-    }
+  const getStatusBadgeStyles = (_status: Agendamento['status']) => {
+    return 'bg-primary text-primary-foreground border-transparent hover:bg-primary/95'
   }
 
   function shouldShowClienteChegouPrompt(agendamento: Agendamento): boolean {

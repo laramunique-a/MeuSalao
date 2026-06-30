@@ -16,9 +16,9 @@ export function useCaixaPendenciasReport() {
   })
 }
 
-export function useFolhaPagamentoReport() {
+export function useFolhaPagamentoReport(startDate?: string, endDate?: string) {
   return useQuery({
-    queryKey: ['folha-pagamento-report'],
-    queryFn: () => relatoriosService.getFolhaPagamentoReport(),
+    queryKey: ['folha-pagamento-report', startDate, endDate],
+    queryFn: () => relatoriosService.getFolhaPagamentoReport(startDate, endDate),
   })
 }

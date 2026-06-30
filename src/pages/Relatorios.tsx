@@ -37,8 +37,9 @@ import {
   Search,
   AlertCircle,
 } from 'lucide-react'
-import { format } from 'date-fns'
+import { format, startOfMonth, endOfMonth, subMonths, addMonths, differenceInDays, subDays, addDays, startOfDay, endOfDay } from 'date-fns'
 import { cn } from '@/lib/utils'
+import { DateNavigator } from '@/components/ui/date-navigator'
 
 const formatCurrency = (value: number) => {
   return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
@@ -82,10 +83,71 @@ export default function Relatorios() {
   const [activeReportTab, setActiveReportTab] = useState<'cliente' | 'caixa' | 'folha'>(isProfissional ? 'folha' : 'cliente')
   const [selectedProfissionalIdForFolha, setSelectedProfissionalIdForFolha] = useState<string>('all')
 
+  // Date Range para Folha de Pagamento (Mês Atual por padrão)
+  const hoje = new Date()
+  const [rangeFolha, setRangeFolha] = useState<{ from: Date; to: Date }>({
+    from: startOfMonth(hoje),
+    to: endOfMonth(hoje)
+  })
+
+  const handleFolhaPrev = () => {
+    const days = differenceInDays(rangeFolha.to, rangeFolha.from) + 1
+    const isFullMonth = 
+      format(rangeFolha.from, 'yyyy-MM-dd') === format(startOfMonth(rangeFolha.from), 'yyyy-MM-dd') &&
+      format(rangeFolha.to, 'yyyy-MM-dd') === format(endOfMonth(rangeFolha.to), 'yyyy-MM-dd')
+
+    if (isFullMonth) {
+      const prevMonth = subMonths(rangeFolha.from, 1)
+      setRangeFolha({
+        from: startOfMonth(prevMonth),
+        to: endOfMonth(prevMonth)
+      })
+    } else {
+      setRangeFolha({
+        from: subDays(rangeFolha.from, days),
+        to: subDays(rangeFolha.to, days)
+      })
+    }
+  }
+
+  const handleFolhaNext = () => {
+    const days = differenceInDays(rangeFolha.to, rangeFolha.from) + 1
+    const isFullMonth = 
+      format(rangeFolha.from, 'yyyy-MM-dd') === format(startOfMonth(rangeFolha.from), 'yyyy-MM-dd') &&
+      format(rangeFolha.to, 'yyyy-MM-dd') === format(endOfMonth(rangeFolha.to), 'yyyy-MM-dd')
+
+    if (isFullMonth) {
+      const nextMonth = addMonths(rangeFolha.from, 1)
+      setRangeFolha({
+        from: startOfMonth(nextMonth),
+        to: endOfMonth(nextMonth)
+      })
+    } else {
+      setRangeFolha({
+        from: addDays(rangeFolha.from, days),
+        to: addDays(rangeFolha.to, days)
+      })
+    }
+  }
+
+  const handleFolhaToday = () => {
+    setRangeFolha({
+      from: startOfMonth(new Date()),
+      to: endOfMonth(new Date())
+    })
+  }
+
+  const isCurrentMonthFolha = 
+    format(rangeFolha.from, 'yyyy-MM-dd') === format(startOfMonth(new Date()), 'yyyy-MM-dd') &&
+    format(rangeFolha.to, 'yyyy-MM-dd') === format(endOfMonth(new Date()), 'yyyy-MM-dd')
+
   const { data: clientes = [] } = useClientes()
   const { data: reportData, isLoading: loadingReport } = useClienteReport(selectedClienteId)
   const { data: caixaReport = [], isLoading: loadingCaixaReport } = useCaixaPendenciasReport()
-  const { data: folhaData = [], isLoading: loadingFolha } = useFolhaPagamentoReport()
+
+  const startDateFolha = startOfDay(rangeFolha.from).toISOString()
+  const endDateFolha = endOfDay(rangeFolha.to).toISOString()
+  const { data: folhaData = [], isLoading: loadingFolha } = useFolhaPagamentoReport(startDateFolha, endDateFolha)
   const { data: profissionais = [] } = useProfissionais()
 
   const selectedCliente = clientes.find((c) => c.id === selectedClienteId)
@@ -627,23 +689,39 @@ export default function Relatorios() {
               </p>
             </div>
 
-            {/* Filter by Professional */}
-            {!isProfissional && (
-              <div className="flex flex-col gap-1 w-full sm:w-60">
-                <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Filtrar Profissional</label>
-                <Select value={selectedProfissionalIdForFolha} onValueChange={setSelectedProfissionalIdForFolha}>
-                  <SelectTrigger className="h-9 text-xs rounded-lg border-border bg-background">
-                    <SelectValue placeholder="Todos os profissionais" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Todos os profissionais</SelectItem>
-                    {profissionais.map((p) => (
-                      <SelectItem key={p.id} value={p.id}>{p.nome}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full sm:w-auto">
+              <div className="flex flex-col gap-1">
+                <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Período</label>
+                <DateNavigator
+                  mode="range"
+                  selectedRange={rangeFolha}
+                  onSelectRange={setRangeFolha}
+                  onPrev={handleFolhaPrev}
+                  onNext={handleFolhaNext}
+                  onToday={handleFolhaToday}
+                  labelToday="ESTE MÊS"
+                  isTodayActive={isCurrentMonthFolha}
+                />
               </div>
-            )}
+
+              {/* Filter by Professional */}
+              {!isProfissional && (
+                <div className="flex flex-col gap-1 w-full sm:w-56">
+                  <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Filtrar Profissional</label>
+                  <Select value={selectedProfissionalIdForFolha} onValueChange={setSelectedProfissionalIdForFolha}>
+                    <SelectTrigger className="h-10 text-xs rounded-xl border-border bg-background">
+                      <SelectValue placeholder="Todos os profissionais" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Todos os profissionais</SelectItem>
+                      {profissionais.map((p) => (
+                        <SelectItem key={p.id} value={p.id}>{p.nome}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+            </div>
           </div>
 
           {/* KPIs Section */}

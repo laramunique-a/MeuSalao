@@ -260,7 +260,7 @@ export default function Agenda() {
           <h1 className="text-xl font-medium tracking-tight">Agenda</h1>
         </div>
         <div className="flex items-center gap-2">
-          <AgendaButton variant="outline" onClick={() => setIsBloqueioFormOpen(true)}>
+          <AgendaButton variant="outline" className="bg-[#FFFFFF] dark:bg-card" onClick={() => setIsBloqueioFormOpen(true)}>
             <Ban className="h-4 w-4 mr-2" />
             Bloquear
           </AgendaButton>
