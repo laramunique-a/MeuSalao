@@ -52,6 +52,18 @@ export function useDeleteCliente() {
   })
 }
 
+export function useImportClientes() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (clientes: Omit<Cliente, 'id' | 'salao_id' | 'created_at' | 'updated_at'>[]) =>
+      clienteService.importarClientes(clientes),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['clientes'] })
+    },
+  })
+}
+
 export function useSearchClientes(termo: string) {
   return useQuery({
     queryKey: ['clientes', 'search', termo],

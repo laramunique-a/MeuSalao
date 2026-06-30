@@ -80,4 +80,22 @@ export const clienteService = {
     if (error) throw error
     return data as Cliente[]
   },
+
+  async importarClientes(clientes: Omit<Cliente, 'id' | 'salao_id' | 'created_at' | 'updated_at'>[]) {
+    const usuario = useAuthStore.getState().usuario
+    if (!usuario || !usuario.salao_id) throw new Error('Usuário não autenticado')
+
+    const clientesComSalao = clientes.map((c) => ({
+      ...c,
+      salao_id: usuario.salao_id,
+    }))
+
+    const { data, error } = await (supabase
+      .from('cliente') as any)
+      .insert(clientesComSalao)
+      .select()
+
+    if (error) throw error
+    return data as unknown as Cliente[]
+  },
 }

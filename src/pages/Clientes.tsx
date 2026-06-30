@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Plus, Search } from 'lucide-react'
+import { Plus, Search, Upload } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { useClientes, useDeleteCliente, useSearchClientes } from '@/hooks/useClientes'
@@ -10,11 +10,13 @@ import type { Cliente } from '@/types/models'
 import { useToast } from '@/hooks/use-toast'
 import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
+import { ImportarClientesDialog } from '@/components/clientes/ImportarClientesDialog'
 
 export default function Clientes() {
   const { toast } = useToast()
   const [searchTerm, setSearchTerm] = useState('')
   const [isFormOpen, setIsFormOpen] = useState(false)
+  const [isImportOpen, setIsImportOpen] = useState(false)
   const [selectedCliente, setSelectedCliente] = useState<Cliente | null>(null)
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
   const [clienteToDelete, setClienteToDelete] = useState<Cliente | null>(null)
@@ -71,10 +73,21 @@ export default function Clientes() {
         <div>
           <h1 className="text-xl font-medium tracking-tight">Clientes</h1>
         </div>
-        <Button size="sm" onClick={() => setIsFormOpen(true)} className="h-9 px-3">
-          <Plus className="h-4 w-4 mr-2" />
-          Novo Cliente
-        </Button>
+        <div className="flex items-center gap-2 w-full sm:w-auto">
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={() => setIsImportOpen(true)} 
+            className="h-9 px-3 border-border bg-background text-muted-foreground hover:text-foreground hover:bg-accent/50 rounded-lg text-xs"
+          >
+            <Upload className="h-4 w-4 mr-2" />
+            Importar Planilha
+          </Button>
+          <Button size="sm" onClick={() => setIsFormOpen(true)} className="h-9 px-3 rounded-lg text-xs">
+            <Plus className="h-4 w-4 mr-2" />
+            Novo Cliente
+          </Button>
+        </div>
       </div>
 
       <div className="flex flex-col lg:flex-row items-center justify-between gap-4 mb-6 bg-card p-3 rounded-lg border border-border">
@@ -158,6 +171,11 @@ export default function Clientes() {
         onOpenChange={setIsDeleteDialogOpen}
         onConfirm={confirmDelete}
         clienteNome={clienteToDelete?.nome || ''}
+      />
+
+      <ImportarClientesDialog
+        open={isImportOpen}
+        onOpenChange={setIsImportOpen}
       />
     </div>
   )
