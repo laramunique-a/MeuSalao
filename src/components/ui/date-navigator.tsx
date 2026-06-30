@@ -91,15 +91,7 @@ export function DateNavigator(props: DateNavigatorProps) {
         <ChevronLeft className="h-4 w-4" />
       </Button>
 
-      <Popover open={popoverOpen} onOpenChange={(open) => {
-        setPopoverOpen(open)
-        if (!open && props.mode === "range" && tempRange?.from) {
-          props.onSelectRange({
-            from: tempRange.from,
-            to: tempRange.to || tempRange.from
-          })
-        }
-      }}>
+      <Popover open={popoverOpen} onOpenChange={setPopoverOpen}>
         <PopoverTrigger asChild>
           <div className="flex items-center gap-2 h-9 px-2 rounded-lg hover:bg-accent/50 transition-all cursor-pointer">
             <CalendarIcon className="h-4 w-4 text-muted-foreground" />
@@ -143,9 +135,11 @@ export function DateNavigator(props: DateNavigatorProps) {
               selected={tempRange}
               onSelect={(range) => {
                 setTempRange(range)
-                if (range?.from && range?.to) {
-                  props.onSelectRange({ from: range.from, to: range.to })
-                  setPopoverOpen(false)
+                if (range?.from) {
+                  props.onSelectRange({
+                    from: range.from,
+                    to: range.to || range.from
+                  })
                 }
               }}
               initialFocus
