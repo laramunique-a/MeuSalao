@@ -74,6 +74,16 @@ const FORMAS_PAGAMENTO = [
 
 const BANDEIRAS = ['Visa', 'MasterCard', 'Elo', 'Amex', 'Hipercard', 'Outros']
 
+const formatarMoeda = (val: string): string => {
+  const clean = val.replace(/\D/g, '')
+  if (!clean) return ''
+  const num = parseFloat(clean) / 100
+  return num.toLocaleString('pt-BR', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  })
+}
+
 export function DarBaixaDialog({ open, onOpenChange, agendamento }: DarBaixaDialogProps) {
   const { toast } = useToast()
   const createTransacao = useCreateTransacao()
@@ -97,9 +107,7 @@ export function DarBaixaDialog({ open, onOpenChange, agendamento }: DarBaixaDial
   const [selectedProfissionalId, setSelectedProfissionalId] = useState<string>('ignore')
   const [valorServicoAdicional, setValorServicoAdicional] = useState<string>('')
 
-  // Estados para valor extra e desconto
-  const [valorExtra, setValorExtra] = useState<string>('')
-  const [descricaoExtra, setDescricaoExtra] = useState<string>('')
+  // Estados para desconto
   const [valorDesconto, setValorDesconto] = useState<string>('')
 
   const form = useForm<DarBaixaFormData>({
@@ -120,8 +128,6 @@ export function DarBaixaDialog({ open, onOpenChange, agendamento }: DarBaixaDial
     setSelectedServicoId('ignore')
     setSelectedProfissionalId('ignore')
     setValorServicoAdicional('')
-    setValorExtra('')
-    setDescricaoExtra('')
     setValorDesconto('')
   }
 
@@ -157,10 +163,9 @@ export function DarBaixaDialog({ open, onOpenChange, agendamento }: DarBaixaDial
   const agValor = agendamento?.valor || 0
   
   const totalServicosAdicionais = servicosAdicionais.reduce((acc, s) => acc + s.valor, 0)
-  const extraVal = parseFloat(valorExtra.replace(/\./g, '').replace(',', '.')) || 0
   const descontoVal = parseFloat(valorDesconto.replace(/\./g, '').replace(',', '.')) || 0
   
-  const totalBrutoCalculado = Math.max(0, agValor + totalServicosAdicionais + extraVal - descontoVal)
+  const totalBrutoCalculado = Math.max(0, agValor + totalServicosAdicionais - descontoVal)
 
   // Sincronizar o valor 1 e valor 2 do formulário de pagamento com o total bruto calculado
   useEffect(() => {
@@ -227,7 +232,7 @@ export function DarBaixaDialog({ open, onOpenChange, agendamento }: DarBaixaDial
 
       // Lista de Itens de Receita
       const itensReceita: {
-        tipo: 'principal' | 'adicional' | 'extra'
+        tipo: 'principal' | 'adicional'
         descricao: string
         categoria: string
         valorBase: number
@@ -261,18 +266,6 @@ export function DarBaixaDialog({ open, onOpenChange, agendamento }: DarBaixaDial
           profissionalId: sa.profissionalId
         })
       })
-
-      // 3. Item Extra
-      if (extraVal > 0) {
-        itensReceita.push({
-          tipo: 'extra',
-          descricao: `[Extra] ${descricaoExtra || 'Valor Extra'} - ${agendamento.cliente?.nome}`,
-          categoria: 'Outros',
-          valorBase: extraVal,
-          comissaoPercentual: 0,
-          profissionalId: null
-        })
-      }
 
       // Lançar as transações proporcionalmente no split
       for (const item of itensReceita) {
@@ -501,7 +494,7 @@ export function DarBaixaDialog({ open, onOpenChange, agendamento }: DarBaixaDial
                     <Label className="text-[9px] font-bold text-muted-foreground uppercase tracking-wider">Valor do Serviço (R$)</Label>
                     <Input 
                       value={valorServicoAdicional}
-                      onChange={(e) => setValorServicoAdicional(e.target.value.replace(/[^\d,.]/g, ''))}
+                      onChange={(e) => setValorServicoAdicional(formatarMoeda(e.target.value))}
                       placeholder="0,00"
                       className="h-8 text-xs font-bold border-border"
                     />
@@ -550,52 +543,25 @@ export function DarBaixaDialog({ open, onOpenChange, agendamento }: DarBaixaDial
                 </div>
               </div>
 
-              {/* Extras e Descontos */}
+              {/* Desconto */}
               <div className="bg-background rounded-xl border border-border shadow-sm p-4 space-y-3 transition-all hover:border-primary/20">
                 <h4 className="text-[10px] font-bold uppercase text-muted-foreground tracking-widest flex items-center gap-1.5 border-b border-border pb-1.5">
                   <Tag className="h-3.5 w-3.5 text-primary" />
-                  Extras e Descontos
+                  Desconto
                 </h4>
 
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-1">
-                    <Label className="text-[9px] font-bold text-muted-foreground uppercase tracking-wider">Valor Extra (R$)</Label>
-                    <div className="relative">
-                      <Plus className="absolute left-2.5 top-1/2 transform -translate-y-1/2 h-3.5 w-3.5 text-emerald-500" />
-                      <Input
-                        value={valorExtra}
-                        onChange={(e) => setValorExtra(e.target.value.replace(/[^\d,.]/g, ''))}
-                        placeholder="0,00"
-                        className="h-9 text-xs font-bold pl-8 border-border"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="space-y-1">
-                    <Label className="text-[9px] font-bold text-muted-foreground uppercase tracking-wider">Desconto (R$)</Label>
-                    <div className="relative">
-                      <DollarSign className="absolute left-2.5 top-1/2 transform -translate-y-1/2 h-3.5 w-3.5 text-red-500" />
-                      <Input
-                        value={valorDesconto}
-                        onChange={(e) => setValorDesconto(e.target.value.replace(/[^\d,.]/g, ''))}
-                        placeholder="0,00"
-                        className="h-9 text-xs font-bold pl-8 border-border"
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                {parseFloat(valorExtra.replace(/\./g, '').replace(',', '.') || '0') > 0 && (
-                  <div className="space-y-1 animate-in slide-in-from-top-1 duration-200">
-                    <Label className="text-[9px] font-bold text-muted-foreground uppercase tracking-wider">Descrição do Extra (ex: Produto)</Label>
+                <div className="space-y-1">
+                  <Label className="text-[9px] font-bold text-muted-foreground uppercase tracking-wider">Desconto (R$)</Label>
+                  <div className="relative">
+                    <DollarSign className="absolute left-2.5 top-1/2 transform -translate-y-1/2 h-3.5 w-3.5 text-red-500" />
                     <Input
-                      value={descricaoExtra}
-                      onChange={(e) => setDescricaoExtra(e.target.value)}
-                      placeholder="Ex: Venda de Shampoo, Taxa de serviço"
-                      className="h-9 text-xs border-border"
+                      value={valorDesconto}
+                      onChange={(e) => setValorDesconto(formatarMoeda(e.target.value))}
+                      placeholder="0,00"
+                      className="h-9 text-xs font-bold pl-8 border-border"
                     />
                   </div>
-                )}
+                </div>
               </div>
 
               {/* Resumo do Total Atualizado */}
@@ -608,12 +574,6 @@ export function DarBaixaDialog({ open, onOpenChange, agendamento }: DarBaixaDial
                   <div className="flex justify-between text-xs text-muted-foreground">
                     <span>Serviços Adicionais</span>
                     <span className="font-semibold text-emerald-600 dark:text-emerald-400">+ R$ {totalServicosAdicionais.toFixed(2).replace('.', ',')}</span>
-                  </div>
-                )}
-                {extraVal > 0 && (
-                  <div className="flex justify-between text-xs text-muted-foreground">
-                    <span>Valor Extra</span>
-                    <span className="font-semibold text-emerald-600 dark:text-emerald-400">+ R$ {extraVal.toFixed(2).replace('.', ',')}</span>
                   </div>
                 )}
                 {descontoVal > 0 && (
@@ -736,7 +696,7 @@ export function DarBaixaDialog({ open, onOpenChange, agendamento }: DarBaixaDial
                                   {...field}
                                   className="h-9 text-xs font-bold border-border"
                                   placeholder="0,00"
-                                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => field.onChange(e.target.value.replace(/[^\d,.]/g, ''))}
+                                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => field.onChange(formatarMoeda(e.target.value))}
                                 />
                               </FormControl>
                             </FormItem>
