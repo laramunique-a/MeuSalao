@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, Fragment } from 'react'
 import { useClientes } from '@/hooks/useClientes'
 import { useClienteReport, useCaixaPendenciasReport, useFolhaPagamentoReport, useSaldosComissoesReport } from '@/hooks/useRelatorios'
 import { useProfissionais } from '@/hooks/useProfissionais'
@@ -38,6 +38,8 @@ import {
   Clock,
   Search,
   AlertCircle,
+  ChevronDown,
+  ChevronUp,
 } from 'lucide-react'
 import { format, startOfMonth, endOfMonth, subMonths, addMonths, differenceInDays, subDays, addDays, startOfDay, endOfDay } from 'date-fns'
 import { cn } from '@/lib/utils'
@@ -81,6 +83,7 @@ export default function Relatorios() {
   const isProfissional = usuario?.perfil === 'profissional'
 
   const [selectedClienteId, setSelectedClienteId] = useState<string | null>(null)
+  const [expandedProfissionalId, setExpandedProfissionalId] = useState<string | null>(null)
   const [openCombobox, setOpenCombobox] = useState(false)
   const [search, setSearch] = useState('')
   const [activeReportTab, setActiveReportTab] = useState<'cliente' | 'caixa' | 'folha'>(isProfissional ? 'folha' : 'cliente')
@@ -844,33 +847,99 @@ export default function Relatorios() {
                       </tr>
                     ) : (
                       saldosComissoes.map((saldo: any) => {
+                        const isExpanded = expandedProfissionalId === saldo.profissional_id
                         return (
-                          <tr key={saldo.profissional_id} className="hover:bg-accent/10 transition-colors">
-                            <td className="px-4 py-3 font-bold text-foreground uppercase tracking-wider">
-                              {saldo.nome}
-                            </td>
-                            <td className="px-4 py-3 text-right font-medium text-muted-foreground">
-                              {formatCurrency(saldo.gerado_periodo)}
-                            </td>
-                            <td className="px-4 py-3 text-right font-medium text-muted-foreground">
-                              {formatCurrency(saldo.pago_periodo)}
-                            </td>
-                            <td className={`px-4 py-3 text-right font-bold ${saldo.saldo_pendente > 0 ? 'text-violet-600' : 'text-muted-foreground'}`}>
-                              {formatCurrency(saldo.saldo_pendente)}
-                            </td>
-                            <td className="px-4 py-2 text-center">
-                              <Button
-                                size="sm"
-                                disabled={saldo.saldo_pendente <= 0}
-                                className="h-8 px-3 text-[10px] font-semibold uppercase tracking-wider rounded-lg"
-                                onClick={() => {
-                                  handleLancarPagamento(saldo.profissional_id, saldo.saldo_pendente)
-                                }}
-                              >
-                                Pagar Comissão
-                              </Button>
-                            </td>
-                          </tr>
+                          <Fragment key={saldo.profissional_id}>
+                            <tr 
+                              className="hover:bg-accent/10 transition-colors cursor-pointer"
+                              onClick={() => setExpandedProfissionalId(isExpanded ? null : saldo.profissional_id)}
+                            >
+                              <td className="px-4 py-3 font-bold text-foreground uppercase tracking-wider flex items-center gap-2">
+                                {isExpanded ? (
+                                  <ChevronUp className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                                ) : (
+                                  <ChevronDown className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                                )}
+                                {saldo.nome}
+                              </td>
+                              <td className="px-4 py-3 text-right font-medium text-muted-foreground">
+                                {formatCurrency(saldo.gerado_periodo)}
+                              </td>
+                              <td className="px-4 py-3 text-right font-medium text-muted-foreground">
+                                {formatCurrency(saldo.pago_periodo)}
+                              </td>
+                              <td className={`px-4 py-3 text-right font-bold ${saldo.saldo_pendente > 0 ? 'text-violet-600' : 'text-muted-foreground'}`}>
+                                {formatCurrency(saldo.saldo_pendente)}
+                              </td>
+                              <td className="px-4 py-2 text-center" onClick={(e) => e.stopPropagation()}>
+                                <Button
+                                  size="sm"
+                                  disabled={saldo.saldo_pendente <= 0}
+                                  className="h-8 px-3 text-[10px] font-semibold uppercase tracking-wider rounded-lg"
+                                  onClick={() => {
+                                    handleLancarPagamento(saldo.profissional_id, saldo.saldo_pendente)
+                                  }}
+                                >
+                                  Pagar Comissão
+                                </Button>
+                              </td>
+                            </tr>
+                            {isExpanded && (
+                              <tr onClick={(e) => e.stopPropagation()}>
+                                <td colSpan={5} className="bg-accent/5 px-4 py-3 border-t border-border/40">
+                                  <div className="space-y-2 border border-border/60 rounded-xl bg-background p-3 animate-in fade-in duration-200">
+                                    <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest border-b border-border pb-1.5 flex items-center gap-1.5">
+                                      <Calendar className="h-3.5 w-3.5 text-primary animate-pulse" />
+                                      Detalhamento de Comissões Geradas no Período ({saldo.detalhes?.length || 0})
+                                    </p>
+                                    {(!saldo.detalhes || saldo.detalhes.length === 0) ? (
+                                      <p className="text-[10px] text-muted-foreground uppercase py-2">
+                                        Nenhum serviço gerador no período.
+                                      </p>
+                                    ) : (
+                                      <div className="max-h-[220px] overflow-y-auto w-full">
+                                        <table className="w-full text-left text-[10px]">
+                                          <thead>
+                                            <tr className="text-muted-foreground font-bold uppercase tracking-wider text-[8px] border-b border-border bg-accent/20">
+                                              <th className="px-2 py-1.5">Data</th>
+                                              <th className="px-2 py-1.5">Cliente</th>
+                                              <th className="px-2 py-1.5">Serviço / Descrição</th>
+                                              <th className="px-2 py-1.5 text-right">Valor Serviço</th>
+                                              <th className="px-2 py-1.5 text-right text-violet-600 dark:text-violet-400">Comissão</th>
+                                            </tr>
+                                          </thead>
+                                          <tbody className="divide-y divide-border/60">
+                                            {[...saldo.detalhes]
+                                              .sort((a, b) => new Date(b.data_hora).getTime() - new Date(a.data_hora).getTime())
+                                              .map((det: any, idx: number) => (
+                                                <tr key={idx} className="hover:bg-accent/20 transition-colors">
+                                                  <td className="px-2 py-2 whitespace-nowrap text-muted-foreground">
+                                                    {format(new Date(det.data_hora), "dd/MM/yyyy HH:mm")}
+                                                  </td>
+                                                  <td className="px-2 py-2 font-semibold text-foreground uppercase tracking-wider">
+                                                    {det.cliente}
+                                                  </td>
+                                                  <td className="px-2 py-2 text-muted-foreground uppercase tracking-wider">
+                                                    {det.descricao}
+                                                  </td>
+                                                  <td className="px-2 py-2 text-right">
+                                                    {formatCurrency(det.valor_bruto)}
+                                                  </td>
+                                                  <td className="px-2 py-2 text-right font-bold text-violet-600 dark:text-violet-400">
+                                                    {formatCurrency(det.comissao_valor)}
+                                                  </td>
+                                                </tr>
+                                              ))
+                                            }
+                                          </tbody>
+                                        </table>
+                                      </div>
+                                    )}
+                                  </div>
+                                </td>
+                              </tr>
+                            )}
+                          </Fragment>
                         )
                       })
                     )}

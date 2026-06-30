@@ -145,9 +145,12 @@ export const relatoriosService = {
         comissao_valor,
         data_hora,
         metadata,
+        descricao,
+        valor,
         agendamento:agendamento_id (
           profissional_id,
-          profissional:profissional_id (id, nome)
+          profissional:profissional_id (id, nome),
+          cliente:cliente_id (nome)
         )
       `)
       .eq('salao_id', usuario.salao_id)
@@ -184,6 +187,13 @@ export const relatoriosService = {
       gerado_historico: number
       pago_historico: number
       saldo_pendente: number
+      detalhes: {
+        data_hora: string
+        cliente: string
+        descricao: string
+        valor_bruto: number
+        comissao_valor: number
+      }[]
     }> = {}
 
     // Inicializar profissionais
@@ -195,7 +205,8 @@ export const relatoriosService = {
         pago_periodo: 0,
         gerado_historico: 0,
         pago_historico: 0,
-        saldo_pendente: 0
+        saldo_pendente: 0,
+        detalhes: []
       }
     })
 
@@ -212,6 +223,18 @@ export const relatoriosService = {
       const insidePeriod = (!startDate || tDate >= new Date(startDate)) && (!endDate || tDate <= new Date(endDate))
       if (insidePeriod) {
         saldosMap[profId].gerado_periodo += valor
+
+        // Adicionar apenas os serviços que estão dentro do período selecionado
+        const clienteNome = (t.agendamento as any)?.cliente?.nome || 'Cliente'
+        const valorBruto = Number((t.metadata as any)?.pagamento?.valor_bruto) || Number(t.valor) || 0
+
+        saldosMap[profId].detalhes.push({
+          data_hora: t.data_hora,
+          cliente: clienteNome,
+          descricao: t.descricao,
+          valor_bruto: valorBruto,
+          comissao_valor: valor
+        })
       }
     })
 
