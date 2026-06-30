@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -32,9 +32,11 @@ import { useUpdateAgendamentoStatus } from '@/hooks/useAgendamentos'
 import { useSalao } from '@/hooks/useSalao'
 import { useToast } from '@/hooks/use-toast'
 import { useAuthStore } from '@/store/authStore'
+import { useServicos } from '@/hooks/useServicos'
+import { useProfissionais } from '@/hooks/useProfissionais'
 import type { Agendamento } from '@/types/models'
 import { format } from 'date-fns'
-import { Receipt, UserCircle, Scissors, Clock, CheckCircle2 } from 'lucide-react'
+import { Receipt, UserCircle, Scissors, Clock, CheckCircle2, Plus, Trash2, Tag, DollarSign } from 'lucide-react'
 
 const darBaixaSchema = z.object({
   forma_pagamento: z.enum(['dinheiro', 'cartao_debito', 'cartao_credito', 'pix', 'outros']),
@@ -78,6 +80,28 @@ export function DarBaixaDialog({ open, onOpenChange, agendamento }: DarBaixaDial
   const updateStatus = useUpdateAgendamentoStatus()
   const { data: salao } = useSalao()
 
+  // Hooks de Dados
+  const { data: todosServicos = [] } = useServicos()
+  const { data: todosProfissionais = [] } = useProfissionais()
+
+  // Estados para serviços adicionais
+  const [servicosAdicionais, setServicosAdicionais] = useState<{
+    id: string
+    servicoId: string
+    profissionalId: string
+    valor: number
+  }[]>([])
+
+  // Estado para adicionar um novo serviço (inputs temporários)
+  const [selectedServicoId, setSelectedServicoId] = useState<string>('ignore')
+  const [selectedProfissionalId, setSelectedProfissionalId] = useState<string>('ignore')
+  const [valorServicoAdicional, setValorServicoAdicional] = useState<string>('')
+
+  // Estados para valor extra e desconto
+  const [valorExtra, setValorExtra] = useState<string>('')
+  const [descricaoExtra, setDescricaoExtra] = useState<string>('')
+  const [valorDesconto, setValorDesconto] = useState<string>('')
+
   const form = useForm<DarBaixaFormData>({
     resolver: zodResolver(darBaixaSchema),
     defaultValues: {
@@ -91,6 +115,16 @@ export function DarBaixaDialog({ open, onOpenChange, agendamento }: DarBaixaDial
     },
   })
 
+  const resetStates = () => {
+    setServicosAdicionais([])
+    setSelectedServicoId('ignore')
+    setSelectedProfissionalId('ignore')
+    setValorServicoAdicional('')
+    setValorExtra('')
+    setDescricaoExtra('')
+    setValorDesconto('')
+  }
+
   useEffect(() => {
     if (open) {
       form.reset({
@@ -102,6 +136,7 @@ export function DarBaixaDialog({ open, onOpenChange, agendamento }: DarBaixaDial
         bandeira_2: '',
         valor_pagamento_2: '',
       })
+      resetStates()
     }
   }, [open, agendamento, form])
 
@@ -118,16 +153,25 @@ export function DarBaixaDialog({ open, onOpenChange, agendamento }: DarBaixaDial
   const v2Str = form.watch('valor_pagamento_2')
   const b2 = form.watch('bandeira_2')
 
-  // Auto-calcular valor 2 quando valor 1 muda
+  // Cálculos dinâmicos
+  const agValor = agendamento?.valor || 0
+  
+  const totalServicosAdicionais = servicosAdicionais.reduce((acc, s) => acc + s.valor, 0)
+  const extraVal = parseFloat(valorExtra.replace(/\./g, '').replace(',', '.')) || 0
+  const descontoVal = parseFloat(valorDesconto.replace(/\./g, '').replace(',', '.')) || 0
+  
+  const totalBrutoCalculado = Math.max(0, agValor + totalServicosAdicionais + extraVal - descontoVal)
+
+  // Sincronizar o valor 1 e valor 2 do formulário de pagamento com o total bruto calculado
   useEffect(() => {
-    if (isSplit && agendamento && v1Str) {
-      const v1 = parseFloat(v1Str.replace(/\./g, '').replace(',', '.'))
-      if (!isNaN(v1)) {
-        const v2 = Math.max(0, agendamento.valor - v1)
-        form.setValue('valor_pagamento_2', v2.toFixed(2).replace('.', ','))
-      }
+    if (!isSplit) {
+      form.setValue('valor_pagamento_1', totalBrutoCalculado.toFixed(2).replace('.', ','))
+    } else {
+      const v1 = parseFloat(v1Str?.replace(/\./g, '').replace(',', '.') || '0') || 0
+      const v2 = Math.max(0, totalBrutoCalculado - v1)
+      form.setValue('valor_pagamento_2', v2.toFixed(2).replace('.', ','))
     }
-  }, [v1Str, isSplit, agendamento, form])
+  }, [totalBrutoCalculado, isSplit, form, v1Str])
 
   // Lógica de Taxas
   const taxasConfig = (salao?.configuracoes as any)?.taxas_cartao || { ativo: false, modo: 'unica', taxa_unica: 0, taxas_bandeira: {} }
@@ -143,11 +187,8 @@ export function DarBaixaDialog({ open, onOpenChange, agendamento }: DarBaixaDial
     return 0
   }
 
-  // Cálculos dinâmicos
-  const agValor = agendamento?.valor || 0
-  
   const val1 = parseFloat(v1Str?.replace(/\./g, '').replace(',', '.') || '0') || 0
-  const realVal1 = isSplit ? val1 : agValor
+  const realVal1 = isSplit ? val1 : totalBrutoCalculado
   const pct1 = getTaxaPercentual(form1, b1)
   const taxaVal1 = (realVal1 * pct1) / 100
   const net1 = realVal1 - taxaVal1
@@ -170,111 +211,149 @@ export function DarBaixaDialog({ open, onOpenChange, agendamento }: DarBaixaDial
       const profissional = agendamento.profissional
       const comissaoPercentual = (profissional as any)?.comissao_percentual || 0
 
-      // Split Logic
       if (data.is_split && data.valor_pagamento_1 && data.valor_pagamento_2 && data.forma_pagamento_2) {
-        if (Math.abs((totalBruto) - agendamento.valor) > 0.01) {
+        if (Math.abs(totalBruto - totalBrutoCalculado) > 0.01) {
           toast({
             title: 'Valores incorretos',
-            description: `A soma (R$ ${totalBruto.toFixed(2)}) não bate com o total (R$ ${agendamento.valor.toFixed(2)})`,
+            description: `A soma (R$ ${totalBruto.toFixed(2)}) não bate com o total recalculado (R$ ${totalBrutoCalculado.toFixed(2)})`,
             variant: 'destructive',
           })
           return
         }
+      }
 
-        const comissao1 = (net1 * comissaoPercentual) / 100
-        const mdata1 = {
-          pagamento: {
-            valor_bruto: realVal1,
-            taxa_aplicada: taxaVal1,
-            taxa_percentual: pct1,
-            bandeira_cartao: form1 === 'cartao_credito' ? data.bandeira_1 : null,
-            valor_liquido: net1,
-            base_comissao: net1
-          }
-        }
+      const prop1 = totalBrutoCalculado > 0 ? realVal1 / totalBrutoCalculado : 1
+      const prop2 = totalBrutoCalculado > 0 ? realVal2 / totalBrutoCalculado : 0
 
-        await createTransacao.mutateAsync({
-          agendamento_id: agendamento.id,
-          tipo: 'entrada',
-          valor: net1,
-          forma_pagamento: data.forma_pagamento,
+      // Lista de Itens de Receita
+      const itensReceita: {
+        tipo: 'principal' | 'adicional' | 'extra'
+        descricao: string
+        categoria: string
+        valorBase: number
+        comissaoPercentual: number
+      }[] = []
+
+      // 1. Serviço Principal com desconto proporcional
+      const valorPrincipalComDesconto = Math.max(0, agValor - descontoVal)
+      itensReceita.push({
+        tipo: 'principal',
+        descricao: `${servico?.nome} - ${agendamento.cliente?.nome}`,
+        categoria: 'Serviço',
+        valorBase: valorPrincipalComDesconto,
+        comissaoPercentual: comissaoPercentual
+      })
+
+      // 2. Serviços Adicionais
+      servicosAdicionais.forEach(sa => {
+        const servObj = todosServicos.find(s => s.id === sa.servicoId)
+        const profObj = todosProfissionais.find(p => p.id === sa.profissionalId)
+        const pctComissao = profObj?.comissao_percentual || 0
+        
+        itensReceita.push({
+          tipo: 'adicional',
+          descricao: `[Adicional] ${servObj?.nome || 'Serviço'} - ${agendamento.cliente?.nome}`,
           categoria: 'Serviço',
-          descricao: `[1/2] ${servico?.nome} - ${agendamento.cliente?.nome}`,
-          comissao_valor: comissao1,
-          taxa_cartao: taxaVal1,
-          data_hora: new Date().toISOString(),
-          status: 'ativo',
-          caixa_id: null,
-          metadata: mdata1 as any
+          valorBase: sa.valor,
+          comissaoPercentual: pctComissao
         })
+      })
 
-        const comissao2 = (net2 * comissaoPercentual) / 100
-        const mdata2 = {
-          pagamento: {
-            valor_bruto: realVal2,
-            taxa_aplicada: taxaVal2,
-            taxa_percentual: pct2,
-            bandeira_cartao: data.forma_pagamento_2 === 'cartao_credito' ? data.bandeira_2 : null,
-            valor_liquido: net2,
-            base_comissao: net2
-          }
-        }
-
-        await createTransacao.mutateAsync({
-          agendamento_id: agendamento.id,
-          tipo: 'entrada',
-          valor: net2,
-          forma_pagamento: data.forma_pagamento_2,
-          categoria: 'Serviço',
-          descricao: `[2/2] ${servico?.nome} - ${agendamento.cliente?.nome}`,
-          comissao_valor: comissao2,
-          taxa_cartao: taxaVal2,
-          data_hora: new Date().toISOString(),
-          status: 'ativo',
-          caixa_id: null,
-          metadata: mdata2 as any
-        })
-
-      } else {
-        // Single Payment Logic
-        const comissaoUnica = (net1 * comissaoPercentual) / 100
-        const mdataUnico = {
-          pagamento: {
-            valor_bruto: realVal1,
-            taxa_aplicada: taxaVal1,
-            taxa_percentual: pct1,
-            bandeira_cartao: data.forma_pagamento === 'cartao_credito' ? data.bandeira_1 : null,
-            valor_liquido: net1,
-            base_comissao: net1
-          }
-        }
-
-        await createTransacao.mutateAsync({
-          agendamento_id: agendamento.id,
-          tipo: 'entrada',
-          valor: net1, // LÍQUIDO vai para o caixa
-          forma_pagamento: data.forma_pagamento,
-          categoria: 'Serviço',
-          descricao: `${servico?.nome} - ${agendamento.cliente?.nome}`,
-          comissao_valor: comissaoUnica,
-          taxa_cartao: taxaVal1,
-          data_hora: new Date().toISOString(),
-          status: 'ativo',
-          caixa_id: null,
-          metadata: mdataUnico as any
+      // 3. Item Extra
+      if (extraVal > 0) {
+        itensReceita.push({
+          tipo: 'extra',
+          descricao: `[Extra] ${descricaoExtra || 'Valor Extra'} - ${agendamento.cliente?.nome}`,
+          categoria: 'Outros',
+          valorBase: extraVal,
+          comissaoPercentual: 0
         })
       }
 
-      // O status do agendamento é atualizado automaticamente dentro do caixaService.create
-      // quando agendamento_id é fornecido — não é necessário chamar updateStatus aqui.
+      // Lançar as transações proporcionalmente no split
+      for (const item of itensReceita) {
+        // Lançar Parte 1 (Forma 1)
+        const bruto1 = item.valorBase * prop1
+        if (bruto1 > 0.005) {
+          const pctTaxa1 = getTaxaPercentual(data.forma_pagamento, data.bandeira_1)
+          const taxa1 = (bruto1 * pctTaxa1) / 100
+          const liquido1 = bruto1 - taxa1
+          const comissao1 = (liquido1 * item.comissaoPercentual) / 100
+
+          const prefix = data.is_split ? '[1/2] ' : ''
+          const metadata = {
+            pagamento: {
+              valor_bruto: bruto1,
+              taxa_aplicada: taxa1,
+              taxa_percentual: pctTaxa1,
+              bandeira_cartao: data.forma_pagamento === 'cartao_credito' ? data.bandeira_1 : null,
+              valor_liquido: liquido1,
+              base_comissao: liquido1
+            }
+          }
+
+          await createTransacao.mutateAsync({
+            agendamento_id: agendamento.id,
+            tipo: 'entrada',
+            valor: liquido1,
+            forma_pagamento: data.forma_pagamento,
+            categoria: item.categoria,
+            descricao: `${prefix}${item.descricao}`,
+            comissao_valor: comissao1,
+            taxa_cartao: taxa1,
+            data_hora: new Date().toISOString(),
+            status: 'ativo',
+            caixa_id: null,
+            metadata: metadata as any
+          })
+        }
+
+        // Lançar Parte 2 (Forma 2) se houver split
+        if (data.is_split && prop2 > 0) {
+          const bruto2 = item.valorBase * prop2
+          if (bruto2 > 0.005) {
+            const pctTaxa2 = getTaxaPercentual(data.forma_pagamento_2 || '', data.bandeira_2)
+            const taxa2 = (bruto2 * pctTaxa2) / 100
+            const liquido2 = bruto2 - taxa2
+            const comissao2 = (liquido2 * item.comissaoPercentual) / 100
+
+            const metadata = {
+              pagamento: {
+                valor_bruto: bruto2,
+                taxa_aplicada: taxa2,
+                taxa_percentual: pctTaxa2,
+                bandeira_cartao: data.forma_pagamento_2 === 'cartao_credito' ? data.bandeira_2 : null,
+                valor_liquido: liquido2,
+                base_comissao: liquido2
+              }
+            }
+
+            await createTransacao.mutateAsync({
+              agendamento_id: agendamento.id,
+              tipo: 'entrada',
+              valor: liquido2,
+              forma_pagamento: data.forma_pagamento_2!,
+              categoria: item.categoria,
+              descricao: `[2/2] ${item.descricao}`,
+              comissao_valor: comissao2,
+              taxa_cartao: taxa2,
+              data_hora: new Date().toISOString(),
+              status: 'ativo',
+              caixa_id: null,
+              metadata: metadata as any
+            })
+          }
+        }
+      }
 
       toast({
         title: 'Baixa realizada!',
-        description: `O valor líquido de R$ ${totalLiquido.toFixed(2).replace('.',',')} entrou no caixa.`,
+        description: `O valor líquido de R$ ${totalLiquido.toFixed(2).replace('.', ',')} entrou no caixa.`,
       })
 
       onOpenChange(false)
       form.reset()
+      resetStates()
     } catch (error: any) {
       toast({
         title: 'Erro ao registrar',
@@ -329,11 +408,218 @@ export function DarBaixaDialog({ open, onOpenChange, agendamento }: DarBaixaDial
                     </div>
                   </div>
                 </div>
+              </div>
 
-                <div className="pt-3 border-t border-border mt-3 flex items-center justify-between">
-                  <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Valor Bruto</span>
+              {/* Serviços Adicionais */}
+              <div className="bg-background rounded-xl border border-border shadow-sm p-4 space-y-3 transition-all hover:border-primary/20">
+                <h4 className="text-[10px] font-bold uppercase text-muted-foreground tracking-widest flex items-center gap-1.5 border-b border-border pb-1.5">
+                  <Scissors className="h-3.5 w-3.5 text-primary" />
+                  Serviços Adicionais
+                </h4>
+
+                {/* Lista de Adicionados */}
+                {servicosAdicionais.length > 0 && (
+                  <div className="space-y-1.5">
+                    {servicosAdicionais.map((sa) => {
+                      const serv = todosServicos.find(s => s.id === sa.servicoId)
+                      const prof = todosProfissionais.find(p => p.id === sa.profissionalId)
+                      return (
+                        <div key={sa.id} className="flex items-center justify-between bg-accent/25 px-2.5 py-1.5 rounded-lg border border-border/40 text-xs">
+                          <div className="min-w-0">
+                            <p className="font-semibold text-foreground truncate">{serv?.nome || 'Serviço'}</p>
+                            <p className="text-[10px] text-muted-foreground">com {prof?.nome || 'Profissional'}</p>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="font-bold text-foreground">R$ {sa.valor.toFixed(2).replace('.', ',')}</span>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => setServicosAdicionais(prev => prev.filter(item => item.id !== sa.id))}
+                              className="h-7 w-7 text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-md"
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </Button>
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                )}
+
+                {/* Formulário de Adição Rápida */}
+                <div className="grid grid-cols-2 gap-2.5 pt-1.5">
+                  <div className="space-y-1">
+                    <Label className="text-[9px] font-bold text-muted-foreground uppercase tracking-wider">Serviço</Label>
+                    <Select 
+                      value={selectedServicoId} 
+                      onValueChange={(val) => {
+                        setSelectedServicoId(val)
+                        const serv = todosServicos.find(s => s.id === val)
+                        if (serv) {
+                          setValorServicoAdicional(serv.valor.toFixed(2).replace('.', ','))
+                        }
+                      }}
+                    >
+                      <SelectTrigger className="h-8 text-xs rounded-lg border-border">
+                        <SelectValue placeholder="Selecione..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="ignore" disabled>Selecione...</SelectItem>
+                        {todosServicos.filter(s => s.ativo).map(s => (
+                          <SelectItem key={s.id} value={s.id}>{s.nome}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-1">
+                    <Label className="text-[9px] font-bold text-muted-foreground uppercase tracking-wider">Profissional</Label>
+                    <Select 
+                      value={selectedProfissionalId} 
+                      onValueChange={setSelectedProfissionalId}
+                    >
+                      <SelectTrigger className="h-8 text-xs rounded-lg border-border">
+                        <SelectValue placeholder="Selecione..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="ignore" disabled>Selecione...</SelectItem>
+                        {todosProfissionais.filter(p => p.ativo && p.pode_atender).map(p => (
+                          <SelectItem key={p.id} value={p.id}>{p.nome}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-1 col-span-2 sm:col-span-1">
+                    <Label className="text-[9px] font-bold text-muted-foreground uppercase tracking-wider">Valor do Serviço (R$)</Label>
+                    <Input 
+                      value={valorServicoAdicional}
+                      onChange={(e) => setValorServicoAdicional(e.target.value.replace(/[^\d,.]/g, ''))}
+                      placeholder="0,00"
+                      className="h-8 text-xs font-bold border-border"
+                    />
+                  </div>
+
+                  <div className="flex items-end col-span-2 sm:col-span-1">
+                    <Button
+                      type="button"
+                      onClick={() => {
+                        if (selectedServicoId === 'ignore' || selectedProfissionalId === 'ignore' || !valorServicoAdicional) {
+                          toast({
+                            title: 'Dados incompletos',
+                            description: 'Preencha serviço, profissional e valor para adicionar.',
+                            variant: 'destructive'
+                          })
+                          return
+                        }
+                        const val = parseFloat(valorServicoAdicional.replace(/\./g, '').replace(',', '.'))
+                        if (isNaN(val) || val <= 0) {
+                          toast({
+                            title: 'Valor inválido',
+                            description: 'Digite um valor maior que zero.',
+                            variant: 'destructive'
+                          })
+                          return
+                        }
+                        setServicosAdicionais(prev => [
+                          ...prev,
+                          {
+                            id: Math.random().toString(),
+                            servicoId: selectedServicoId,
+                            profissionalId: selectedProfissionalId,
+                            valor: val
+                          }
+                        ])
+                        setSelectedServicoId('ignore')
+                        setSelectedProfissionalId('ignore')
+                        setValorServicoAdicional('')
+                      }}
+                      className="h-8 w-full text-[10px] font-bold uppercase tracking-wider rounded-lg gap-1.5"
+                    >
+                      <Plus className="h-3.5 w-3.5" />
+                      Adicionar
+                    </Button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Extras e Descontos */}
+              <div className="bg-background rounded-xl border border-border shadow-sm p-4 space-y-3 transition-all hover:border-primary/20">
+                <h4 className="text-[10px] font-bold uppercase text-muted-foreground tracking-widest flex items-center gap-1.5 border-b border-border pb-1.5">
+                  <Tag className="h-3.5 w-3.5 text-primary" />
+                  Extras e Descontos
+                </h4>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <Label className="text-[9px] font-bold text-muted-foreground uppercase tracking-wider">Valor Extra (R$)</Label>
+                    <div className="relative">
+                      <Plus className="absolute left-2.5 top-1/2 transform -translate-y-1/2 h-3.5 w-3.5 text-emerald-500" />
+                      <Input
+                        value={valorExtra}
+                        onChange={(e) => setValorExtra(e.target.value.replace(/[^\d,.]/g, ''))}
+                        placeholder="0,00"
+                        className="h-9 text-xs font-bold pl-8 border-border"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-1">
+                    <Label className="text-[9px] font-bold text-muted-foreground uppercase tracking-wider">Desconto (R$)</Label>
+                    <div className="relative">
+                      <DollarSign className="absolute left-2.5 top-1/2 transform -translate-y-1/2 h-3.5 w-3.5 text-red-500" />
+                      <Input
+                        value={valorDesconto}
+                        onChange={(e) => setValorDesconto(e.target.value.replace(/[^\d,.]/g, ''))}
+                        placeholder="0,00"
+                        className="h-9 text-xs font-bold pl-8 border-border"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {parseFloat(valorExtra.replace(/\./g, '').replace(',', '.') || '0') > 0 && (
+                  <div className="space-y-1 animate-in slide-in-from-top-1 duration-200">
+                    <Label className="text-[9px] font-bold text-muted-foreground uppercase tracking-wider">Descrição do Extra (ex: Produto)</Label>
+                    <Input
+                      value={descricaoExtra}
+                      onChange={(e) => setDescricaoExtra(e.target.value)}
+                      placeholder="Ex: Venda de Shampoo, Taxa de serviço"
+                      className="h-9 text-xs border-border"
+                    />
+                  </div>
+                )}
+              </div>
+
+              {/* Resumo do Total Atualizado */}
+              <div className="bg-primary/5 p-4 rounded-xl border border-primary/10 space-y-1.5">
+                <div className="flex justify-between text-xs text-muted-foreground">
+                  <span>Valor do Agendamento</span>
+                  <span className="font-semibold text-foreground">R$ {agValor.toFixed(2).replace('.', ',')}</span>
+                </div>
+                {totalServicosAdicionais > 0 && (
+                  <div className="flex justify-between text-xs text-muted-foreground">
+                    <span>Serviços Adicionais</span>
+                    <span className="font-semibold text-emerald-600 dark:text-emerald-400">+ R$ {totalServicosAdicionais.toFixed(2).replace('.', ',')}</span>
+                  </div>
+                )}
+                {extraVal > 0 && (
+                  <div className="flex justify-between text-xs text-muted-foreground">
+                    <span>Valor Extra</span>
+                    <span className="font-semibold text-emerald-600 dark:text-emerald-400">+ R$ {extraVal.toFixed(2).replace('.', ',')}</span>
+                  </div>
+                )}
+                {descontoVal > 0 && (
+                  <div className="flex justify-between text-xs text-muted-foreground">
+                    <span>Desconto Aplicado</span>
+                    <span className="font-semibold text-red-500">- R$ {descontoVal.toFixed(2).replace('.', ',')}</span>
+                  </div>
+                )}
+                <div className="pt-2 border-t border-border mt-1 flex items-center justify-between">
+                  <span className="text-xs font-bold text-foreground uppercase tracking-wider">Total a Pagar</span>
                   <span className="text-lg font-black text-foreground tracking-tight">
-                    R$ {agendamento.valor.toFixed(2).replace('.', ',')}
+                    R$ {totalBrutoCalculado.toFixed(2).replace('.', ',')}
                   </span>
                 </div>
               </div>
