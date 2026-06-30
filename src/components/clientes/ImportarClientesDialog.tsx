@@ -15,6 +15,42 @@ import { useToast } from '@/hooks/use-toast'
 import { useImportClientes } from '@/hooks/useClientes'
 import { Upload, FileSpreadsheet, CheckCircle, Database } from 'lucide-react'
 
+function formatarTelefoneBR(raw: string): string {
+  const digits = raw.replace(/\D/g, '')
+
+  let cleanedDigits = digits
+  if (cleanedDigits.startsWith('55') && cleanedDigits.length > 10) {
+    cleanedDigits = cleanedDigits.substring(2)
+  }
+
+  if (cleanedDigits.length < 10) {
+    return cleanedDigits ? raw : ''
+  }
+
+  if (cleanedDigits.length === 11) {
+    const ddd = cleanedDigits.substring(0, 2)
+    const parte1 = cleanedDigits.substring(2, 7)
+    const parte2 = cleanedDigits.substring(7)
+    return `(${ddd}) ${parte1}-${parte2}`
+  }
+
+  if (cleanedDigits.length === 10) {
+    const ddd = cleanedDigits.substring(0, 2)
+    const parte1 = cleanedDigits.substring(2, 6)
+    const parte2 = cleanedDigits.substring(6)
+    return `(${ddd}) ${parte1}-${parte2}`
+  }
+
+  if (cleanedDigits.length > 11) {
+    const ddd = cleanedDigits.substring(cleanedDigits.length - 11, cleanedDigits.length - 9)
+    const parte1 = cleanedDigits.substring(cleanedDigits.length - 9, cleanedDigits.length - 4)
+    const parte2 = cleanedDigits.substring(cleanedDigits.length - 4)
+    return `(${ddd}) ${parte1}-${parte2}`
+  }
+
+  return raw
+}
+
 interface ImportarClientesDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
@@ -122,13 +158,15 @@ export function ImportarClientesDialog({ open, onOpenChange }: ImportarClientesD
   const getMappedClients = () => {
     return sheetData.map(row => {
       const nome = row[mapping.nome] ? String(row[mapping.nome]).trim() : ''
-      const telefone = mapping.telefone && mapping.telefone !== 'ignore' && row[mapping.telefone] ? String(row[mapping.telefone]).trim() : ''
+      const rawTelefone = mapping.telefone && mapping.telefone !== 'ignore' && row[mapping.telefone] ? String(row[mapping.telefone]).trim() : ''
       const email = mapping.email && mapping.email !== 'ignore' && row[mapping.email] ? String(row[mapping.email]).trim() : ''
       const observacoes = mapping.observacoes && mapping.observacoes !== 'ignore' && row[mapping.observacoes] ? String(row[mapping.observacoes]).trim() : ''
 
+      const telefone = rawTelefone ? formatarTelefoneBR(rawTelefone) : ''
+
       return {
         nome,
-        telefone: telefone || '',
+        telefone,
         email: email || null,
         observacoes: observacoes || null
       }
