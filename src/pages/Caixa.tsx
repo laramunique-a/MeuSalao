@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { 
   Plus, 
   Search, 
@@ -22,7 +22,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { useTransacoesByDate, useCaixaSummary, useCaixaAberto, useEstornarTransacao, useSaldoCaixaAberto } from '@/hooks/useCaixa'
+import { useTransacoesByDate, useCaixaSummary, useCaixaAberto, useEstornarTransacao, useSaldoCaixaAberto, useTransacoesByCaixa } from '@/hooks/useCaixa'
 import { useAgendamentosEmAtendimento, usePendenciasGlobais } from '@/hooks/useAgendamentos'
 import { format, startOfDay, endOfDay, subDays, isBefore, parseISO } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
@@ -63,6 +63,32 @@ export default function Caixa() {
   const { data: caixaAberto, isLoading: loadingStatus } = useCaixaAberto()
   const { data: saldoRealCaixa = 0 } = useSaldoCaixaAberto(caixaAberto?.id)
   
+  // Buscar transações vinculadas ao caixa atualmente aberto
+  const { data: transacoesCaixa, isLoading: loadingTransCaixa } = useTransacoesByCaixa(caixaAberto?.id || null)
+
+  // Selecionar transações e estado de carregamento de acordo com o caixa
+  const transacoesExibidas = caixaAberto ? transacoesCaixa : transacoes
+  const loadingTransExibidas = caixaAberto ? loadingTransCaixa : loadingTrans
+
+  // Calcular Entradas, Saídas e Saldo do Caixa Aberto (se houver) ou do Dia (se fechado)
+  const resumoAtivo = useMemo(() => {
+    if (caixaAberto) {
+      const ativas = transacoesCaixa?.filter((t: any) => t.status === 'ativo') || []
+      const entradas = ativas.filter((t: any) => t.tipo === 'entrada').reduce((sum: number, t: any) => sum + Number(t.valor), 0)
+      const saidas = ativas.filter((t: any) => t.tipo === 'saida').reduce((sum: number, t: any) => sum + Number(t.valor), 0)
+      return {
+        entradas,
+        saidas,
+        saldo: entradas - saidas
+      }
+    }
+    return {
+      entradas: resumen?.entradas || 0,
+      saidas: resumen?.saidas || 0,
+      saldo: resumen?.saldo || 0
+    }
+  }, [caixaAberto, transacoesCaixa, resumen])
+  
   // Buscar pendências de até 7 dias atrás
   const [dataPendenciasInicio] = useState(subDays(startOfDay(new Date()), 7).toISOString())
   const { data: pendencias } = useAgendamentosEmAtendimento(dataPendenciasInicio, dataFim)
@@ -70,7 +96,7 @@ export default function Caixa() {
 
   const { data: pendenciasGlobais = [] } = usePendenciasGlobais()
 
-  const pendenciasPassadas = pendenciasGlobais.filter(p => {
+  const pendenciasPassadas = pendenciasGlobais.filter((p: any) => {
     if (!caixaAberto) return false
     // Compara apenas a DATA (ignorando hora) para não incluir agendamentos
     // do mesmo dia que foram realizados antes do horário de abertura do caixa
@@ -79,30 +105,38 @@ export default function Caixa() {
     return dataAgendamento < dataAberturaCaixa
   })
 
-  // Calcular comissões por profissional (dos agendamentos concluídos no período)
-  const comissoesPorProfissional = transacoes?.reduce((acc: any, t) => {
-    if (t.status === 'ativo' && t.comissao_valor && t.agendamento?.profissional) {
-      const profissional = t.agendamento.profissional
-      const profId = profissional.id
-      const profNome = profissional.nome
-      
-      // Se não for admin, mostrar apenas as comissões do próprio usuário
-      if (!isAdmin && profId !== usuario?.id) {
-        return acc
+  // Calcular comissões por profissional (dos agendamentos concluídos no período ou caixa aberto)
+  const comissoesPorProfissional = useMemo(() => {
+    const list = caixaAberto ? transacoesCaixa : transacoes
+    return list?.reduce((acc: any, t: any) => {
+      if (t.status === 'ativo' && t.comissao_valor && t.agendamento?.profissional) {
+        const profissional = t.agendamento.profissional
+        const profId = profissional.id
+        const profNome = profissional.nome
+        
+        // Se não for admin, mostrar apenas as comissões do próprio usuário
+        if (!isAdmin && profId !== usuario?.id) {
+          return acc
+        }
+
+        if (!acc[profId]) acc[profId] = { nome: profNome, total: 0 }
+        acc[profId].total += t.comissao_valor
       }
+      return acc
+    }, {})
+  }, [caixaAberto, transacoesCaixa, transacoes, isAdmin, usuario?.id])
 
-      if (!acc[profId]) acc[profId] = { nome: profNome, total: 0 }
-      acc[profId].total += t.comissao_valor
-    }
-    return acc
-  }, {})
+  const totalComissoes = useMemo(() => {
+    return Object.values(comissoesPorProfissional || {}).reduce((acc: number, p: any) => acc + p.total, 0)
+  }, [comissoesPorProfissional])
 
-  const totalComissoes = Object.values(comissoesPorProfissional || {}).reduce((acc: number, p: any) => acc + p.total, 0)
-
-  const filteredTransacoes = transacoes?.filter(t => 
-    t.descricao.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    t.categoria?.toLowerCase().includes(searchTerm.toLowerCase())
-  )
+  const filteredTransacoes = useMemo(() => {
+    const list = transacoesExibidas || []
+    return list.filter((t: any) => 
+      t.descricao.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      t.categoria?.toLowerCase().includes(searchTerm.toLowerCase())
+    )
+  }, [transacoesExibidas, searchTerm])
 
   const handleEstorno = async (id: string) => {
     if (!isAdmin) {
@@ -275,10 +309,10 @@ export default function Caixa() {
                 {isAdmin && (
                   <>
                     <Badge variant="secondary" className="h-7 px-3 text-[10px] font-semibold bg-background border border-border text-muted-foreground rounded-full">
-                      Entradas: <span className="text-foreground ml-1">R$ {resumen?.entradas.toFixed(2).replace('.', ',')}</span>
+                      Entradas: <span className="text-foreground ml-1">R$ {resumoAtivo.entradas.toFixed(2).replace('.', ',')}</span>
                     </Badge>
                     <Badge variant="secondary" className="h-7 px-3 text-[10px] font-semibold bg-background border border-border text-muted-foreground rounded-full">
-                      Saídas: <span className="text-foreground ml-1">R$ {resumen?.saidas.toFixed(2).replace('.', ',')}</span>
+                      Saídas: <span className="text-foreground ml-1">R$ {resumoAtivo.saidas.toFixed(2).replace('.', ',')}</span>
                     </Badge>
                   </>
                 )}
@@ -289,7 +323,7 @@ export default function Caixa() {
 
                 {isAdmin && (
                   <Badge variant="secondary" className="h-7 px-3 text-[10px] font-semibold bg-primary text-primary-foreground border border-transparent rounded-full">
-                    Saldo: <span className="ml-1">R$ {resumen?.saldo.toFixed(2).replace('.', ',')}</span>
+                    Saldo: <span className="ml-1">R$ {resumoAtivo.saldo.toFixed(2).replace('.', ',')}</span>
                   </Badge>
                 )}
               </>
@@ -431,7 +465,7 @@ export default function Caixa() {
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-border">
-                        {loadingTrans ? (
+                        {loadingTransExibidas ? (
                           <tr><td colSpan={8} className="p-8 text-center text-xs text-muted-foreground uppercase tracking-wider">Carregando transações...</td></tr>
                         ) : filteredTransacoes?.length === 0 ? (
                           <tr><td colSpan={8} className="p-12 text-center text-muted-foreground text-xs uppercase tracking-wider">Nenhuma movimentação encontrada.</td></tr>
