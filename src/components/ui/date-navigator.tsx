@@ -158,12 +158,20 @@ export function DateNavigator(props: DateNavigatorProps) {
                   setIsSelecting(true)
                   props.onSelectRange({ from: selectedDay, to: selectedDay })
                 } else {
-                  // Segundo clique: fecha a seleção e o Popover
-                  setTempRange(range)
-                  if (range?.from && range?.to) {
-                    props.onSelectRange({ from: range.from, to: range.to })
+                  // Segundo clique: se clicado no mesmo dia, assume dia único e fecha
+                  const isSameDayClick = !range || (range.from && !range.to) || (range.from && range.to && range.from.getTime() === range.to.getTime())
+                  if (isSameDayClick) {
+                    props.onSelectRange({ from: selectedDay, to: selectedDay })
                     setPopoverOpen(false)
                     setIsSelecting(false)
+                  } else {
+                    // Clique em outro dia: completa o período
+                    setTempRange(range)
+                    if (range?.from && range?.to) {
+                      props.onSelectRange({ from: range.from, to: range.to })
+                      setPopoverOpen(false)
+                      setIsSelecting(false)
+                    }
                   }
                 }
               }}
