@@ -742,12 +742,12 @@ export default function Relatorios() {
               <Card className="border-border bg-card shadow-none col-span-1 sm:col-span-3">
                 <CardContent className="p-4 flex items-center justify-between">
                   <div>
-                    <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Minha Comissão Pendente a Receber</p>
-                    <h3 className={`text-xl font-bold mt-1 ${saldosComissoes[0]?.saldo_pendente > 0 ? 'text-violet-600 dark:text-violet-400' : 'text-muted-foreground'}`}>
-                      {formatCurrency(saldosComissoes[0]?.saldo_pendente || 0)}
+                    <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Minha Comissão no Período</p>
+                    <h3 className={`text-xl font-bold mt-1 ${(saldosComissoes[0]?.gerado_periodo || 0) - (saldosComissoes[0]?.pago_periodo || 0) > 0 ? 'text-violet-600 dark:text-violet-400' : 'text-muted-foreground'}`}>
+                      {formatCurrency((saldosComissoes[0]?.gerado_periodo || 0) - (saldosComissoes[0]?.pago_periodo || 0))}
                     </h3>
                     <p className="text-[9px] text-muted-foreground mt-1">
-                      Saldo acumulado de comissões. (Total de serviços prestados: {formatCurrency(saldosComissoes[0]?.gerado_historico || 0)} | Total já pago: {formatCurrency(saldosComissoes[0]?.pago_historico || 0)})
+                      Comissão no período selecionado. (Serviços no período: {formatCurrency(saldosComissoes[0]?.gerado_periodo || 0)} | Recebido no período: {formatCurrency(saldosComissoes[0]?.pago_periodo || 0)})
                     </p>
                   </div>
                   <div className="p-2.5 bg-violet-500/10 rounded-lg">
@@ -808,10 +808,10 @@ export default function Relatorios() {
               <div className="p-4 border-b border-border bg-card flex items-center justify-between">
                 <h3 className="text-xs font-bold text-foreground uppercase tracking-widest flex items-center gap-2">
                   <DollarSign className="h-4 w-4 text-muted-foreground" />
-                  Saldos de Comissões Acumuladas
+                  Saldos de Comissões (No Período)
                 </h3>
                 <span className="text-[9px] font-semibold text-muted-foreground uppercase tracking-wider">
-                  Total Geral Pendente: {formatCurrency(saldosComissoes.reduce((acc: number, s: any) => acc + s.saldo_pendente, 0))}
+                  Total Pendente no Período: {formatCurrency(saldosComissoes.reduce((acc: number, s: any) => acc + (s.gerado_periodo - s.pago_periodo), 0))}
                 </span>
               </div>
               <div className="w-full overflow-x-auto">
@@ -819,9 +819,9 @@ export default function Relatorios() {
                   <thead>
                     <tr className="text-muted-foreground font-bold text-[9px] uppercase bg-accent/20 border-b border-border">
                       <th className="px-4 py-3">Profissional</th>
-                      <th className="px-4 py-3 text-right">Total Gerado (Histórico)</th>
-                      <th className="px-4 py-3 text-right">Total Pago (Histórico)</th>
-                      <th className="px-4 py-3 text-right">Saldo Pendente (A Pagar)</th>
+                      <th className="px-4 py-3 text-right">Gerado no Período</th>
+                      <th className="px-4 py-3 text-right">Pago no Período</th>
+                      <th className="px-4 py-3 text-right">Saldo do Período</th>
                       <th className="px-4 py-3 text-center w-36">Ação</th>
                     </tr>
                   </thead>
@@ -839,34 +839,37 @@ export default function Relatorios() {
                         </td>
                       </tr>
                     ) : (
-                      saldosComissoes.map((saldo: any) => (
-                        <tr key={saldo.profissional_id} className="hover:bg-accent/10 transition-colors">
-                          <td className="px-4 py-3 font-bold text-foreground uppercase tracking-wider">
-                            {saldo.nome}
-                          </td>
-                          <td className="px-4 py-3 text-right font-medium text-muted-foreground">
-                            {formatCurrency(saldo.gerado_historico)}
-                          </td>
-                          <td className="px-4 py-3 text-right font-medium text-muted-foreground">
-                            {formatCurrency(saldo.pago_historico)}
-                          </td>
-                          <td className={`px-4 py-3 text-right font-bold ${saldo.saldo_pendente > 0 ? 'text-violet-600' : 'text-muted-foreground'}`}>
-                            {formatCurrency(saldo.saldo_pendente)}
-                          </td>
-                          <td className="px-4 py-2 text-center">
-                            <Button
-                              size="sm"
-                              disabled={saldo.saldo_pendente <= 0}
-                              className="h-8 px-3 text-[10px] font-semibold uppercase tracking-wider rounded-lg"
-                              onClick={() => {
-                                handleLancarPagamento(saldo.profissional_id, saldo.saldo_pendente)
-                              }}
-                            >
-                              Pagar Comissão
-                            </Button>
-                          </td>
-                        </tr>
-                      ))
+                      saldosComissoes.map((saldo: any) => {
+                        const saldoPeriodo = saldo.gerado_periodo - saldo.pago_periodo
+                        return (
+                          <tr key={saldo.profissional_id} className="hover:bg-accent/10 transition-colors">
+                            <td className="px-4 py-3 font-bold text-foreground uppercase tracking-wider">
+                              {saldo.nome}
+                            </td>
+                            <td className="px-4 py-3 text-right font-medium text-muted-foreground">
+                              {formatCurrency(saldo.gerado_periodo)}
+                            </td>
+                            <td className="px-4 py-3 text-right font-medium text-muted-foreground">
+                              {formatCurrency(saldo.pago_periodo)}
+                            </td>
+                            <td className={`px-4 py-3 text-right font-bold ${saldoPeriodo > 0 ? 'text-violet-600' : 'text-muted-foreground'}`}>
+                              {formatCurrency(saldoPeriodo)}
+                            </td>
+                            <td className="px-4 py-2 text-center">
+                              <Button
+                                size="sm"
+                                disabled={saldoPeriodo <= 0}
+                                className="h-8 px-3 text-[10px] font-semibold uppercase tracking-wider rounded-lg"
+                                onClick={() => {
+                                  handleLancarPagamento(saldo.profissional_id, saldoPeriodo)
+                                }}
+                              >
+                                Pagar Comissão
+                              </Button>
+                            </td>
+                          </tr>
+                        )
+                      })
                     )}
                   </tbody>
                 </table>
