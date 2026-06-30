@@ -39,6 +39,7 @@ export function DateNavigator(props: DateNavigatorProps) {
   } = props
 
   const [popoverOpen, setPopoverOpen] = useState(false)
+  const [isSelecting, setIsSelecting] = useState(false)
   const [tempRange, setTempRange] = useState<{ from: Date | undefined; to?: Date | undefined } | undefined>(
     props.mode === "range" ? { from: props.selectedRange.from, to: props.selectedRange.to } : undefined
   )
@@ -91,7 +92,23 @@ export function DateNavigator(props: DateNavigatorProps) {
         <ChevronLeft className="h-4 w-4" />
       </Button>
 
-      <Popover open={popoverOpen} onOpenChange={setPopoverOpen}>
+      <Popover open={popoverOpen} onOpenChange={(open) => {
+        setPopoverOpen(open)
+        if (open) {
+          setIsSelecting(false)
+          if (props.mode === "range") {
+            setTempRange({ from: props.selectedRange.from, to: props.selectedRange.to })
+          }
+        } else {
+          if (props.mode === "range" && isSelecting && tempRange?.from) {
+            props.onSelectRange({
+              from: tempRange.from,
+              to: tempRange.to || tempRange.from
+            })
+          }
+          setIsSelecting(false)
+        }
+      }}>
         <PopoverTrigger asChild>
           <div className="flex items-center gap-2 h-9 px-2 rounded-lg hover:bg-accent/50 transition-all cursor-pointer">
             <CalendarIcon className="h-4 w-4 text-muted-foreground" />
@@ -133,13 +150,21 @@ export function DateNavigator(props: DateNavigatorProps) {
             <Calendar
               mode="range"
               selected={tempRange}
-              onSelect={(range) => {
-                setTempRange(range)
-                if (range?.from) {
-                  props.onSelectRange({
-                    from: range.from,
-                    to: range.to || range.from
-                  })
+              onSelect={(range, selectedDay) => {
+                if (!isSelecting) {
+                  // Primeiro clique de uma nova seleção: inicia o range e sinaliza
+                  const newRange = { from: selectedDay, to: undefined }
+                  setTempRange(newRange)
+                  setIsSelecting(true)
+                  props.onSelectRange({ from: selectedDay, to: selectedDay })
+                } else {
+                  // Segundo clique: fecha a seleção e o Popover
+                  setTempRange(range)
+                  if (range?.from && range?.to) {
+                    props.onSelectRange({ from: range.from, to: range.to })
+                    setPopoverOpen(false)
+                    setIsSelecting(false)
+                  }
                 }
               }}
               initialFocus
