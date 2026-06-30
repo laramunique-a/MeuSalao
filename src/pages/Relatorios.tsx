@@ -296,7 +296,7 @@ export default function Relatorios() {
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-[320px] sm:w-[350px] p-0 border-border bg-background rounded-lg shadow-md" align="start">
-                  <Command className="bg-background">
+                  <Command className="bg-background" shouldFilter={false}>
                     <CommandInput
                       placeholder="Pesquisar por nome, tel ou email..."
                       value={search}
