@@ -14,6 +14,43 @@ import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { usePendenciasGlobais } from '@/hooks/useAgendamentos'
 
+function formatarTelefoneBR(raw: string): string {
+  if (!raw) return ''
+  const digits = raw.replace(/\D/g, '')
+
+  let cleanedDigits = digits
+  if (cleanedDigits.startsWith('55') && cleanedDigits.length > 10) {
+    cleanedDigits = cleanedDigits.substring(2)
+  }
+
+  if (cleanedDigits.length < 10) {
+    return raw
+  }
+
+  if (cleanedDigits.length === 11) {
+    const ddd = cleanedDigits.substring(0, 2)
+    const parte1 = cleanedDigits.substring(2, 7)
+    const parte2 = cleanedDigits.substring(7)
+    return `(${ddd}) ${parte1}-${parte2}`
+  }
+
+  if (cleanedDigits.length === 10) {
+    const ddd = cleanedDigits.substring(0, 2)
+    const parte1 = cleanedDigits.substring(2, 6)
+    const parte2 = cleanedDigits.substring(6)
+    return `(${ddd}) ${parte1}-${parte2}`
+  }
+
+  if (cleanedDigits.length > 11) {
+    const ddd = cleanedDigits.substring(cleanedDigits.length - 11, cleanedDigits.length - 9)
+    const parte1 = cleanedDigits.substring(cleanedDigits.length - 9, cleanedDigits.length - 4)
+    const parte2 = cleanedDigits.substring(cleanedDigits.length - 4)
+    return `(${ddd}) ${parte1}-${parte2}`
+  }
+
+  return raw
+}
+
 interface ClientesTableProps {
   clientes: Cliente[]
   onEdit: (cliente: Cliente) => void
@@ -70,7 +107,7 @@ export function ClientesTable({ clientes, onEdit, onDelete }: ClientesTableProps
                       {cliente.telefone && (
                         <div className="flex items-center gap-1.5 text-xs text-muted-foreground whitespace-nowrap">
                           <Phone className="h-3 w-3" />
-                          {cliente.telefone}
+                          {formatarTelefoneBR(cliente.telefone)}
                         </div>
                       )}
                       {cliente.email && (
@@ -166,7 +203,7 @@ export function ClientesTable({ clientes, onEdit, onDelete }: ClientesTableProps
                 {cliente.telefone && (
                   <div className="flex items-center gap-2">
                     <Phone className="h-3.5 w-3.5 text-muted-foreground/60" />
-                    <span>{cliente.telefone}</span>
+                    <span>{formatarTelefoneBR(cliente.telefone)}</span>
                   </div>
                 )}
                 {cliente.email && (
