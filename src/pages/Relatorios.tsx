@@ -211,6 +211,11 @@ export default function Relatorios() {
     return item.metadata?.profissional_id === selectedProfissionalIdForFolha
   })
 
+  const filteredSaldosComissoes = saldosComissoes.filter((saldo: any) => {
+    if (selectedProfissionalIdForFolha === 'all') return true
+    return saldo.profissional_id === selectedProfissionalIdForFolha
+  })
+
   const totalPagoFolha = filteredFolhaData
     .filter((t: any) => t.status === 'ativo')
     .reduce((acc: number, t: any) => acc + Number(t.valor), 0)
@@ -818,7 +823,7 @@ export default function Relatorios() {
                   Saldos de Comissões Acumuladas
                 </h3>
                 <span className="text-[9px] font-semibold text-muted-foreground uppercase tracking-wider">
-                  Total Geral Pendente a Pagar: {formatCurrency(saldosComissoes.reduce((acc: number, s: any) => acc + s.saldo_pendente, 0))}
+                  Total Geral Pendente a Pagar: {formatCurrency(filteredSaldosComissoes.reduce((acc: number, s: any) => acc + s.saldo_pendente, 0))}
                 </span>
               </div>
               <div className="w-full overflow-x-auto">
@@ -839,14 +844,14 @@ export default function Relatorios() {
                           Carregando saldos de comissões...
                         </td>
                       </tr>
-                    ) : saldosComissoes.length === 0 ? (
+                    ) : filteredSaldosComissoes.length === 0 ? (
                       <tr>
                         <td colSpan={5} className="p-8 text-center text-muted-foreground uppercase tracking-wider">
                           Nenhum profissional com comissão registrado.
                         </td>
                       </tr>
                     ) : (
-                      saldosComissoes.map((saldo: any) => {
+                      filteredSaldosComissoes.map((saldo: any) => {
                         const isExpanded = expandedProfissionalId === saldo.profissional_id
                         return (
                           <Fragment key={saldo.profissional_id}>
