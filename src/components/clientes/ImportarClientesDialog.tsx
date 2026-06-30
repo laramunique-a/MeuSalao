@@ -35,9 +35,9 @@ export function ImportarClientesDialog({ open, onOpenChange }: ImportarClientesD
   // Mapeamento de colunas: Campo do Banco -> Coluna do Excel
   const [mapping, setMapping] = useState({
     nome: '',
-    telefone: '',
-    email: '',
-    observacoes: ''
+    telefone: 'ignore',
+    email: 'ignore',
+    observacoes: 'ignore'
   })
 
   const resetState = () => {
@@ -47,9 +47,9 @@ export function ImportarClientesDialog({ open, onOpenChange }: ImportarClientesD
     setSheetData([])
     setMapping({
       nome: '',
-      telefone: '',
-      email: '',
-      observacoes: ''
+      telefone: 'ignore',
+      email: 'ignore',
+      observacoes: 'ignore'
     })
     if (fileInputRef.current) fileInputRef.current.value = ''
   }
@@ -79,7 +79,7 @@ export function ImportarClientesDialog({ open, onOpenChange }: ImportarClientesD
         setSheetData(rows)
 
         // Mapeamento inteligente automático
-        const newMapping = { nome: '', telefone: '', email: '', observacoes: '' }
+        const newMapping = { nome: '', telefone: 'ignore', email: 'ignore', observacoes: 'ignore' }
         excelHeaders.forEach(h => {
           const lower = h.toLowerCase()
           if (lower.includes('nome') || lower.includes('name') || lower.includes('cliente') || lower === 'nome_cliente') {
@@ -122,9 +122,9 @@ export function ImportarClientesDialog({ open, onOpenChange }: ImportarClientesD
   const getMappedClients = () => {
     return sheetData.map(row => {
       const nome = row[mapping.nome] ? String(row[mapping.nome]).trim() : ''
-      const telefone = mapping.telefone && row[mapping.telefone] ? String(row[mapping.telefone]).trim() : ''
-      const email = mapping.email && row[mapping.email] ? String(row[mapping.email]).trim() : ''
-      const observacoes = mapping.observacoes && row[mapping.observacoes] ? String(row[mapping.observacoes]).trim() : ''
+      const telefone = mapping.telefone && mapping.telefone !== 'ignore' && row[mapping.telefone] ? String(row[mapping.telefone]).trim() : ''
+      const email = mapping.email && mapping.email !== 'ignore' && row[mapping.email] ? String(row[mapping.email]).trim() : ''
+      const observacoes = mapping.observacoes && mapping.observacoes !== 'ignore' && row[mapping.observacoes] ? String(row[mapping.observacoes]).trim() : ''
 
       return {
         nome,
@@ -245,7 +245,7 @@ export function ImportarClientesDialog({ open, onOpenChange }: ImportarClientesD
                       <SelectValue placeholder="Ignorar" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">Ignorar Campo</SelectItem>
+                      <SelectItem value="ignore">Ignorar Campo</SelectItem>
                       {headers.map(h => (
                         <SelectItem key={h} value={h}>{h}</SelectItem>
                       ))}
@@ -263,7 +263,7 @@ export function ImportarClientesDialog({ open, onOpenChange }: ImportarClientesD
                       <SelectValue placeholder="Ignorar" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">Ignorar Campo</SelectItem>
+                      <SelectItem value="ignore">Ignorar Campo</SelectItem>
                       {headers.map(h => (
                         <SelectItem key={h} value={h}>{h}</SelectItem>
                       ))}
@@ -281,7 +281,7 @@ export function ImportarClientesDialog({ open, onOpenChange }: ImportarClientesD
                       <SelectValue placeholder="Ignorar" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">Ignorar Campo</SelectItem>
+                      <SelectItem value="ignore">Ignorar Campo</SelectItem>
                       {headers.map(h => (
                         <SelectItem key={h} value={h}>{h}</SelectItem>
                       ))}
