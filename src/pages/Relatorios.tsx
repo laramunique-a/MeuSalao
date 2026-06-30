@@ -166,11 +166,23 @@ export default function Relatorios() {
 
   const selectedCliente = clientes.find((c) => c.id === selectedClienteId)
 
-  const filteredClientes = clientes.filter((c) =>
-    c.nome.toLowerCase().includes(search.toLowerCase()) ||
-    (c.telefone && c.telefone.includes(search)) ||
-    (c.email && c.email.toLowerCase().includes(search.toLowerCase()))
-  )
+  const filteredClientes = clientes.filter((c) => {
+    const searchLower = search.toLowerCase()
+    const matchNome = c.nome.toLowerCase().includes(searchLower)
+    const matchEmail = c.email && c.email.toLowerCase().includes(searchLower)
+
+    if (matchNome || matchEmail) return true
+
+    if (c.telefone) {
+      const searchDigits = search.replace(/\D/g, '')
+      const phoneDigits = c.telefone.replace(/\D/g, '')
+      if (searchDigits) {
+        return phoneDigits.includes(searchDigits) || searchDigits.includes(phoneDigits)
+      }
+    }
+
+    return false
+  })
 
   // Calcular KPIs do Relatório por Cliente
   const agendamentos = reportData?.agendamentos || []
