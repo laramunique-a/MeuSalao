@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react"
 import { format } from "date-fns"
 import { ptBR } from "date-fns/locale"
 import { Calendar as CalendarIcon, ChevronLeft, ChevronRight } from "lucide-react"
@@ -36,6 +37,17 @@ export function DateNavigator(props: DateNavigatorProps) {
     className,
     mode,
   } = props
+
+  const [popoverOpen, setPopoverOpen] = useState(false)
+  const [tempRange, setTempRange] = useState<{ from: Date | undefined; to?: Date | undefined } | undefined>(
+    props.mode === "range" ? { from: props.selectedRange.from, to: props.selectedRange.to } : undefined
+  )
+
+  useEffect(() => {
+    if (props.mode === "range") {
+      setTempRange({ from: props.selectedRange.from, to: props.selectedRange.to })
+    }
+  }, [props.mode === "range" ? props.selectedRange.from.getTime() + props.selectedRange.to.getTime() : null])
 
   const renderDateText = () => {
     if (mode === "single") {
@@ -79,7 +91,15 @@ export function DateNavigator(props: DateNavigatorProps) {
         <ChevronLeft className="h-4 w-4" />
       </Button>
 
-      <Popover>
+      <Popover open={popoverOpen} onOpenChange={(open) => {
+        setPopoverOpen(open)
+        if (!open && props.mode === "range" && tempRange?.from) {
+          props.onSelectRange({
+            from: tempRange.from,
+            to: tempRange.to || tempRange.from
+          })
+        }
+      }}>
         <PopoverTrigger asChild>
           <div className="flex items-center gap-2 h-9 px-2 rounded-lg hover:bg-accent/50 transition-all cursor-pointer">
             <CalendarIcon className="h-4 w-4 text-muted-foreground" />
@@ -107,7 +127,12 @@ export function DateNavigator(props: DateNavigatorProps) {
             <Calendar
               mode="single"
               selected={props.selectedDate}
-              onSelect={(date) => date && props.onSelectDate(date)}
+              onSelect={(date) => {
+                if (date) {
+                  props.onSelectDate(date)
+                  setPopoverOpen(false)
+                }
+              }}
               initialFocus
               locale={ptBR}
               className="p-3"
@@ -115,12 +140,12 @@ export function DateNavigator(props: DateNavigatorProps) {
           ) : (
             <Calendar
               mode="range"
-              selected={{ from: props.selectedRange.from, to: props.selectedRange.to }}
+              selected={tempRange}
               onSelect={(range) => {
+                setTempRange(range)
                 if (range?.from && range?.to) {
                   props.onSelectRange({ from: range.from, to: range.to })
-                } else if (range?.from) {
-                  props.onSelectRange({ from: range.from, to: range.from })
+                  setPopoverOpen(false)
                 }
               }}
               initialFocus
