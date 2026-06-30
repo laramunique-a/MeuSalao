@@ -26,12 +26,21 @@ import { useProfissionais } from '@/hooks/useProfissionais'
 interface MovimentacaoManualDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
+  defaultTipoMovimento?: TipoMovimento
+  defaultProfissionalId?: string
+  defaultValor?: string
 }
 
 type TipoMovimento = 'entrada' | 'saida' | 'retirada' | 'ajuste' | 'comissao'
 type SubTipoAjuste = 'positivo' | 'negativo'
 
-export function MovimentacaoManualDialog({ open, onOpenChange }: MovimentacaoManualDialogProps) {
+export function MovimentacaoManualDialog({ 
+  open, 
+  onOpenChange,
+  defaultTipoMovimento,
+  defaultProfissionalId,
+  defaultValor
+}: MovimentacaoManualDialogProps) {
   const { toast } = useToast()
   const createTransacao = useCreateTransacao()
   const { isAdmin } = useAuthStore()
@@ -66,14 +75,14 @@ export function MovimentacaoManualDialog({ open, onOpenChange }: MovimentacaoMan
 
   useEffect(() => {
     if (open) {
-      setTipoMovimento('entrada')
+      setTipoMovimento(defaultTipoMovimento || 'entrada')
       setSubTipoAjuste('positivo')
-      setValor('')
+      setValor(defaultValor || '')
       setDescricao('')
-      setSelectedProfissionalId('')
+      setSelectedProfissionalId(defaultProfissionalId || '')
       setFormaPagamento('dinheiro')
     }
-  }, [open])
+  }, [open, defaultTipoMovimento, defaultProfissionalId, defaultValor])
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()

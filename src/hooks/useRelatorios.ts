@@ -22,3 +22,10 @@ export function useFolhaPagamentoReport(startDate?: string, endDate?: string) {
     queryFn: () => relatoriosService.getFolhaPagamentoReport(startDate, endDate),
   })
 }
+
+export function useSaldosComissoesReport(startDate?: string, endDate?: string) {
+  return useQuery({
+    queryKey: ['saldos-comissoes-report', startDate, endDate],
+    queryFn: () => relatoriosService.getSaldosComissoesReport(startDate, endDate),
+  })
+}

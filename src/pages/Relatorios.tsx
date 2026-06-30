@@ -1,8 +1,9 @@
 import { useState } from 'react'
 import { useClientes } from '@/hooks/useClientes'
-import { useClienteReport, useCaixaPendenciasReport, useFolhaPagamentoReport } from '@/hooks/useRelatorios'
+import { useClienteReport, useCaixaPendenciasReport, useFolhaPagamentoReport, useSaldosComissoesReport } from '@/hooks/useRelatorios'
 import { useProfissionais } from '@/hooks/useProfissionais'
 import { useAuthStore } from '@/store/authStore'
+import { MovimentacaoManualDialog } from '@/components/caixa/MovimentacaoManualDialog'
 import {
   Popover,
   PopoverContent,
@@ -141,6 +142,16 @@ export default function Relatorios() {
     format(rangeFolha.from, 'yyyy-MM-dd') === format(startOfMonth(new Date()), 'yyyy-MM-dd') &&
     format(rangeFolha.to, 'yyyy-MM-dd') === format(endOfMonth(new Date()), 'yyyy-MM-dd')
 
+  const [isPayDialogOpen, setIsPayDialogOpen] = useState(false)
+  const [payProfissionalId, setPayProfissionalId] = useState('')
+  const [payValor, setPayValor] = useState('')
+
+  const handleLancarPagamento = (profissionalId: string, valorPendente: number) => {
+    setPayProfissionalId(profissionalId)
+    setPayValor(valorPendente.toFixed(2).replace('.', ','))
+    setIsPayDialogOpen(true)
+  }
+
   const { data: clientes = [] } = useClientes()
   const { data: reportData, isLoading: loadingReport } = useClienteReport(selectedClienteId)
   const { data: caixaReport = [], isLoading: loadingCaixaReport } = useCaixaPendenciasReport()
@@ -148,6 +159,7 @@ export default function Relatorios() {
   const startDateFolha = startOfDay(rangeFolha.from).toISOString()
   const endDateFolha = endOfDay(rangeFolha.to).toISOString()
   const { data: folhaData = [], isLoading: loadingFolha } = useFolhaPagamentoReport(startDateFolha, endDateFolha)
+  const { data: saldosComissoes = [], isLoading: loadingSaldos } = useSaldosComissoesReport(startDateFolha, endDateFolha)
   const { data: profissionais = [] } = useProfissionais()
 
   const selectedCliente = clientes.find((c) => c.id === selectedClienteId)
@@ -726,48 +738,141 @@ export default function Relatorios() {
 
           {/* KPIs Section */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <Card className="border-border bg-card shadow-none">
-              <CardContent className="p-4 flex items-center justify-between">
-                <div>
-                  <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Total Pago (Comissões)</p>
-                  <h3 className="text-xl font-bold mt-1 text-foreground">
-                    {formatCurrency(totalPagoFolha)}
-                  </h3>
-                </div>
-                <div className="p-2.5 bg-emerald-500/10 rounded-lg">
-                  <DollarSign className="h-5 w-5 text-emerald-600" />
-                </div>
-              </CardContent>
-            </Card>
+            {isProfissional ? (
+              <Card className="border-border bg-card shadow-none col-span-1 sm:col-span-3">
+                <CardContent className="p-4 flex items-center justify-between">
+                  <div>
+                    <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Minha Comissão Pendente a Receber</p>
+                    <h3 className={`text-xl font-bold mt-1 ${saldosComissoes[0]?.saldo_pendente > 0 ? 'text-violet-600 dark:text-violet-400' : 'text-muted-foreground'}`}>
+                      {formatCurrency(saldosComissoes[0]?.saldo_pendente || 0)}
+                    </h3>
+                    <p className="text-[9px] text-muted-foreground mt-1">
+                      Saldo acumulado de comissões. (Total de serviços prestados: {formatCurrency(saldosComissoes[0]?.gerado_historico || 0)} | Total já pago: {formatCurrency(saldosComissoes[0]?.pago_historico || 0)})
+                    </p>
+                  </div>
+                  <div className="p-2.5 bg-violet-500/10 rounded-lg">
+                    <DollarSign className="h-5 w-5 text-violet-600" />
+                  </div>
+                </CardContent>
+              </Card>
+            ) : (
+              <>
+                <Card className="border-border bg-card shadow-none">
+                  <CardContent className="p-4 flex items-center justify-between">
+                    <div>
+                      <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Total Pago (Comissões)</p>
+                      <h3 className="text-xl font-bold mt-1 text-foreground">
+                        {formatCurrency(totalPagoFolha)}
+                      </h3>
+                    </div>
+                    <div className="p-2.5 bg-emerald-500/10 rounded-lg">
+                      <DollarSign className="h-5 w-5 text-emerald-600" />
+                    </div>
+                  </CardContent>
+                </Card>
 
-            <Card className="border-border bg-card shadow-none">
-              <CardContent className="p-4 flex items-center justify-between">
-                <div>
-                  <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Lançamentos</p>
-                  <h3 className="text-xl font-bold mt-1 text-foreground">
-                    {filteredFolhaData.length}
-                  </h3>
-                </div>
-                <div className="p-2.5 bg-accent rounded-lg border border-border">
-                  <Calendar className="h-5 w-5 text-muted-foreground" />
-                </div>
-              </CardContent>
-            </Card>
+                <Card className="border-border bg-card shadow-none">
+                  <CardContent className="p-4 flex items-center justify-between">
+                    <div>
+                      <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Lançamentos</p>
+                      <h3 className="text-xl font-bold mt-1 text-foreground">
+                        {filteredFolhaData.length}
+                      </h3>
+                    </div>
+                    <div className="p-2.5 bg-accent rounded-lg border border-border">
+                      <Calendar className="h-5 w-5 text-muted-foreground" />
+                    </div>
+                  </CardContent>
+                </Card>
 
-            <Card className="border-border bg-card shadow-none">
-              <CardContent className="p-4 flex items-center justify-between">
-                <div>
-                  <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Forma Predominante</p>
-                  <h3 className="text-sm font-bold mt-2.5 text-foreground uppercase tracking-wider">
-                    {predominantPaymentMethod}
-                  </h3>
-                </div>
-                <div className="p-2.5 bg-accent rounded-lg border border-border">
-                  <TrendingUp className="h-5 w-5 text-muted-foreground" />
-                </div>
-              </CardContent>
-            </Card>
+                <Card className="border-border bg-card shadow-none">
+                  <CardContent className="p-4 flex items-center justify-between">
+                    <div>
+                      <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Forma Predominante</p>
+                      <h3 className="text-sm font-bold mt-2.5 text-foreground uppercase tracking-wider">
+                        {predominantPaymentMethod}
+                      </h3>
+                    </div>
+                    <div className="p-2.5 bg-accent rounded-lg border border-border">
+                      <TrendingUp className="h-5 w-5 text-muted-foreground" />
+                    </div>
+                  </CardContent>
+                </Card>
+              </>
+            )}
           </div>
+
+          {/* Tabela de Saldos Acumulados por Profissional (Apenas Admin) */}
+          {!isProfissional && (
+            <Card className="border-border bg-card shadow-none rounded-lg overflow-hidden">
+              <div className="p-4 border-b border-border bg-card flex items-center justify-between">
+                <h3 className="text-xs font-bold text-foreground uppercase tracking-widest flex items-center gap-2">
+                  <DollarSign className="h-4 w-4 text-muted-foreground" />
+                  Saldos de Comissões Acumuladas
+                </h3>
+                <span className="text-[9px] font-semibold text-muted-foreground uppercase tracking-wider">
+                  Total Geral Pendente: {formatCurrency(saldosComissoes.reduce((acc: number, s: any) => acc + s.saldo_pendente, 0))}
+                </span>
+              </div>
+              <div className="w-full overflow-x-auto">
+                <table className="w-full text-xs text-left">
+                  <thead>
+                    <tr className="text-muted-foreground font-bold text-[9px] uppercase bg-accent/20 border-b border-border">
+                      <th className="px-4 py-3">Profissional</th>
+                      <th className="px-4 py-3 text-right">Total Gerado (Histórico)</th>
+                      <th className="px-4 py-3 text-right">Total Pago (Histórico)</th>
+                      <th className="px-4 py-3 text-right">Saldo Pendente (A Pagar)</th>
+                      <th className="px-4 py-3 text-center w-36">Ação</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-border">
+                    {loadingSaldos ? (
+                      <tr>
+                        <td colSpan={5} className="p-8 text-center text-muted-foreground uppercase tracking-wider">
+                          Carregando saldos de comissões...
+                        </td>
+                      </tr>
+                    ) : saldosComissoes.length === 0 ? (
+                      <tr>
+                        <td colSpan={5} className="p-8 text-center text-muted-foreground uppercase tracking-wider">
+                          Nenhum profissional com comissão registrado.
+                        </td>
+                      </tr>
+                    ) : (
+                      saldosComissoes.map((saldo: any) => (
+                        <tr key={saldo.profissional_id} className="hover:bg-accent/10 transition-colors">
+                          <td className="px-4 py-3 font-bold text-foreground uppercase tracking-wider">
+                            {saldo.nome}
+                          </td>
+                          <td className="px-4 py-3 text-right font-medium text-muted-foreground">
+                            {formatCurrency(saldo.gerado_historico)}
+                          </td>
+                          <td className="px-4 py-3 text-right font-medium text-muted-foreground">
+                            {formatCurrency(saldo.pago_historico)}
+                          </td>
+                          <td className={`px-4 py-3 text-right font-bold ${saldo.saldo_pendente > 0 ? 'text-violet-600' : 'text-muted-foreground'}`}>
+                            {formatCurrency(saldo.saldo_pendente)}
+                          </td>
+                          <td className="px-4 py-2 text-center">
+                            <Button
+                              size="sm"
+                              disabled={saldo.saldo_pendente <= 0}
+                              className="h-8 px-3 text-[10px] font-semibold uppercase tracking-wider rounded-lg"
+                              onClick={() => {
+                                handleLancarPagamento(saldo.profissional_id, saldo.saldo_pendente)
+                              }}
+                            >
+                              Pagar Comissão
+                            </Button>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </Card>
+          )}
 
           {/* Detailed Table */}
           <Card className="border-border bg-card shadow-none rounded-lg overflow-hidden">
@@ -841,6 +946,13 @@ export default function Relatorios() {
           </Card>
         </div>
       )}
+      <MovimentacaoManualDialog
+        open={isPayDialogOpen}
+        onOpenChange={setIsPayDialogOpen}
+        defaultTipoMovimento="comissao"
+        defaultProfissionalId={payProfissionalId}
+        defaultValor={payValor}
+      />
     </div>
   )
 }

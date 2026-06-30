@@ -133,4 +133,115 @@ export const relatoriosService = {
     if (error) throw error
     return (transacoes || []) as any[]
   },
+
+  async getSaldosComissoesReport(startDate?: string, endDate?: string) {
+    const usuario = useAuthStore.getState().usuario
+    if (!usuario || !usuario.salao_id) throw new Error('Usuário não autenticado')
+
+    // 1. Buscar todas as transações de entrada com comissão (comissões geradas)
+    const { data: geradasData, error: errGeradas } = await supabase
+      .from('transacao_caixa')
+      .select(`
+        comissao_valor,
+        data_hora,
+        agendamento:agendamento_id (
+          profissional_id,
+          profissional:profissional_id (id, nome)
+        )
+      `)
+      .eq('salao_id', usuario.salao_id)
+      .eq('tipo', 'entrada')
+      .eq('status', 'ativo')
+      .gt('comissao_valor', 0)
+
+    if (errGeradas) throw errGeradas
+
+    // 2. Buscar todas as transações de pagamento de comissão (comissões pagas)
+    const { data: pagasData, error: errPagas } = await supabase
+      .from('transacao_caixa')
+      .select('valor, data_hora, metadata')
+      .eq('salao_id', usuario.salao_id)
+      .eq('categoria', 'Pagamento de Comissão')
+      .eq('status', 'ativo')
+
+    if (errPagas) throw errPagas
+
+    // 3. Buscar profissionais ativos
+    const { data: profissionais, error: errProfs } = await supabase
+      .from('usuario')
+      .select('id, nome, perfil')
+      .eq('salao_id', usuario.salao_id)
+      .eq('perfil', 'profissional')
+
+    if (errProfs) throw errProfs
+
+    // Mapear saldos consolidados por profissional
+    const saldosMap: Record<string, {
+      profissional_id: string
+      nome: string
+      gerado_periodo: number
+      pago_periodo: number
+      gerado_historico: number
+      pago_historico: number
+      saldo_pendente: number
+    }> = {}
+
+    // Inicializar profissionais
+    profissionais?.forEach((p: any) => {
+      saldosMap[p.id] = {
+        profissional_id: p.id,
+        nome: p.nome,
+        gerado_periodo: 0,
+        pago_periodo: 0,
+        gerado_historico: 0,
+        pago_historico: 0,
+        saldo_pendente: 0
+      }
+    })
+
+    // Agrupar comissões geradas
+    geradasData?.forEach((t: any) => {
+      const profId = t.agendamento?.profissional_id
+      if (!profId || !saldosMap[profId]) return
+
+      const valor = Number(t.comissao_valor) || 0
+      saldosMap[profId].gerado_historico += valor
+
+      // Se houver filtro de período, verificar se está no intervalo
+      const tDate = new Date(t.data_hora)
+      const insidePeriod = (!startDate || tDate >= new Date(startDate)) && (!endDate || tDate <= new Date(endDate))
+      if (insidePeriod) {
+        saldosMap[profId].gerado_periodo += valor
+      }
+    })
+
+    // Agrupar comissões pagas
+    pagasData?.forEach((t: any) => {
+      const profId = t.metadata?.profissional_id
+      if (!profId || !saldosMap[profId]) return
+
+      const valor = Number(t.valor) || 0
+      saldosMap[profId].pago_historico += valor
+
+      // Se houver filtro de período, verificar se está no intervalo
+      const tDate = new Date(t.data_hora)
+      const insidePeriod = (!startDate || tDate >= new Date(startDate)) && (!endDate || tDate <= new Date(endDate))
+      if (insidePeriod) {
+        saldosMap[profId].pago_periodo += valor
+      }
+    })
+
+    // Calcular saldos pendentes históricos (gerado_historico - pago_historico)
+    Object.keys(saldosMap).forEach((id) => {
+      const p = saldosMap[id]
+      p.saldo_pendente = p.gerado_historico - p.pago_historico
+    })
+
+    // Se o usuário logado for profissional comum, retornar apenas o saldo dele
+    if (usuario.perfil === 'profissional') {
+      return saldosMap[usuario.id] ? [saldosMap[usuario.id]] : []
+    }
+
+    return Object.values(saldosMap)
+  },
 }

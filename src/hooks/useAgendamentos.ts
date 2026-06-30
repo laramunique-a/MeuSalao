@@ -34,6 +34,8 @@ export function useCreateAgendamento() {
       agendamentoService.create(agendamento),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['agendamentos'] })
+      queryClient.invalidateQueries({ queryKey: ['saldos-comissoes-report'] })
+      queryClient.invalidateQueries({ queryKey: ['folha-pagamento-report'] })
     },
   })
 }
@@ -46,6 +48,8 @@ export function useUpdateAgendamento() {
       agendamentoService.update(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['agendamentos'] })
+      queryClient.invalidateQueries({ queryKey: ['saldos-comissoes-report'] })
+      queryClient.invalidateQueries({ queryKey: ['folha-pagamento-report'] })
     },
   })
 }
@@ -58,6 +62,8 @@ export function useUpdateAgendamentoStatus() {
       agendamentoService.updateStatus(id, status),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['agendamentos'] })
+      queryClient.invalidateQueries({ queryKey: ['saldos-comissoes-report'] })
+      queryClient.invalidateQueries({ queryKey: ['folha-pagamento-report'] })
     },
   })
 }
@@ -69,6 +75,8 @@ export function useDeleteAgendamento() {
     mutationFn: (id: string) => agendamentoService.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['agendamentos'] })
+      queryClient.invalidateQueries({ queryKey: ['saldos-comissoes-report'] })
+      queryClient.invalidateQueries({ queryKey: ['folha-pagamento-report'] })
     },
   })
 }

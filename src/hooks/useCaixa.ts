@@ -39,6 +39,8 @@ export function useCreateTransacao() {
       queryClient.invalidateQueries({ queryKey: ['agendamentos'] })
       queryClient.invalidateQueries({ queryKey: ['saldo-caixa-aberto'] })
       queryClient.invalidateQueries({ queryKey: ['transacoes-caixa'] })
+      queryClient.invalidateQueries({ queryKey: ['saldos-comissoes-report'] })
+      queryClient.invalidateQueries({ queryKey: ['folha-pagamento-report'] })
     },
   })
 }
@@ -54,6 +56,8 @@ export function useDeleteTransacao() {
       queryClient.invalidateQueries({ queryKey: ['agendamentos'] })
       queryClient.invalidateQueries({ queryKey: ['saldo-caixa-aberto'] })
       queryClient.invalidateQueries({ queryKey: ['transacoes-caixa'] })
+      queryClient.invalidateQueries({ queryKey: ['saldos-comissoes-report'] })
+      queryClient.invalidateQueries({ queryKey: ['folha-pagamento-report'] })
     },
   })
 }
@@ -125,6 +129,8 @@ export function useFecharCaixa() {
       queryClient.invalidateQueries({ queryKey: ['caixas-period'] })
       queryClient.invalidateQueries({ queryKey: ['transacoes-caixa', variables.caixaId] })
       queryClient.invalidateQueries({ queryKey: ['saldo-caixa-aberto'] })
+      queryClient.invalidateQueries({ queryKey: ['saldos-comissoes-report'] })
+      queryClient.invalidateQueries({ queryKey: ['folha-pagamento-report'] })
     },
   })
 }
@@ -155,6 +161,8 @@ export function useEstornarTransacao() {
       queryClient.invalidateQueries({ queryKey: ['agendamentos'] })
       queryClient.invalidateQueries({ queryKey: ['saldo-caixa-aberto'] })
       queryClient.invalidateQueries({ queryKey: ['transacoes-caixa'] })
+      queryClient.invalidateQueries({ queryKey: ['saldos-comissoes-report'] })
+      queryClient.invalidateQueries({ queryKey: ['folha-pagamento-report'] })
     },
   })
 }
@@ -170,6 +178,8 @@ export function useUpdateAberturaCaixa() {
       queryClient.invalidateQueries({ queryKey: ['caixa-aberto'] })
       queryClient.invalidateQueries({ queryKey: ['saldo-caixa-aberto'] })
       queryClient.invalidateQueries({ queryKey: ['transacoes-caixa'] })
+      queryClient.invalidateQueries({ queryKey: ['saldos-comissoes-report'] })
+      queryClient.invalidateQueries({ queryKey: ['folha-pagamento-report'] })
     },
   })
 }
