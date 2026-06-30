@@ -36,7 +36,7 @@ import { useServicos } from '@/hooks/useServicos'
 import { useProfissionais } from '@/hooks/useProfissionais'
 import type { Agendamento } from '@/types/models'
 import { format } from 'date-fns'
-import { Receipt, UserCircle, Scissors, Clock, CheckCircle2, Plus, Trash2, Tag, DollarSign } from 'lucide-react'
+import { Receipt, UserCircle, Scissors, Clock, CheckCircle2, Plus, Trash2, Tag, DollarSign, ChevronDown, ChevronUp } from 'lucide-react'
 
 const darBaixaSchema = z.object({
   forma_pagamento: z.enum(['dinheiro', 'cartao_debito', 'cartao_credito', 'pix', 'outros']),
@@ -110,6 +110,10 @@ export function DarBaixaDialog({ open, onOpenChange, agendamento }: DarBaixaDial
   // Estados para desconto
   const [valorDesconto, setValorDesconto] = useState<string>('')
 
+  // Estados de expansão dos painéis
+  const [isServicosAdicionaisExpanded, setIsServicosAdicionaisExpanded] = useState(false)
+  const [isDescontoExpanded, setIsDescontoExpanded] = useState(false)
+
   const form = useForm<DarBaixaFormData>({
     resolver: zodResolver(darBaixaSchema),
     defaultValues: {
@@ -129,6 +133,8 @@ export function DarBaixaDialog({ open, onOpenChange, agendamento }: DarBaixaDial
     setSelectedProfissionalId('ignore')
     setValorServicoAdicional('')
     setValorDesconto('')
+    setIsServicosAdicionaisExpanded(false)
+    setIsDescontoExpanded(false)
   }
 
   useEffect(() => {
@@ -410,158 +416,186 @@ export function DarBaixaDialog({ open, onOpenChange, agendamento }: DarBaixaDial
               </div>
 
               {/* Serviços Adicionais */}
-              <div className="bg-background rounded-xl border border-border shadow-sm p-4 space-y-3 transition-all hover:border-primary/20">
-                <h4 className="text-[10px] font-bold uppercase text-muted-foreground tracking-widest flex items-center gap-1.5 border-b border-border pb-1.5">
-                  <Scissors className="h-3.5 w-3.5 text-primary" />
-                  Serviços Adicionais
-                </h4>
+              <div className="bg-background rounded-xl border border-border shadow-sm transition-all hover:border-primary/20 overflow-hidden">
+                <button
+                  type="button"
+                  onClick={() => setIsServicosAdicionaisExpanded(!isServicosAdicionaisExpanded)}
+                  className="w-full flex items-center justify-between px-4 py-3 bg-slate-50/50 dark:bg-slate-900/20 hover:bg-slate-100/50 dark:hover:bg-slate-900/40 transition-colors border-b border-border/40"
+                >
+                  <h4 className="text-[10px] font-bold uppercase text-muted-foreground tracking-widest flex items-center gap-1.5">
+                    <Scissors className="h-3.5 w-3.5 text-primary" />
+                    Serviços Adicionais {servicosAdicionais.length > 0 && `(${servicosAdicionais.length})`}
+                  </h4>
+                  {isServicosAdicionaisExpanded ? (
+                    <ChevronUp className="h-4 w-4 text-muted-foreground" />
+                  ) : (
+                    <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                  )}
+                </button>
 
-                {/* Lista de Adicionados */}
-                {servicosAdicionais.length > 0 && (
-                  <div className="space-y-1.5">
-                    {servicosAdicionais.map((sa) => {
-                      const serv = todosServicos.find(s => s.id === sa.servicoId)
-                      const prof = todosProfissionais.find(p => p.id === sa.profissionalId)
-                      return (
-                        <div key={sa.id} className="flex items-center justify-between bg-accent/25 px-2.5 py-1.5 rounded-lg border border-border/40 text-xs">
-                          <div className="min-w-0">
-                            <p className="font-semibold text-foreground truncate">{serv?.nome || 'Serviço'}</p>
-                            <p className="text-[10px] text-muted-foreground">com {prof?.nome || 'Profissional'}</p>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <span className="font-bold text-foreground">R$ {sa.valor.toFixed(2).replace('.', ',')}</span>
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => setServicosAdicionais(prev => prev.filter(item => item.id !== sa.id))}
-                              className="h-7 w-7 text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-md"
-                            >
-                              <Trash2 className="h-3.5 w-3.5" />
-                            </Button>
-                          </div>
-                        </div>
-                      )
-                    })}
+                {isServicosAdicionaisExpanded && (
+                  <div className="p-4 space-y-3 animate-in slide-in-from-top-1 duration-200">
+                    {/* Lista de Adicionados */}
+                    {servicosAdicionais.length > 0 && (
+                      <div className="space-y-1.5">
+                        {servicosAdicionais.map((sa) => {
+                          const serv = todosServicos.find(s => s.id === sa.servicoId)
+                          const prof = todosProfissionais.find(p => p.id === sa.profissionalId)
+                          return (
+                            <div key={sa.id} className="flex items-center justify-between bg-accent/25 px-2.5 py-1.5 rounded-lg border border-border/40 text-xs">
+                              <div className="min-w-0">
+                                <p className="font-semibold text-foreground truncate">{serv?.nome || 'Serviço'}</p>
+                                <p className="text-[10px] text-muted-foreground">com {prof?.nome || 'Profissional'}</p>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <span className="font-bold text-foreground">R$ {sa.valor.toFixed(2).replace('.', ',')}</span>
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => setServicosAdicionais(prev => prev.filter(item => item.id !== sa.id))}
+                                  className="h-7 w-7 text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-md"
+                                >
+                                  <Trash2 className="h-3.5 w-3.5" />
+                                </Button>
+                              </div>
+                            </div>
+                          )
+                        })}
+                      </div>
+                    )}
+
+                    {/* Formulário de Adição Rápida */}
+                    <div className="grid grid-cols-2 gap-2.5 pt-1.5">
+                      <div className="space-y-1">
+                        <Label className="text-[9px] font-bold text-muted-foreground uppercase tracking-wider">Serviço</Label>
+                        <Select 
+                          value={selectedServicoId} 
+                          onValueChange={(val) => {
+                            setSelectedServicoId(val)
+                            const serv = todosServicos.find(s => s.id === val)
+                            if (serv) {
+                              setValorServicoAdicional(serv.valor.toFixed(2).replace('.', ','))
+                            }
+                          }}
+                        >
+                          <SelectTrigger className="h-8 text-xs rounded-lg border-border">
+                            <SelectValue placeholder="Selecione..." />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="ignore" disabled>Selecione...</SelectItem>
+                            {todosServicos.filter(s => s.ativo).map(s => (
+                              <SelectItem key={s.id} value={s.id}>{s.nome}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div className="space-y-1">
+                        <Label className="text-[9px] font-bold text-muted-foreground uppercase tracking-wider">Profissional</Label>
+                        <Select 
+                          value={selectedProfissionalId} 
+                          onValueChange={setSelectedProfissionalId}
+                        >
+                          <SelectTrigger className="h-8 text-xs rounded-lg border-border">
+                            <SelectValue placeholder="Selecione..." />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="ignore" disabled>Selecione...</SelectItem>
+                            {todosProfissionais.filter(p => p.ativo && p.pode_atender).map(p => (
+                              <SelectItem key={p.id} value={p.id}>{p.nome}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div className="space-y-1 col-span-2 sm:col-span-1">
+                        <Label className="text-[9px] font-bold text-muted-foreground uppercase tracking-wider">Valor do Serviço (R$)</Label>
+                        <Input 
+                          value={valorServicoAdicional}
+                          onChange={(e) => setValorServicoAdicional(formatarMoeda(e.target.value))}
+                          placeholder="0,00"
+                          className="h-8 text-xs font-bold border-border"
+                        />
+                      </div>
+
+                      <div className="flex items-end col-span-2 sm:col-span-1">
+                        <Button
+                          type="button"
+                          onClick={() => {
+                            if (selectedServicoId === 'ignore' || selectedProfissionalId === 'ignore' || !valorServicoAdicional) {
+                              toast({
+                                title: 'Dados incompletos',
+                                description: 'Preencha serviço, profissional e valor para adicionar.',
+                                variant: 'destructive'
+                              })
+                              return
+                            }
+                            const val = parseFloat(valorServicoAdicional.replace(/\./g, '').replace(',', '.'))
+                            if (isNaN(val) || val <= 0) {
+                              toast({
+                                title: 'Valor inválido',
+                                description: 'Digite um valor maior que zero.',
+                                variant: 'destructive'
+                              })
+                              return
+                            }
+                            setServicosAdicionais(prev => [
+                              ...prev,
+                              {
+                                id: Math.random().toString(),
+                                servicoId: selectedServicoId,
+                                profissionalId: selectedProfissionalId,
+                                valor: val
+                              }
+                            ])
+                            setSelectedServicoId('ignore')
+                            setSelectedProfissionalId('ignore')
+                            setValorServicoAdicional('')
+                          }}
+                          className="h-8 w-full text-[10px] font-bold uppercase tracking-wider rounded-lg gap-1.5"
+                        >
+                          <Plus className="h-3.5 w-3.5" />
+                          Adicionar
+                        </Button>
+                      </div>
+                    </div>
                   </div>
                 )}
-
-                {/* Formulário de Adição Rápida */}
-                <div className="grid grid-cols-2 gap-2.5 pt-1.5">
-                  <div className="space-y-1">
-                    <Label className="text-[9px] font-bold text-muted-foreground uppercase tracking-wider">Serviço</Label>
-                    <Select 
-                      value={selectedServicoId} 
-                      onValueChange={(val) => {
-                        setSelectedServicoId(val)
-                        const serv = todosServicos.find(s => s.id === val)
-                        if (serv) {
-                          setValorServicoAdicional(serv.valor.toFixed(2).replace('.', ','))
-                        }
-                      }}
-                    >
-                      <SelectTrigger className="h-8 text-xs rounded-lg border-border">
-                        <SelectValue placeholder="Selecione..." />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="ignore" disabled>Selecione...</SelectItem>
-                        {todosServicos.filter(s => s.ativo).map(s => (
-                          <SelectItem key={s.id} value={s.id}>{s.nome}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="space-y-1">
-                    <Label className="text-[9px] font-bold text-muted-foreground uppercase tracking-wider">Profissional</Label>
-                    <Select 
-                      value={selectedProfissionalId} 
-                      onValueChange={setSelectedProfissionalId}
-                    >
-                      <SelectTrigger className="h-8 text-xs rounded-lg border-border">
-                        <SelectValue placeholder="Selecione..." />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="ignore" disabled>Selecione...</SelectItem>
-                        {todosProfissionais.filter(p => p.ativo && p.pode_atender).map(p => (
-                          <SelectItem key={p.id} value={p.id}>{p.nome}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="space-y-1 col-span-2 sm:col-span-1">
-                    <Label className="text-[9px] font-bold text-muted-foreground uppercase tracking-wider">Valor do Serviço (R$)</Label>
-                    <Input 
-                      value={valorServicoAdicional}
-                      onChange={(e) => setValorServicoAdicional(formatarMoeda(e.target.value))}
-                      placeholder="0,00"
-                      className="h-8 text-xs font-bold border-border"
-                    />
-                  </div>
-
-                  <div className="flex items-end col-span-2 sm:col-span-1">
-                    <Button
-                      type="button"
-                      onClick={() => {
-                        if (selectedServicoId === 'ignore' || selectedProfissionalId === 'ignore' || !valorServicoAdicional) {
-                          toast({
-                            title: 'Dados incompletos',
-                            description: 'Preencha serviço, profissional e valor para adicionar.',
-                            variant: 'destructive'
-                          })
-                          return
-                        }
-                        const val = parseFloat(valorServicoAdicional.replace(/\./g, '').replace(',', '.'))
-                        if (isNaN(val) || val <= 0) {
-                          toast({
-                            title: 'Valor inválido',
-                            description: 'Digite um valor maior que zero.',
-                            variant: 'destructive'
-                          })
-                          return
-                        }
-                        setServicosAdicionais(prev => [
-                          ...prev,
-                          {
-                            id: Math.random().toString(),
-                            servicoId: selectedServicoId,
-                            profissionalId: selectedProfissionalId,
-                            valor: val
-                          }
-                        ])
-                        setSelectedServicoId('ignore')
-                        setSelectedProfissionalId('ignore')
-                        setValorServicoAdicional('')
-                      }}
-                      className="h-8 w-full text-[10px] font-bold uppercase tracking-wider rounded-lg gap-1.5"
-                    >
-                      <Plus className="h-3.5 w-3.5" />
-                      Adicionar
-                    </Button>
-                  </div>
-                </div>
               </div>
 
               {/* Desconto */}
-              <div className="bg-background rounded-xl border border-border shadow-sm p-4 space-y-3 transition-all hover:border-primary/20">
-                <h4 className="text-[10px] font-bold uppercase text-muted-foreground tracking-widest flex items-center gap-1.5 border-b border-border pb-1.5">
-                  <Tag className="h-3.5 w-3.5 text-primary" />
-                  Desconto
-                </h4>
+              <div className="bg-background rounded-xl border border-border shadow-sm transition-all hover:border-primary/20 overflow-hidden">
+                <button
+                  type="button"
+                  onClick={() => setIsDescontoExpanded(!isDescontoExpanded)}
+                  className="w-full flex items-center justify-between px-4 py-3 bg-slate-50/50 dark:bg-slate-900/20 hover:bg-slate-100/50 dark:hover:bg-slate-900/40 transition-colors border-b border-border/40"
+                >
+                  <h4 className="text-[10px] font-bold uppercase text-muted-foreground tracking-widest flex items-center gap-1.5">
+                    <Tag className="h-3.5 w-3.5 text-primary" />
+                    Desconto {parseFloat(valorDesconto.replace(/\./g, '').replace(',', '.')) > 0 && `(R$ ${valorDesconto})`}
+                  </h4>
+                  {isDescontoExpanded ? (
+                    <ChevronUp className="h-4 w-4 text-muted-foreground" />
+                  ) : (
+                    <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                  )}
+                </button>
 
-                <div className="space-y-1">
-                  <Label className="text-[9px] font-bold text-muted-foreground uppercase tracking-wider">Desconto (R$)</Label>
-                  <div className="relative">
-                    <DollarSign className="absolute left-2.5 top-1/2 transform -translate-y-1/2 h-3.5 w-3.5 text-red-500" />
-                    <Input
-                      value={valorDesconto}
-                      onChange={(e) => setValorDesconto(formatarMoeda(e.target.value))}
-                      placeholder="0,00"
-                      className="h-9 text-xs font-bold pl-8 border-border"
-                    />
+                {isDescontoExpanded && (
+                  <div className="p-4 space-y-1 animate-in slide-in-from-top-1 duration-200">
+                    <Label className="text-[9px] font-bold text-muted-foreground uppercase tracking-wider">Desconto (R$)</Label>
+                    <div className="relative">
+                      <DollarSign className="absolute left-2.5 top-1/2 transform -translate-y-1/2 h-3.5 w-3.5 text-red-500" />
+                      <Input
+                        value={valorDesconto}
+                        onChange={(e) => setValorDesconto(formatarMoeda(e.target.value))}
+                        placeholder="0,00"
+                        className="h-9 text-xs font-bold pl-8 border-border"
+                      />
+                    </div>
                   </div>
-                </div>
+                )}
               </div>
 
               {/* Resumo do Total Atualizado */}
