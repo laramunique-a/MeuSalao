@@ -4,6 +4,7 @@ import { useClienteReport, useCaixaPendenciasReport, useFolhaPagamentoReport, us
 import { useProfissionais } from '@/hooks/useProfissionais'
 import { useAuthStore } from '@/store/authStore'
 import { MovimentacaoManualDialog } from '@/components/caixa/MovimentacaoManualDialog'
+import { useQueryClient } from '@tanstack/react-query'
 import {
   Popover,
   PopoverContent,
@@ -75,6 +76,7 @@ const getAgendamentoStatusStyles = (status: string) => {
 }
 
 export default function Relatorios() {
+  const queryClient = useQueryClient()
   const { usuario } = useAuthStore()
   const isProfissional = usuario?.perfil === 'profissional'
 
@@ -955,6 +957,11 @@ export default function Relatorios() {
         defaultTipoMovimento="comissao"
         defaultProfissionalId={payProfissionalId}
         defaultValor={payValor}
+        onSuccess={() => {
+          queryClient.invalidateQueries({ queryKey: ['saldos-comissoes-report'] })
+          queryClient.invalidateQueries({ queryKey: ['folha-pagamento-report'] })
+          queryClient.invalidateQueries({ queryKey: ['transacoes'] })
+        }}
       />
     </div>
   )

@@ -29,6 +29,7 @@ interface MovimentacaoManualDialogProps {
   defaultTipoMovimento?: TipoMovimento
   defaultProfissionalId?: string
   defaultValor?: string
+  onSuccess?: () => void
 }
 
 type TipoMovimento = 'entrada' | 'saida' | 'retirada' | 'ajuste' | 'comissao'
@@ -39,7 +40,8 @@ export function MovimentacaoManualDialog({
   onOpenChange,
   defaultTipoMovimento,
   defaultProfissionalId,
-  defaultValor
+  defaultValor,
+  onSuccess
 }: MovimentacaoManualDialogProps) {
   const { toast } = useToast()
   const createTransacao = useCreateTransacao()
@@ -183,6 +185,9 @@ export function MovimentacaoManualDialog({
         description: `A movimentação de R$ ${valorNum.toFixed(2)} foi concluída com sucesso.`,
       })
       onOpenChange(false)
+      if (onSuccess) {
+        onSuccess()
+      }
     } catch (error: any) {
       toast({
         title: 'Erro ao registrar movimentação',
