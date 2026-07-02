@@ -186,6 +186,13 @@ export default function Agenda() {
   )
 
   function handleEdit(agendamento: Agendamento) {
+    if (['concluido', 'cancelado'].includes(agendamento.status)) {
+      toast({
+        title: 'Atendimento finalizado',
+        description: `Este agendamento está com status "${agendamento.status === 'concluido' ? 'Concluído' : 'Cancelado'}" e não pode ser alterado.`,
+      })
+      return
+    }
     setSelectedAgendamento(agendamento)
     setIsFormOpen(true)
   }

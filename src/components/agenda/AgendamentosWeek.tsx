@@ -76,10 +76,19 @@ export function AgendamentosWeek({
                                             return (
                                                 <div
                                                     key={ag.id}
-                                                    onClick={() => onEdit(ag)}
+                                                    onClick={() => {
+                                                        if (!['concluido', 'cancelado'].includes(ag.status)) {
+                                                            onEdit(ag)
+                                                        }
+                                                    }}
                                                     className={cn(
-                                                        "p-2 rounded-lg border text-[11px] cursor-pointer transition-all hover:shadow-md",
-                                                        ag.status === 'cancelado' ? "opacity-50 line-through bg-gray-100" : "bg-white dark:bg-gray-900 hover:border-primary border-gray-100 dark:border-gray-800"
+                                                        "p-2 rounded-lg border text-[11px] transition-all",
+                                                        ['concluido', 'cancelado'].includes(ag.status)
+                                                            ? "cursor-default opacity-75"
+                                                            : "cursor-pointer hover:shadow-md hover:border-primary",
+                                                        ag.status === 'cancelado'
+                                                            ? "line-through bg-gray-100 dark:bg-gray-800"
+                                                            : "bg-white dark:bg-gray-900 border-gray-100 dark:border-gray-800"
                                                     )}
                                                 >
                                                     <div className="flex justify-between items-center mb-1">

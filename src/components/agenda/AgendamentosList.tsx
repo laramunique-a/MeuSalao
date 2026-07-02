@@ -82,8 +82,25 @@ export function AgendamentosList({
     )
   }
 
-  const getStatusBadgeStyles = (_status: Agendamento['status']) => {
-    return 'bg-primary text-primary-foreground border-transparent hover:bg-primary/95'
+  const getStatusBadgeStyles = (status: Agendamento['status']) => {
+    switch (status) {
+      case 'agendado':
+        return 'bg-blue-500 text-white border-transparent hover:bg-blue-600'
+      case 'confirmado':
+        return 'bg-green-500 text-white border-transparent hover:bg-green-600'
+      case 'em_atendimento':
+        return 'bg-yellow-500 text-yellow-950 border-transparent hover:bg-yellow-600'
+      case 'em_atraso':
+        return 'bg-orange-500 text-white border-transparent hover:bg-orange-600'
+      case 'pendente_caixa':
+        return 'bg-purple-500 text-white border-transparent hover:bg-purple-600'
+      case 'concluido':
+        return 'bg-green-700 text-white border-transparent hover:bg-green-800'
+      case 'cancelado':
+        return 'bg-red-500 text-white border-transparent hover:bg-red-600'
+      default:
+        return 'bg-primary text-primary-foreground border-transparent'
+    }
   }
 
   function shouldShowClienteChegouPrompt(agendamento: Agendamento): boolean {
