@@ -274,7 +274,7 @@ export default function Relatorios() {
                 : 'text-muted-foreground hover:text-foreground'
             )}
           >
-            Folha de Pagamento
+            Comissões
           </button>
         </div>
       </div>
@@ -705,7 +705,7 @@ export default function Relatorios() {
           {/* Header & Filter Section */}
           <div className="bg-card rounded-lg border border-border p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="space-y-1">
-              <h2 className="text-sm font-semibold uppercase tracking-widest text-foreground">Folha de Pagamento</h2>
+              <h2 className="text-sm font-semibold uppercase tracking-widest text-foreground">Comissões</h2>
               <p className="text-xs text-muted-foreground mt-0.5">
                 {isProfissional
                   ? 'Histórico de comissões pagas'
@@ -973,7 +973,7 @@ export default function Relatorios() {
                   {loadingFolha ? (
                     <tr>
                       <td colSpan={7} className="p-8 text-center text-muted-foreground uppercase tracking-wider">
-                        Carregando folha de pagamento...
+                        Carregando comissões...
                       </td>
                     </tr>
                   ) : filteredFolhaData.length === 0 ? (
