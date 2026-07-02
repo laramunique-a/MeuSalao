@@ -286,7 +286,7 @@ export function AgendamentoFormDialog({
                               role="combobox"
                               aria-expanded={openCombobox}
                               className={cn(
-                                'flex h-10 w-full items-center justify-between rounded-md border border-input bg-[#FFFFFF] px-3 py-2 text-sm ring-offset-background cursor-pointer',
+                                'flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background cursor-pointer',
                                 'hover:bg-accent hover:text-accent-foreground',
                                 'focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2',
                                 !field.value && 'text-muted-foreground'
@@ -445,7 +445,7 @@ export function AgendamentoFormDialog({
                         <Input
                           type="date"
                           {...field}
-                          className="text-foreground bg-[#FFFFFF] [color-scheme:light] dark:[color-scheme:dark] h-10 w-full"
+                          className="text-foreground bg-background [color-scheme:light] dark:[color-scheme:dark] h-10 w-full"
                         />
                       </FormControl>
                       <FormMessage />
