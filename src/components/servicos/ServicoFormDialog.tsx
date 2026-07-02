@@ -22,7 +22,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
-import { useCreateServico, useUpdateServico } from '@/hooks/useServicos'
+import { useCreateServico, useUpdateServico, useServicos } from '@/hooks/useServicos'
 import { useToast } from '@/hooks/use-toast'
 import { useEffect } from 'react'
 import type { Servico } from '@/types/models'
@@ -37,6 +37,7 @@ export function ServicoFormDialog({ open, onOpenChange, servico }: ServicoFormDi
   const { toast } = useToast()
   const createServico = useCreateServico()
   const updateServico = useUpdateServico()
+  const { data: todosServicos = [] } = useServicos()
 
   const form = useForm<ServicoFormData>({
     resolver: zodResolver(servicoSchema),
@@ -70,6 +71,21 @@ export function ServicoFormDialog({ open, onOpenChange, servico }: ServicoFormDi
   }, [servico, form, open])
 
   async function onSubmit(data: ServicoFormData) {
+    const nomeLimpo = data.nome.trim().toLowerCase()
+    const nomeExiste = todosServicos.some(s => 
+      s.nome.trim().toLowerCase() === nomeLimpo && 
+      (!servico || s.id !== servico.id)
+    )
+
+    if (nomeExiste) {
+      toast({
+        title: 'Nome já cadastrado',
+        description: 'Já existe um serviço com este nome no seu estabelecimento. Por favor, escolha outro.',
+        variant: 'destructive',
+      })
+      return
+    }
+
     try {
       const servicoData = {
         nome: data.nome,
