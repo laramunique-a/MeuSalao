@@ -24,6 +24,7 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { useTransacoesByDate, useCaixaSummary, useCaixaAberto, useEstornarTransacao, useSaldoCaixaAberto, useTransacoesByCaixa } from '@/hooks/useCaixa'
 import { useAgendamentosEmAtendimento, usePendenciasGlobais } from '@/hooks/useAgendamentos'
+import { useProfissionais } from '@/hooks/useProfissionais'
 import { format, startOfDay, endOfDay, subDays, isBefore, parseISO } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { Badge } from '@/components/ui/badge'
@@ -93,6 +94,7 @@ export default function Caixa() {
   const [dataPendenciasInicio] = useState(subDays(startOfDay(new Date()), 7).toISOString())
   const { data: pendencias } = useAgendamentosEmAtendimento(dataPendenciasInicio, dataFim)
   const estornar = useEstornarTransacao()
+  const { data: todosProfissionais = [] } = useProfissionais()
 
   const { data: pendenciasGlobais = [] } = usePendenciasGlobais()
 
@@ -109,14 +111,23 @@ export default function Caixa() {
   const comissoesPorProfissional = useMemo(() => {
     const list = caixaAberto ? transacoesCaixa : transacoes
     return list?.reduce((acc: any, t: any) => {
-      if (t.status === 'ativo' && t.comissao_valor && t.agendamento?.profissional) {
-        const profissional = t.agendamento.profissional
-        const profId = profissional.id
-        const profNome = profissional.nome
+      if (t.status === 'ativo' && t.comissao_valor) {
+        const metadataProfId = t.metadata?.profissional_id
+        const profId = metadataProfId || t.agendamento?.profissional_id || t.agendamento?.profissional?.id
         
+        if (!profId) return acc
+
         // Se não for admin, mostrar apenas as comissões do próprio usuário
         if (!isAdmin && profId !== usuario?.id) {
           return acc
+        }
+
+        let profNome = ''
+        if (metadataProfId) {
+          const profObj = todosProfissionais.find(p => p.id === metadataProfId)
+          profNome = profObj?.nome || 'Profissional'
+        } else {
+          profNome = t.agendamento?.profissional?.nome || 'Profissional'
         }
 
         if (!acc[profId]) acc[profId] = { nome: profNome, total: 0 }
@@ -124,7 +135,7 @@ export default function Caixa() {
       }
       return acc
     }, {})
-  }, [caixaAberto, transacoesCaixa, transacoes, isAdmin, usuario?.id])
+  }, [caixaAberto, transacoesCaixa, transacoes, isAdmin, usuario?.id, todosProfissionais])
 
   const totalComissoes = useMemo(() => {
     return Object.values(comissoesPorProfissional || {}).reduce((acc: number, p: any) => acc + p.total, 0)
