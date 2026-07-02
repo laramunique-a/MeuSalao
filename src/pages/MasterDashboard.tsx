@@ -15,7 +15,7 @@ import {
 } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Plus, Users, Scissors, Calendar, Loader2, Trash2, Edit2, Mail } from 'lucide-react'
+import { Plus, Scissors, Loader2, Trash2, Edit2, Mail } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import { useAuthStore } from '@/store/authStore'
 import { authService } from '@/services/auth.service'
@@ -432,17 +432,6 @@ export default function MasterDashboard() {
               </div>
               <div className="text-xs text-muted-foreground line-clamp-2">
                 {salao.endereco || 'Endereço não informado'}
-              </div>
-              
-              <div className="flex gap-4 mt-4 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
-                <div className="flex items-center gap-1">
-                  <Users className="h-3.5 w-3.5" />
-                  -- clientes
-                </div>
-                <div className="flex items-center gap-1">
-                  <Calendar className="h-3.5 w-3.5" />
-                  -- agendamentos
-                </div>
               </div>
  
               <div className="flex flex-col gap-2 mt-4">
