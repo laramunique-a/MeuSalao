@@ -212,29 +212,57 @@ export const relatoriosService = {
 
     // Agrupar comissões geradas
     geradasData?.forEach((t: any) => {
-      const profId = t.metadata?.profissional_id || t.agendamento?.profissional_id
-      if (!profId || !saldosMap[profId]) return
+      const breakdown = t.metadata?.comissoes_breakdown
+      if (Array.isArray(breakdown) && breakdown.length > 0) {
+        // Multi-profissional rateio de comissão
+        breakdown.forEach((item: any) => {
+          const profId = item.profissional_id
+          if (!profId || !saldosMap[profId]) return
 
-      const valor = Number(t.comissao_valor) || 0
-      saldosMap[profId].gerado_historico += valor
+          const valorComissao = Number(item.comissao_valor) || 0
+          saldosMap[profId].gerado_historico += valorComissao
 
-      // Se houver filtro de período, verificar se está no intervalo
-      const tDate = new Date(t.data_hora)
-      const insidePeriod = (!startDate || tDate >= new Date(startDate)) && (!endDate || tDate <= new Date(endDate))
-      if (insidePeriod) {
-        saldosMap[profId].gerado_periodo += valor
+          const tDate = new Date(t.data_hora)
+          const insidePeriod = (!startDate || tDate >= new Date(startDate)) && (!endDate || tDate <= new Date(endDate))
+          if (insidePeriod) {
+            saldosMap[profId].gerado_periodo += valorComissao
 
-        // Adicionar apenas os serviços que estão dentro do período selecionado
-        const clienteNome = (t.agendamento as any)?.cliente?.nome || 'Cliente'
-        const valorBruto = Number((t.metadata as any)?.pagamento?.valor_bruto) || Number(t.valor) || 0
+            const clienteNome = (t.agendamento as any)?.cliente?.nome || 'Cliente'
+            const valorBruto = Number(item.valor_servico) || 0
 
-        saldosMap[profId].detalhes.push({
-          data_hora: t.data_hora,
-          cliente: clienteNome,
-          descricao: t.descricao,
-          valor_bruto: valorBruto,
-          comissao_valor: valor
+            saldosMap[profId].detalhes.push({
+              data_hora: t.data_hora,
+              cliente: clienteNome,
+              descricao: `${item.servico_nome || 'Serviço'} (Cobrança Unificada)`,
+              valor_bruto: valorBruto,
+              comissao_valor: valorComissao
+            })
+          }
         })
+      } else {
+        // Agendamento tradicional com 1 único profissional
+        const profId = t.metadata?.profissional_id || t.agendamento?.profissional_id
+        if (!profId || !saldosMap[profId]) return
+
+        const valor = Number(t.comissao_valor) || 0
+        saldosMap[profId].gerado_historico += valor
+
+        const tDate = new Date(t.data_hora)
+        const insidePeriod = (!startDate || tDate >= new Date(startDate)) && (!endDate || tDate <= new Date(endDate))
+        if (insidePeriod) {
+          saldosMap[profId].gerado_periodo += valor
+
+          const clienteNome = (t.agendamento as any)?.cliente?.nome || 'Cliente'
+          const valorBruto = Number((t.metadata as any)?.pagamento?.valor_bruto) || Number(t.valor) || 0
+
+          saldosMap[profId].detalhes.push({
+            data_hora: t.data_hora,
+            cliente: clienteNome,
+            descricao: t.descricao,
+            valor_bruto: valorBruto,
+            comissao_valor: valor
+          })
+        }
       }
     })
 

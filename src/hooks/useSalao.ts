@@ -23,7 +23,7 @@ export function useUpdateSalao() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: (updates: Partial<SalaoUpdate>) => salaoService.updateSalao(updates),
+    mutationFn: (updates: Partial<SalaoUpdate>) => salaoService.updateSalao(updates as any),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['salao'] })
     },

@@ -6,7 +6,19 @@ const AGENDAMENTO_SELECT = `
   *,
   cliente:cliente_id (id, nome, telefone),
   profissional:profissional_id (id, nome, perfil, comissao_percentual),
-  servico:servico_id (id, nome, valor, duracao_minutos)
+  servico:servico_id (id, nome, valor, duracao_minutos),
+  itens:agendamento_servico (
+    id,
+    agendamento_id,
+    servico_id,
+    profissional_id,
+    valor,
+    duracao_minutos,
+    comissao_percentual,
+    comissao_valor,
+    servico:servico_id (id, nome, valor, duracao_minutos, comissao_percentual),
+    profissional:profissional_id (id, nome, perfil, comissao_percentual)
+  )
 `
 
 const statusUpdateInProgress = new Set<string>()
@@ -15,7 +27,13 @@ export function mapAgendamentoRealTimeStatus(ag: any): any {
   if (!ag) return ag
   const now = new Date()
   const dataInicio = new Date(ag.data_hora)
-  const duracao = ag.servico?.duracao_minutos || 60
+  
+  // Se houver itens, a duração total é a soma das durações dos itens
+  let duracao = ag.servico?.duracao_minutos || 60
+  if (ag.itens && ag.itens.length > 0) {
+    duracao = ag.itens.reduce((acc: number, item: any) => acc + (Number(item.duracao_minutos) || 0), 0)
+  }
+  
   const dataFim = new Date(dataInicio.getTime() + duracao * 60000)
 
   let status = ag.status
@@ -229,42 +247,97 @@ export const agendamentoService = {
     return mapAgendamentoRealTimeStatus(data) as unknown as Agendamento
   },
 
-  async create(agendamento: Omit<Agendamento, 'id' | 'salao_id' | 'created_at' | 'updated_at' | 'cliente' | 'profissional' | 'servico'>) {
+  async create(agendamentoData: Omit<Agendamento, 'id' | 'salao_id' | 'created_at' | 'updated_at' | 'cliente' | 'profissional' | 'servico'>) {
     const usuario = useAuthStore.getState().usuario
     if (!usuario || !usuario.salao_id) throw new Error('Usuário não autenticado')
 
-    const { data, error } = await (supabase
+    const { itens, ...agendamentoFields } = agendamentoData as any
+
+    let mainProfissionalId = agendamentoFields.profissional_id
+    let mainServicoId = agendamentoFields.servico_id
+    let totalValor = agendamentoFields.valor || 0
+
+    if (itens && itens.length > 0) {
+      mainProfissionalId = itens[0].profissional_id
+      mainServicoId = itens[0].servico_id
+      totalValor = itens.reduce((acc: number, item: any) => acc + (Number(item.valor) || 0), 0)
+    }
+
+    const { data: createdAgendamento, error } = await (supabase
       .from('agendamento') as any)
       .insert({
-        ...agendamento,
         salao_id: usuario.salao_id,
-        cliente_id: agendamento.cliente_id,
-        profissional_id: agendamento.profissional_id,
-        servico_id: agendamento.servico_id,
-        data_hora: agendamento.data_hora,
-        status: agendamento.status,
-        valor: agendamento.valor,
-        observacoes: agendamento.observacoes,
+        cliente_id: agendamentoFields.cliente_id,
+        profissional_id: mainProfissionalId,
+        servico_id: mainServicoId,
+        data_hora: agendamentoFields.data_hora,
+        status: agendamentoFields.status || 'agendado',
+        valor: totalValor,
+        observacoes: agendamentoFields.observacoes || null,
       })
-      .select(AGENDAMENTO_SELECT)
+      .select('id')
       .single()
 
     if (error) throw error
-    return mapAgendamentoRealTimeStatus(data) as unknown as Agendamento
+
+    if (itens && itens.length > 0) {
+      const itensToInsert = itens.map((item: any) => ({
+        agendamento_id: createdAgendamento.id,
+        servico_id: item.servico_id,
+        profissional_id: item.profissional_id,
+        valor: item.valor,
+        duracao_minutos: item.duracao_minutos || 30,
+        comissao_percentual: item.comissao_percentual || null,
+        comissao_valor: item.comissao_valor || 0,
+      }))
+
+      const { error: errorItens } = await (supabase
+        .from('agendamento_servico') as any)
+        .insert(itensToInsert)
+
+      if (errorItens) {
+        console.error('Erro ao salvar itens do agendamento:', errorItens)
+      }
+    }
+
+    return this.getById(createdAgendamento.id)
   },
 
-  async update(id: string, agendamento: Partial<Agendamento>) {
-    const { cliente, profissional, servico, ...updateData } = agendamento
+  async update(id: string, agendamentoData: Partial<Agendamento>) {
+    const { cliente, profissional, servico, itens, ...updateData } = agendamentoData as any
 
-    const { data, error } = await (supabase
+    if (itens && itens.length > 0) {
+      updateData.profissional_id = itens[0].profissional_id
+      updateData.servico_id = itens[0].servico_id
+      updateData.valor = itens.reduce((acc: number, item: any) => acc + (Number(item.valor) || 0), 0)
+    }
+
+    const { error } = await (supabase
       .from('agendamento') as any)
       .update(updateData)
       .eq('id', id)
-      .select(AGENDAMENTO_SELECT)
-      .single()
 
     if (error) throw error
-    return mapAgendamentoRealTimeStatus(data) as unknown as Agendamento
+
+    if (itens) {
+      await (supabase.from('agendamento_servico') as any).delete().eq('agendamento_id', id)
+
+      if (itens.length > 0) {
+        const itensToInsert = itens.map((item: any) => ({
+          agendamento_id: id,
+          servico_id: item.servico_id,
+          profissional_id: item.profissional_id,
+          valor: item.valor,
+          duracao_minutos: item.duracao_minutos || 30,
+          comissao_percentual: item.comissao_percentual || null,
+          comissao_valor: item.comissao_valor || 0,
+        }))
+
+        await (supabase.from('agendamento_servico') as any).insert(itensToInsert)
+      }
+    }
+
+    return this.getById(id)
   },
 
   async updateStatus(id: string, status: AgendamentoStatus) {

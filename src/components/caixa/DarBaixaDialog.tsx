@@ -401,14 +401,34 @@ export function DarBaixaDialog({ open, onOpenChange, agendamento }: DarBaixaDial
                       <UserCircle className="h-4 w-4 text-muted-foreground" />
                       <span className="text-sm font-bold text-foreground">{agendamento.cliente?.nome}</span>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <Scissors className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-sm font-medium text-muted-foreground">{agendamento.servico?.nome}</span>
-                    </div>
+
+                    {agendamento.itens && agendamento.itens.length > 0 ? (
+                      <div className="space-y-1.5 pt-1">
+                        {agendamento.itens.map((it: any, idx: number) => (
+                          <div key={idx} className="flex items-center justify-between text-xs bg-slate-100 dark:bg-slate-800/50 p-1.5 rounded-md">
+                            <span className="font-semibold text-foreground flex items-center gap-1.5">
+                              <Scissors className="h-3.5 w-3.5 text-purple-600" />
+                              {it.servico?.nome || 'Serviço'}
+                              <span className="text-[10px] text-muted-foreground">com {it.profissional?.nome || agendamento.profissional?.nome}</span>
+                            </span>
+                            <span className="font-bold text-purple-700 dark:text-purple-300">
+                              R$ {Number(it.valor).toFixed(2).replace('.', ',')}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-2">
+                        <Scissors className="h-4 w-4 text-muted-foreground" />
+                        <span className="text-sm font-medium text-muted-foreground">{agendamento.servico?.nome}</span>
+                      </div>
+                    )}
+
                     <div className="flex items-center gap-2">
                       <Clock className="h-4 w-4 text-muted-foreground" />
                       <span className="text-xs text-muted-foreground">
-                        {format(new Date(agendamento.data_hora), "dd/MM/yyyy 'às' HH:mm")} • com {agendamento.profissional?.nome}
+                        {format(new Date(agendamento.data_hora), "dd/MM/yyyy 'às' HH:mm")}
+                        {!agendamento.itens && ` • com ${agendamento.profissional?.nome}`}
                       </span>
                     </div>
                   </div>

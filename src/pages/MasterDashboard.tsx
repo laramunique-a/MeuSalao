@@ -66,7 +66,7 @@ export default function MasterDashboard() {
         .order('nome')
       
       if (error) throw error
-      setSaloes(data || [])
+      setSaloes((data || []) as unknown as Salao[])
     } catch (error: any) {
       toast({
         variant: 'destructive',

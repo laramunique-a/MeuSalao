@@ -50,9 +50,9 @@ import { useServicos } from '@/hooks/useServicos'
 import { useProfissionais } from '@/hooks/useProfissionais'
 import { useToast } from '@/hooks/use-toast'
 import { useEffect, useState } from 'react'
-import type { Agendamento } from '@/types/models'
+import type { Agendamento, AgendamentoServico } from '@/types/models'
 import { format } from 'date-fns'
-import { Check, ChevronsUpDown, UserPlus, AlertCircle } from 'lucide-react'
+import { Check, ChevronsUpDown, UserPlus, AlertCircle, Plus, Trash2, Scissors } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { ClienteFormDialog } from '@/components/clientes/ClienteFormDialog'
 import { ConflictWarningDialog } from './ConflictWarningDialog'
@@ -62,6 +62,13 @@ interface AgendamentoFormDialogProps {
   onOpenChange: (open: boolean) => void
   agendamento?: Agendamento | null
   defaultDate?: Date
+}
+
+interface ItemFormState {
+  servico_id: string
+  profissional_id: string
+  valor: number
+  duracao_minutos: number
 }
 
 export function AgendamentoFormDialog({
@@ -81,12 +88,15 @@ export function AgendamentoFormDialog({
   const { data: profissionais = [] } = useProfissionais()
   const { data: pendenciasGlobais = [] } = usePendenciasGlobais()
 
-  const [selectedServico, setSelectedServico] = useState<string>('')
   const [clienteNaoCadastrado, setClienteNaoCadastrado] = useState<string | null>(null)
   const [showClienteFormDialog, setShowClienteFormDialog] = useState(false)
   const [showConflictDialog, setShowConflictDialog] = useState(false)
   const [conflictData, setConflictData] = useState<any>(null)
   const [pendingAgendamento, setPendingAgendamento] = useState<any>(null)
+
+  const [itemsList, setItemsList] = useState<ItemFormState[]>([
+    { servico_id: '', profissional_id: '', valor: 0, duracao_minutos: 30 }
+  ])
 
   const servicosAtivos = servicos.filter((s) => s.ativo)
 
@@ -94,8 +104,6 @@ export function AgendamentoFormDialog({
     resolver: zodResolver(agendamentoSchema),
     defaultValues: {
       cliente_id: '',
-      profissional_id: '',
-      servico_id: '',
       data: defaultDate ? format(defaultDate, 'yyyy-MM-dd') : format(new Date(), 'yyyy-MM-dd'),
       hora: '',
       observacoes: '',
@@ -112,33 +120,83 @@ export function AgendamentoFormDialog({
       const dataHora = new Date(agendamento.data_hora)
       form.reset({
         cliente_id: agendamento.cliente_id,
-        profissional_id: agendamento.profissional_id,
-        servico_id: agendamento.servico_id,
         data: format(dataHora, 'yyyy-MM-dd'),
         hora: format(dataHora, 'HH:mm'),
         observacoes: agendamento.observacoes || '',
       })
-      setSelectedServico(agendamento.servico_id)
+
+      if (agendamento.itens && agendamento.itens.length > 0) {
+        setItemsList(agendamento.itens.map(item => ({
+          servico_id: item.servico_id,
+          profissional_id: item.profissional_id,
+          valor: item.valor,
+          duracao_minutos: item.duracao_minutos || 30
+        })))
+      } else {
+        setItemsList([{
+          servico_id: agendamento.servico_id,
+          profissional_id: agendamento.profissional_id,
+          valor: agendamento.valor,
+          duracao_minutos: agendamento.servico?.duracao_minutos || 30
+        }])
+      }
     } else {
       form.reset({
         cliente_id: '',
-        profissional_id: '',
-        servico_id: '',
         data: defaultDate ? format(defaultDate, 'yyyy-MM-dd') : format(new Date(), 'yyyy-MM-dd'),
         hora: '',
         observacoes: '',
       })
-      setSelectedServico('')
+      setItemsList([{ servico_id: '', profissional_id: '', valor: 0, duracao_minutos: 30 }])
     }
   }, [agendamento, defaultDate, form, open])
 
+  function handleAddItem() {
+    const defaultProf = profissionais[0]?.id || ''
+    setItemsList(prev => [...prev, { servico_id: '', profissional_id: defaultProf, valor: 0, duracao_minutos: 30 }])
+  }
+
+  function handleRemoveItem(index: number) {
+    if (itemsList.length <= 1) return
+    setItemsList(prev => prev.filter((_, i) => i !== index))
+  }
+
+  function handleItemServicoChange(index: number, servicoId: string) {
+    const servico = servicos.find(s => s.id === servicoId)
+    setItemsList(prev => {
+      const updated = [...prev]
+      updated[index] = {
+        ...updated[index],
+        servico_id: servicoId,
+        valor: servico?.valor || 0,
+        duracao_minutos: servico?.duracao_minutos || 30
+      }
+      return updated
+    })
+  }
+
+  function handleItemProfissionalChange(index: number, profId: string) {
+    setItemsList(prev => {
+      const updated = [...prev]
+      updated[index] = {
+        ...updated[index],
+        profissional_id: profId
+      }
+      return updated
+    })
+  }
+
+  const totalValor = itemsList.reduce((acc, item) => acc + (item.valor || 0), 0)
+  const totalDuracao = itemsList.reduce((acc, item) => acc + (item.duracao_minutos || 0), 0)
+
   async function onSubmit(data: AgendamentoFormData) {
     try {
-      const servico = servicos.find((s) => s.id === data.servico_id)
-      if (!servico) {
+      // Validar se há ao menos 1 item completo
+      const hasInvalidItem = itemsList.some(item => !item.servico_id || !item.profissional_id)
+      if (hasInvalidItem) {
         toast({
-          title: 'Erro',
-          description: 'Serviço não encontrado',
+          title: 'Campos incompletos',
+          description: 'Selecione o serviço e o profissional para todos os itens da lista.',
           variant: 'destructive',
         })
         return
@@ -156,43 +214,48 @@ export function AgendamentoFormDialog({
         return
       }
 
-      // Verificar se horário está bloqueado
-      const isBloqueado = await checkBloqueio.mutateAsync({
-        profissionalId: data.profissional_id,
-        dataHora: dataHora.toISOString(),
-      })
-
-      if (isBloqueado) {
-        toast({
-          title: 'Horário bloqueado',
-          description: 'Este horário está bloqueado para o profissional selecionado.',
-          variant: 'destructive',
+      // Verificar bloqueio para cada profissional único envolvido
+      const profIdsUnicos = Array.from(new Set(itemsList.map(i => i.profissional_id)))
+      for (const profId of profIdsUnicos) {
+        const isBloqueado = await checkBloqueio.mutateAsync({
+          profissionalId: profId,
+          dataHora: dataHora.toISOString(),
         })
-        return
+
+        if (isBloqueado) {
+          const profNome = profissionais.find(p => p.id === profId)?.nome || 'Selecionado'
+          toast({
+            title: 'Horário bloqueado',
+            description: `O horário está bloqueado para o profissional ${profNome}.`,
+            variant: 'destructive',
+          })
+          return
+        }
       }
 
-      // Verificar conflito de horário avançado
-      const conflictResult = await checkConflict.mutateAsync({
-        profissionalId: data.profissional_id,
-        dataHora: dataHora.toISOString(),
-        duracaoMinutos: servico.duracao_minutos,
-        excludeId: agendamento?.id,
-      })
-
-      if (conflictResult.hasConflict) {
-        // Armazenar dados do agendamento pendente
-        setPendingAgendamento({
-          data,
-          servico,
-          dataHora,
+      // Verificar conflitos para cada profissional
+      for (const item of itemsList) {
+        const conflictResult = await checkConflict.mutateAsync({
+          profissionalId: item.profissional_id,
+          dataHora: dataHora.toISOString(),
+          duracaoMinutos: item.duracao_minutos,
+          excludeId: agendamento?.id,
         })
-        setConflictData(conflictResult)
-        setShowConflictDialog(true)
-        return
+
+        if (conflictResult.hasConflict) {
+          setPendingAgendamento({
+            data,
+            dataHora,
+            itemsList,
+          })
+          setConflictData(conflictResult)
+          setShowConflictDialog(true)
+          return
+        }
       }
 
       // Prosseguir com salvamento
-      await saveAgendamento(data, servico, dataHora)
+      await saveAgendamento(data, dataHora, itemsList)
     } catch (error: any) {
       toast({
         title: 'Erro ao salvar agendamento',
@@ -202,37 +265,42 @@ export function AgendamentoFormDialog({
     }
   }
 
-  async function saveAgendamento(data: AgendamentoFormData, servico: any, dataHora: Date) {
+  async function saveAgendamento(data: AgendamentoFormData, dataHora: Date, itens: ItemFormState[]) {
     try {
+      const mainProf = itens[0]?.profissional_id || ''
+      const mainServ = itens[0]?.servico_id || ''
+
       if (agendamento) {
         await updateAgendamento.mutateAsync({
           id: agendamento.id,
           data: {
             cliente_id: data.cliente_id,
-            profissional_id: data.profissional_id,
-            servico_id: data.servico_id,
+            profissional_id: mainProf,
+            servico_id: mainServ,
             data_hora: dataHora.toISOString(),
-            valor: servico.valor,
+            valor: totalValor,
             observacoes: data.observacoes || null,
+            itens: itens as unknown as AgendamentoServico[],
           },
         })
         toast({
           title: 'Agendamento atualizado!',
-          description: 'O agendamento foi atualizado com sucesso.',
+          description: 'O agendamento com múltiplos serviços foi atualizado.',
         })
       } else {
         await createAgendamento.mutateAsync({
           cliente_id: data.cliente_id,
-          profissional_id: data.profissional_id,
-          servico_id: data.servico_id,
+          profissional_id: mainProf,
+          servico_id: mainServ,
           data_hora: dataHora.toISOString(),
           status: 'agendado',
-          valor: servico.valor,
+          valor: totalValor,
           observacoes: data.observacoes || null,
+          itens: itens as unknown as AgendamentoServico[],
         })
         toast({
           title: 'Agendamento criado!',
-          description: 'O agendamento foi criado com sucesso.',
+          description: 'O agendamento com múltiplos serviços foi criado com sucesso.',
         })
       }
 
@@ -247,20 +315,16 @@ export function AgendamentoFormDialog({
     }
   }
 
-  const servicoSelecionado = servicos.find((s) => s.id === selectedServico)
-
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent onOpenAutoFocus={(e) => e.preventDefault()} className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+        <DialogContent onOpenAutoFocus={(e) => e.preventDefault()} className="sm:max-w-[650px] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
               {agendamento ? 'Editar Agendamento' : 'Novo Agendamento'}
             </DialogTitle>
             <DialogDescription>
-              {agendamento
-                ? 'Edite as informações do agendamento abaixo.'
-                : 'Preencha os dados do novo agendamento.'}
+              Selecione o cliente, os serviços e os profissionais correspondentes.
             </DialogDescription>
           </DialogHeader>
 
@@ -373,66 +437,109 @@ export function AgendamentoFormDialog({
                 </div>
               )}
 
-              <FormField
-                control={form.control}
-                name="profissional_id"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Profissional *</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Selecione o profissional" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {profissionais.map((profissional) => (
-                          <SelectItem key={profissional.id} value={profissional.id}>
-                            {profissional.nome}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              {/* Lista Dinâmica de Serviços e Profissionais */}
+              <div className="space-y-3 pt-2">
+                <div className="flex items-center justify-between">
+                  <FormLabel className="text-sm font-semibold flex items-center gap-1.5">
+                    <Scissors className="h-4 w-4 text-purple-600" />
+                    Serviços e Profissionais *
+                  </FormLabel>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={handleAddItem}
+                    className="h-8 gap-1 text-xs text-purple-600 border-purple-200 hover:bg-purple-50"
+                  >
+                    <Plus className="h-3.5 w-3.5" />
+                    Adicionar Serviço
+                  </Button>
+                </div>
 
-              <FormField
-                control={form.control}
-                name="servico_id"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Serviço *</FormLabel>
-                    <Select
-                      onValueChange={(value) => {
-                        field.onChange(value)
-                        setSelectedServico(value)
-                      }}
-                      value={field.value}
+                <div className="space-y-2.5">
+                  {itemsList.map((item, idx) => (
+                    <div
+                      key={idx}
+                      className="p-3 rounded-lg border border-purple-100 dark:border-purple-900/40 bg-purple-50/30 dark:bg-purple-950/10 space-y-2 relative"
                     >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Selecione o serviço" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {servicosAtivos.map((servico) => (
-                          <SelectItem key={servico.id} value={servico.id}>
-                            {servico.nome}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                    {servicoSelecionado && (
-                      <p className="text-sm text-gray-600 dark:text-gray-400">
-                        Valor: R$ {servicoSelecionado.valor.toFixed(2)} | Duração: {servicoSelecionado.duracao_minutos} minutos
-                      </p>
-                    )}
-                  </FormItem>
-                )}
-              />
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        {/* Seleção do Serviço */}
+                        <div>
+                          <label className="text-xs text-muted-foreground font-medium mb-1 block">
+                            Serviço #{idx + 1}
+                          </label>
+                          <Select
+                            value={item.servico_id}
+                            onValueChange={(val) => handleItemServicoChange(idx, val)}
+                          >
+                            <SelectTrigger className="h-9 text-xs">
+                              <SelectValue placeholder="Selecione o serviço" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {servicosAtivos.map((s) => (
+                                <SelectItem key={s.id} value={s.id} className="text-xs">
+                                  {s.nome} (R$ {s.valor.toFixed(2)})
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        {/* Seleção do Profissional */}
+                        <div>
+                          <label className="text-xs text-muted-foreground font-medium mb-1 block">
+                            Profissional
+                          </label>
+                          <Select
+                            value={item.profissional_id}
+                            onValueChange={(val) => handleItemProfissionalChange(idx, val)}
+                          >
+                            <SelectTrigger className="h-9 text-xs">
+                              <SelectValue placeholder="Selecione o profissional" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {profissionais.map((p) => (
+                                <SelectItem key={p.id} value={p.id} className="text-xs">
+                                  {p.nome}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center justify-between text-xs pt-1 border-t border-purple-100 dark:border-purple-900/30">
+                        <span className="text-purple-700 dark:text-purple-300 font-medium">
+                          R$ {item.valor.toFixed(2)} • {item.duracao_minutos} min
+                        </span>
+
+                        {itemsList.length > 1 && (
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleRemoveItem(idx)}
+                            className="h-7 w-7 p-0 text-red-500 hover:text-red-700 hover:bg-red-50"
+                            title="Remover Serviço"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Caixa de Resumo de Totais */}
+                <div className="p-2.5 rounded-lg bg-gray-50 dark:bg-gray-900 border text-xs flex justify-between items-center font-medium">
+                  <span>
+                    Total: <strong className="text-purple-700 dark:text-purple-400 font-bold text-sm">R$ {totalValor.toFixed(2)}</strong>
+                  </span>
+                  <span className="text-muted-foreground">
+                    Duração estimada: <strong>{totalDuracao} minutos</strong>
+                  </span>
+                </div>
+              </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <FormField
@@ -458,7 +565,7 @@ export function AgendamentoFormDialog({
                   name="hora"
                   render={({ field }) => (
                     <FormItem className="sm:col-span-2">
-                      <FormLabel>Hora * <span className="text-xs font-normal text-muted-foreground">(formato 24h)</span></FormLabel>
+                      <FormLabel>Hora de Início * <span className="text-xs font-normal text-muted-foreground">(formato 24h)</span></FormLabel>
                       <FormControl>
                         <TimePicker
                           value={field.value || ''}
@@ -557,7 +664,7 @@ export function AgendamentoFormDialog({
           setShowConflictDialog(false)
           if (pendingAgendamento) {
             const newDataHora = new Date(`${pendingAgendamento.data.data}T${newTime}:00`)
-            saveAgendamento(pendingAgendamento.data, pendingAgendamento.servico, newDataHora)
+            saveAgendamento(pendingAgendamento.data, newDataHora, pendingAgendamento.itemsList)
           }
         }}
         onSelectDate={(newDate) => {
@@ -567,13 +674,13 @@ export function AgendamentoFormDialog({
           if (pendingAgendamento) {
             const currentHour = form.getValues('hora')
             const newDataHora = new Date(`${formattedDate}T${currentHour}:00`)
-            saveAgendamento(pendingAgendamento.data, pendingAgendamento.servico, newDataHora)
+            saveAgendamento(pendingAgendamento.data, newDataHora, pendingAgendamento.itemsList)
           }
         }}
         onForceConfirm={() => {
           setShowConflictDialog(false)
           if (pendingAgendamento) {
-            saveAgendamento(pendingAgendamento.data, pendingAgendamento.servico, pendingAgendamento.dataHora)
+            saveAgendamento(pendingAgendamento.data, pendingAgendamento.dataHora, pendingAgendamento.itemsList)
           }
         }}
       />

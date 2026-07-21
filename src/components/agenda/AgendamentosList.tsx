@@ -225,17 +225,31 @@ export function AgendamentosList({
                   </div>
 
                   <div className="space-y-1.5 pl-0.5">
-                    {filterProfissional === 'todos' && (
-                      <div className="text-xs text-muted-foreground flex items-center gap-2">
-                        <span className="font-normal uppercase tracking-wider">Profissional:</span>
-                        <span className="font-semibold text-foreground truncate">{agendamento.profissional?.nome}</span>
+                    {agendamento.itens && agendamento.itens.length > 0 ? (
+                      <div className="space-y-1">
+                        {agendamento.itens.map((it: any, idx: number) => (
+                          <div key={idx} className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                            <Scissors className="h-3.5 w-3.5 text-purple-600 shrink-0" />
+                            <span className="font-semibold text-foreground">{it.servico?.nome || 'Serviço'}</span>
+                            <span className="text-[11px] text-muted-foreground">({it.profissional?.nome || agendamento.profissional?.nome})</span>
+                            <span className="text-[11px] font-bold text-purple-600 ml-auto">R$ {Number(it.valor).toFixed(2)}</span>
+                          </div>
+                        ))}
                       </div>
+                    ) : (
+                      <>
+                        {filterProfissional === 'todos' && (
+                          <div className="text-xs text-muted-foreground flex items-center gap-2">
+                            <span className="font-normal uppercase tracking-wider">Profissional:</span>
+                            <span className="font-semibold text-foreground truncate">{agendamento.profissional?.nome}</span>
+                          </div>
+                        )}
+                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                          <Scissors className="h-3.5 w-3.5 text-muted-foreground/60" />
+                          <span className="font-medium truncate">{agendamento.servico?.nome}</span>
+                        </div>
+                      </>
                     )}
-
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                      <Scissors className="h-3.5 w-3.5 text-muted-foreground/60" />
-                      <span className="font-medium truncate">{agendamento.servico?.nome}</span>
-                    </div>
                   </div>
 
                   {agendamento.observacoes && (

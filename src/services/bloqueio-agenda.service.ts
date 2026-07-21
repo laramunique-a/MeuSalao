@@ -13,7 +13,7 @@ export const bloqueioAgendaService = {
       .order('data_inicio', { ascending: true })
 
     if (error) throw new Error(error.message)
-    return data || []
+    return (data || []) as unknown as BloqueioAgenda[]
   },
 
   async getByProfissionalAndDateRange(
@@ -32,7 +32,7 @@ export const bloqueioAgendaService = {
       .gte('data_fim', dataInicio)
 
     if (error) throw new Error(error.message)
-    return data || []
+    return (data || []) as unknown as BloqueioAgenda[]
   },
 
   async getByDateRange(
@@ -49,7 +49,7 @@ export const bloqueioAgendaService = {
       .gte('data_fim', dataInicio)
 
     if (error) throw new Error(error.message)
-    return data || []
+    return (data || []) as unknown as BloqueioAgenda[]
   },
 
   async create(bloqueio: Omit<BloqueioAgenda, 'id' | 'created_at' | 'updated_at' | 'profissional'>): Promise<BloqueioAgenda> {
