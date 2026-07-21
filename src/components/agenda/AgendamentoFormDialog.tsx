@@ -440,10 +440,10 @@ export function AgendamentoFormDialog({
               {/* Lista Dinâmica de Serviços e Profissionais */}
               <div className="space-y-3 pt-2">
                 <div className="flex items-center justify-between">
-                  <FormLabel className="text-sm font-semibold flex items-center gap-1.5">
+                  <label className="text-sm font-semibold flex items-center gap-1.5 text-foreground">
                     <Scissors className="h-4 w-4 text-purple-600" />
                     Serviços e Profissionais *
-                  </FormLabel>
+                  </label>
                   <Button
                     type="button"
                     variant="outline"
