@@ -80,25 +80,45 @@ export const caixaService = {
     if (transacao.agendamento_id) {
       try {
         const agendamento = await agendamentoService.getById(transacao.agendamento_id)
-        if (agendamento && agendamento.itens && agendamento.itens.length > 0) {
-          const breakdown = agendamento.itens.map((item: any) => {
-            const valServico = Number(item.valor) || 0
-            const pctComissao = Number(item.comissao_percentual ?? item.servico?.comissao_percentual ?? item.profissional?.comissao_percentual ?? 0)
+        if (agendamento) {
+          let breakdown: any[] = []
+          if (agendamento.itens && agendamento.itens.length > 0) {
+            breakdown = agendamento.itens.map((item: any) => {
+              const valServico = Number(item.valor) || 0
+              const pctComissao = Number(item.comissao_percentual ?? item.servico?.comissao_percentual ?? item.profissional?.comissao_percentual ?? 0)
+              const valComissao = Math.round(valServico * (pctComissao / 100) * 100) / 100
+
+              return {
+                profissional_id: item.profissional_id,
+                profissional_nome: item.profissional?.nome || agendamento.profissional?.nome || 'Profissional',
+                servico_id: item.servico_id,
+                servico_nome: item.servico?.nome || 'Serviço',
+                valor_servico: valServico,
+                comissao_percentual: pctComissao,
+                comissao_valor: valComissao,
+              }
+            })
+          } else {
+            const valServico = Number(transacao.valor) || 0
+            const pctComissao = Number(agendamento.servico?.comissao_percentual ?? agendamento.profissional?.comissao_percentual ?? 0)
             const valComissao = Math.round(valServico * (pctComissao / 100) * 100) / 100
 
-            return {
-              profissional_id: item.profissional_id,
-              profissional_nome: item.profissional?.nome || 'Profissional',
-              servico_id: item.servico_id,
-              servico_nome: item.servico?.nome || 'Serviço',
+            breakdown = [{
+              profissional_id: agendamento.profissional_id,
+              profissional_nome: agendamento.profissional?.nome || 'Profissional',
+              servico_id: agendamento.servico_id,
+              servico_nome: agendamento.servico?.nome || 'Serviço',
               valor_servico: valServico,
               comissao_percentual: pctComissao,
               comissao_valor: valComissao,
-            }
-          })
+            }]
+          }
 
           finalMetadata.comissoes_breakdown = breakdown
-          totalComissaoCalculada = breakdown.reduce((acc: number, b: any) => acc + b.comissao_valor, 0)
+          const calcSum = breakdown.reduce((acc: number, b: any) => acc + b.comissao_valor, 0)
+          if (calcSum > 0) {
+            totalComissaoCalculada = calcSum
+          }
         }
       } catch (err) {
         console.error('Erro ao buscar itens do agendamento para comissão:', err)

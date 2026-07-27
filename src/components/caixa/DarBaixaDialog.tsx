@@ -246,16 +246,43 @@ export function DarBaixaDialog({ open, onOpenChange, agendamento }: DarBaixaDial
         profissionalId: string | null
       }[] = []
 
-      // 1. Serviço Principal com desconto proporcional
-      const valorPrincipalComDesconto = Math.max(0, agValor - descontoVal)
-      itensReceita.push({
-        tipo: 'principal',
-        descricao: `${servico?.nome} - ${agendamento.cliente?.nome}`,
-        categoria: 'Serviço',
-        valorBase: valorPrincipalComDesconto,
-        comissaoPercentual: comissaoPercentual,
-        profissionalId: agendamento.profissional_id
-      })
+      // 1. Serviços do Agendamento (suporta múltiplos serviços e profissionais)
+      if (agendamento.itens && agendamento.itens.length > 0) {
+        const totalBrutoItens = agendamento.itens.reduce((acc: number, it: any) => acc + (Number(it.valor) || 0), 0)
+        const proporcaoDesconto = agValor > 0 && descontoVal > 0 && totalBrutoItens > 0
+          ? Math.max(0, agValor - descontoVal) / totalBrutoItens
+          : 1
+
+        agendamento.itens.forEach((it: any) => {
+          const servObj = todosServicos.find((s) => s.id === it.servico_id) || it.servico
+          const profObj = todosProfissionais.find((p) => p.id === it.profissional_id) || it.profissional
+          const pctComissao = Number(it.comissao_percentual ?? servObj?.comissao_percentual ?? profObj?.comissao_percentual ?? 0)
+          const valorBaseItem = (Number(it.valor) || 0) * proporcaoDesconto
+
+          itensReceita.push({
+            tipo: 'principal',
+            descricao: `${servObj?.nome || 'Serviço'} - ${agendamento.cliente?.nome}`,
+            categoria: 'Serviço',
+            valorBase: valorBaseItem,
+            comissaoPercentual: pctComissao,
+            profissionalId: it.profissional_id || agendamento.profissional_id,
+          })
+        })
+      } else {
+        const valorPrincipalComDesconto = Math.max(0, agValor - descontoVal)
+        const profObj = todosProfissionais.find((p) => p.id === agendamento.profissional_id) || agendamento.profissional
+        const servObj = todosServicos.find((s) => s.id === agendamento.servico_id) || agendamento.servico
+        const pctComissao = Number(servObj?.comissao_percentual ?? (profObj as any)?.comissao_percentual ?? 0)
+
+        itensReceita.push({
+          tipo: 'principal',
+          descricao: `${servico?.nome || 'Serviço'} - ${agendamento.cliente?.nome}`,
+          categoria: 'Serviço',
+          valorBase: valorPrincipalComDesconto,
+          comissaoPercentual: pctComissao,
+          profissionalId: agendamento.profissional_id,
+        })
+      }
 
       // 2. Serviços Adicionais
       servicosAdicionais.forEach(sa => {
