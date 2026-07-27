@@ -260,10 +260,11 @@ export function AgendamentoFormDialog({
     try {
       let currentDataHora = new Date(`${data.data}T${data.hora}:00`)
 
-      const mainProf = data.itens[0]?.profissional_id || ''
-      const mainServ = data.itens[0]?.servico_id || ''
+      const itensList = data.itens || []
+      const mainProf = itensList[0]?.profissional_id || ''
+      const mainServ = itensList[0]?.servico_id || ''
 
-      const mappedItens: AgendamentoServico[] = data.itens.map((it) => {
+      const mappedItens: AgendamentoServico[] = itensList.map((it) => {
         const serv = servicos.find((s) => s.id === it.servico_id)
         return {
           servico_id: it.servico_id,
@@ -289,8 +290,8 @@ export function AgendamentoFormDialog({
 
         toast({
           title: 'Agendamento atualizado!',
-          description: data.itens.length > 1 
-            ? `${data.itens.length} serviços agendados com sucesso.` 
+          description: itensList.length > 1 
+            ? `${itensList.length} serviços agendados com sucesso.` 
             : 'O agendamento foi atualizado com sucesso.',
         })
       } else {
@@ -307,8 +308,8 @@ export function AgendamentoFormDialog({
 
         toast({
           title: 'Agendamento criado!',
-          description: data.itens.length > 1 
-            ? `${data.itens.length} serviços agendados com sucesso.` 
+          description: itensList.length > 1 
+            ? `${itensList.length} serviços agendados com sucesso.` 
             : 'O agendamento foi criado com sucesso.',
         })
       }
