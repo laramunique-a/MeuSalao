@@ -194,6 +194,9 @@ export default function Relatorios() {
 
   const atendimentosConcluidos = agendamentos.filter((a) => a.status === 'concluido')
   const totalAtendimentosValidos = agendamentos.filter((a) => a.status !== 'cancelado').length
+  const totalServicosValidos = agendamentos
+    .filter((a) => a.status !== 'cancelado')
+    .reduce((acc, a: any) => acc + (a.itens && a.itens.length > 0 ? a.itens.length : 1), 0)
   const hasUnpaidDebt = agendamentos.some((a) => a.status === 'pendente_caixa')
 
   const totalPago = transacoes
@@ -416,7 +419,7 @@ export default function Relatorios() {
                     </div>
                     <div>
                       <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest">Atendimentos</p>
-                      <p className="text-sm font-bold text-foreground mt-0.5">{totalAtendimentosValidos} agendados</p>
+                      <p className="text-sm font-bold text-foreground mt-0.5">{totalServicosValidos} serviço{totalServicosValidos !== 1 ? 's' : ''} ({totalAtendimentosValidos} agendamento{totalAtendimentosValidos !== 1 ? 's' : ''})</p>
                     </div>
                   </CardContent>
                 </Card>
@@ -505,13 +508,48 @@ export default function Relatorios() {
                                   {format(new Date(ag.data_hora), "dd/MM/yyyy 'às' HH:mm")}
                                 </td>
                                 <td className="px-4 py-3 font-semibold text-foreground uppercase tracking-wider">
-                                  {ag.servico?.nome || '—'}
+                                  {ag.itens && ag.itens.length > 0 ? (
+                                    <div className="space-y-1">
+                                      {ag.itens.map((it: any, idx: number) => (
+                                        <div key={idx} className="block text-foreground font-semibold">
+                                          {it.servico?.nome || ag.servico?.nome || 'Serviço'}
+                                        </div>
+                                      ))}
+                                    </div>
+                                  ) : (
+                                    ag.servico?.nome || '—'
+                                  )}
                                 </td>
                                 <td className="px-4 py-3 text-muted-foreground font-semibold uppercase tracking-wider">
-                                  {ag.profissional?.nome || '—'}
+                                  {ag.itens && ag.itens.length > 0 ? (
+                                    <div className="space-y-1">
+                                      {ag.itens.map((it: any, idx: number) => (
+                                        <div key={idx} className="block text-muted-foreground font-semibold">
+                                          {it.profissional?.nome || ag.profissional?.nome || '—'}
+                                        </div>
+                                      ))}
+                                    </div>
+                                  ) : (
+                                    ag.profissional?.nome || '—'
+                                  )}
                                 </td>
                                 <td className="px-4 py-3 text-right font-bold text-foreground whitespace-nowrap">
-                                  {formatCurrency(ag.valor)}
+                                  {ag.itens && ag.itens.length > 0 ? (
+                                    <div className="space-y-1">
+                                      {ag.itens.map((it: any, idx: number) => (
+                                        <div key={idx} className="block text-foreground font-semibold">
+                                          {formatCurrency(Number(it.valor) || 0)}
+                                        </div>
+                                      ))}
+                                      {ag.itens.length > 1 && (
+                                        <div className="text-[10px] text-muted-foreground font-bold border-t border-dashed pt-0.5 mt-0.5">
+                                          Total: {formatCurrency(ag.valor)}
+                                        </div>
+                                      )}
+                                    </div>
+                                  ) : (
+                                    formatCurrency(ag.valor)
+                                  )}
                                 </td>
                                 <td className="px-4 py-3 text-center whitespace-nowrap">
                                   <Badge

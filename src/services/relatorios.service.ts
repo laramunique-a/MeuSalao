@@ -13,7 +13,14 @@ export const relatoriosService = {
       .select(`
         *,
         profissional:profissional_id (id, nome),
-        servico:servico_id (id, nome)
+        servico:servico_id (id, nome),
+        itens:agendamento_servico (
+          id,
+          valor,
+          duracao_minutos,
+          servico:servico_id (id, nome),
+          profissional:profissional_id (id, nome)
+        )
       `)
       .eq('cliente_id', clienteId)
       .order('data_hora', { ascending: false })
