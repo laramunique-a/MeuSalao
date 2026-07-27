@@ -50,7 +50,7 @@ import { useServicos } from '@/hooks/useServicos'
 import { useProfissionais } from '@/hooks/useProfissionais'
 import { useToast } from '@/hooks/use-toast'
 import { useEffect, useState } from 'react'
-import type { Agendamento } from '@/types/models'
+import type { Agendamento, AgendamentoServico } from '@/types/models'
 import { format, addMinutes } from 'date-fns'
 import { Check, ChevronsUpDown, UserPlus, AlertCircle, Plus, Trash2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -130,18 +130,32 @@ export function AgendamentoFormDialog({
   useEffect(() => {
     if (agendamento) {
       const dataHora = new Date(agendamento.data_hora)
-      form.reset({
-        cliente_id: agendamento.cliente_id,
-        itens: [
-          {
-            servico_id: agendamento.servico_id,
-            profissional_id: agendamento.profissional_id,
-          },
-        ],
-        data: format(dataHora, 'yyyy-MM-dd'),
-        hora: format(dataHora, 'HH:mm'),
-        observacoes: agendamento.observacoes || '',
-      })
+
+      if (agendamento.itens && agendamento.itens.length > 0) {
+        form.reset({
+          cliente_id: agendamento.cliente_id,
+          itens: agendamento.itens.map((it) => ({
+            servico_id: it.servico_id,
+            profissional_id: it.profissional_id,
+          })),
+          data: format(dataHora, 'yyyy-MM-dd'),
+          hora: format(dataHora, 'HH:mm'),
+          observacoes: agendamento.observacoes || '',
+        })
+      } else {
+        form.reset({
+          cliente_id: agendamento.cliente_id,
+          itens: [
+            {
+              servico_id: agendamento.servico_id,
+              profissional_id: agendamento.profissional_id,
+            },
+          ],
+          data: format(dataHora, 'yyyy-MM-dd'),
+          hora: format(dataHora, 'HH:mm'),
+          observacoes: agendamento.observacoes || '',
+        })
+      }
     } else {
       form.reset({
         cliente_id: '',
@@ -246,40 +260,32 @@ export function AgendamentoFormDialog({
     try {
       let currentDataHora = new Date(`${data.data}T${data.hora}:00`)
 
-      if (agendamento) {
-        const firstItem = data.itens[0]
-        const firstServico = servicos.find((s) => s.id === firstItem.servico_id)
+      const mainProf = data.itens[0]?.profissional_id || ''
+      const mainServ = data.itens[0]?.servico_id || ''
 
+      const mappedItens: AgendamentoServico[] = data.itens.map((it) => {
+        const serv = servicos.find((s) => s.id === it.servico_id)
+        return {
+          servico_id: it.servico_id,
+          profissional_id: it.profissional_id,
+          valor: serv?.valor || 0,
+          duracao_minutos: serv?.duracao_minutos || 30,
+        }
+      })
+
+      if (agendamento) {
         await updateAgendamento.mutateAsync({
           id: agendamento.id,
           data: {
             cliente_id: data.cliente_id,
-            profissional_id: firstItem.profissional_id,
-            servico_id: firstItem.servico_id,
+            profissional_id: mainProf,
+            servico_id: mainServ,
             data_hora: currentDataHora.toISOString(),
-            valor: firstServico?.valor || 0,
+            valor: totalValor,
             observacoes: data.observacoes || null,
+            itens: mappedItens,
           },
         })
-
-        currentDataHora = addMinutes(currentDataHora, firstServico?.duracao_minutos || 30)
-
-        for (let i = 1; i < data.itens.length; i++) {
-          const item = data.itens[i]
-          const servico = servicos.find((s) => s.id === item.servico_id)
-
-          await createAgendamento.mutateAsync({
-            cliente_id: data.cliente_id,
-            profissional_id: item.profissional_id,
-            servico_id: item.servico_id,
-            data_hora: currentDataHora.toISOString(),
-            status: 'agendado',
-            valor: servico?.valor || 0,
-            observacoes: data.observacoes ? `(${i + 1}º serviço) ${data.observacoes}` : null,
-          })
-
-          currentDataHora = addMinutes(currentDataHora, servico?.duracao_minutos || 30)
-        }
 
         toast({
           title: 'Agendamento atualizado!',
@@ -288,22 +294,16 @@ export function AgendamentoFormDialog({
             : 'O agendamento foi atualizado com sucesso.',
         })
       } else {
-        for (let i = 0; i < data.itens.length; i++) {
-          const item = data.itens[i]
-          const servico = servicos.find((s) => s.id === item.servico_id)
-
-          await createAgendamento.mutateAsync({
-            cliente_id: data.cliente_id,
-            profissional_id: item.profissional_id,
-            servico_id: item.servico_id,
-            data_hora: currentDataHora.toISOString(),
-            status: 'agendado',
-            valor: servico?.valor || 0,
-            observacoes: data.observacoes || null,
-          })
-
-          currentDataHora = addMinutes(currentDataHora, servico?.duracao_minutos || 30)
-        }
+        await createAgendamento.mutateAsync({
+          cliente_id: data.cliente_id,
+          profissional_id: mainProf,
+          servico_id: mainServ,
+          data_hora: currentDataHora.toISOString(),
+          status: 'agendado',
+          valor: totalValor,
+          observacoes: data.observacoes || null,
+          itens: mappedItens,
+        })
 
         toast({
           title: 'Agendamento criado!',

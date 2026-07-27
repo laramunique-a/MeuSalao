@@ -134,8 +134,8 @@ export function UsuariosTable({ usuarios, onEdit }: UsuariosTableProps) {
                   <TableCell className="py-3">
                     <div className="flex items-center gap-2 scale-90 origin-left">
                       <Switch
-                        checked={usuario.ativo}
-                        onCheckedChange={() => handleToggleAtivo(usuario.id, usuario.ativo)}
+                        checked={!!usuario.ativo}
+                        onCheckedChange={() => handleToggleAtivo(usuario.id, !!usuario.ativo)}
                         disabled={toggleAtivo.isPending}
                       />
                       <Badge variant={usuario.ativo ? 'default' : 'secondary'} className="text-[10px] px-1.5 h-4">

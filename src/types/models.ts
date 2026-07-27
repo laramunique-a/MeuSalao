@@ -28,7 +28,7 @@ export interface Usuario {
   email: string
   perfil: 'administrador' | 'profissional' | 'super_admin'
   pode_atender: boolean
-  comissao_percentual?: number
+  comissao_percentual?: number | null
   ativo: boolean
   created_at: string
 }
@@ -51,13 +51,27 @@ export interface Servico {
   descricao: string | null
   valor: number
   duracao_minutos: number
-  comissao_percentual?: number
+  comissao_percentual?: number | null
   ativo: boolean
   created_at: string
   updated_at: string
 }
 
 export type AgendamentoStatus = 'agendado' | 'confirmado' | 'em_atendimento' | 'em_atraso' | 'pendente_caixa' | 'concluido' | 'cancelado'
+
+export interface AgendamentoServico {
+  id?: string
+  agendamento_id?: string
+  servico_id: string
+  profissional_id: string
+  valor: number
+  duracao_minutos: number
+  comissao_percentual?: number | null
+  comissao_valor?: number | null
+  created_at?: string
+  servico?: Servico
+  profissional?: Usuario
+}
 
 export interface Agendamento {
   id: string
@@ -74,6 +88,7 @@ export interface Agendamento {
   cliente?: Cliente
   profissional?: Usuario
   servico?: Servico
+  itens?: AgendamentoServico[]
 }
 
 export type FormaPagamento = 'dinheiro' | 'cartao_debito' | 'cartao_credito' | 'pix' | 'outros'
@@ -90,8 +105,8 @@ export interface TransacaoCaixa {
   categoria: string | null
   descricao: string
   status: 'ativo' | 'cancelado' | 'estornado'
-  taxa_cartao?: number
-  comissao_valor?: number
+  taxa_cartao?: number | null
+  comissao_valor?: number | null
   metadata?: Json
   data_hora: string
   created_at: string

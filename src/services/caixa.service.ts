@@ -73,6 +73,38 @@ export const caixaService = {
       throw new Error('Não é possível realizar movimentações com o caixa fechado.')
     }
 
+    let finalMetadata: any = typeof transacao.metadata === 'object' && transacao.metadata !== null ? { ...transacao.metadata } : {}
+    let totalComissaoCalculada = Number(transacao.comissao_valor) || 0
+
+    // Se houver agendamento vinculado, calcular comissões detalhadas por item/profissional
+    if (transacao.agendamento_id) {
+      try {
+        const agendamento = await agendamentoService.getById(transacao.agendamento_id)
+        if (agendamento && agendamento.itens && agendamento.itens.length > 0) {
+          const breakdown = agendamento.itens.map((item: any) => {
+            const valServico = Number(item.valor) || 0
+            const pctComissao = Number(item.comissao_percentual ?? item.servico?.comissao_percentual ?? item.profissional?.comissao_percentual ?? 0)
+            const valComissao = Math.round(valServico * (pctComissao / 100) * 100) / 100
+
+            return {
+              profissional_id: item.profissional_id,
+              profissional_nome: item.profissional?.nome || 'Profissional',
+              servico_id: item.servico_id,
+              servico_nome: item.servico?.nome || 'Serviço',
+              valor_servico: valServico,
+              comissao_percentual: pctComissao,
+              comissao_valor: valComissao,
+            }
+          })
+
+          finalMetadata.comissoes_breakdown = breakdown
+          totalComissaoCalculada = breakdown.reduce((acc: number, b: any) => acc + b.comissao_valor, 0)
+        }
+      } catch (err) {
+        console.error('Erro ao buscar itens do agendamento para comissão:', err)
+      }
+    }
+
     const { data, error } = await (supabase
       .from('transacao_caixa') as any)
       .insert({
@@ -87,9 +119,9 @@ export const caixaService = {
         descricao: transacao.descricao,
         status: transacao.status || 'ativo',
         taxa_cartao: transacao.taxa_cartao || 0,
-        comissao_valor: Number(transacao.comissao_valor) || 0,
+        comissao_valor: totalComissaoCalculada,
         data_hora: transacao.data_hora,
-        metadata: transacao.metadata || {},
+        metadata: finalMetadata,
       })
       .select(TRANSACAO_SELECT)
       .single()
