@@ -592,7 +592,7 @@ export function AgendamentoFormDialog({
                       <Input
                         type="number"
                         min={1}
-                        step={5}
+                        step={1}
                         value={customDuracao !== null ? customDuracao : (sumDuracaoServicos || 30)}
                         onChange={(e) => {
                           const val = parseInt(e.target.value)
