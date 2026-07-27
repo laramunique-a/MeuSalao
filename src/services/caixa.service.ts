@@ -81,15 +81,31 @@ export const caixaService = {
       try {
         const agendamento = await agendamentoService.getById(transacao.agendamento_id)
         if (agendamento) {
+          const getPct = (item: any): number => {
+            if (item && item.comissao_percentual !== null && item.comissao_percentual !== undefined && Number(item.comissao_percentual) > 0) {
+              return Number(item.comissao_percentual)
+            }
+            if (item && item.servico && item.servico.comissao_percentual !== null && item.servico.comissao_percentual !== undefined && Number(item.servico.comissao_percentual) > 0) {
+              return Number(item.servico.comissao_percentual)
+            }
+            if (item && item.profissional && item.profissional.comissao_percentual !== null && item.profissional.comissao_percentual !== undefined && Number(item.profissional.comissao_percentual) > 0) {
+              return Number(item.profissional.comissao_percentual)
+            }
+            if (agendamento && agendamento.profissional && agendamento.profissional.comissao_percentual !== null && agendamento.profissional.comissao_percentual !== undefined && Number(agendamento.profissional.comissao_percentual) > 0) {
+              return Number(agendamento.profissional.comissao_percentual)
+            }
+            return 0
+          }
+
           let breakdown: any[] = []
           if (agendamento.itens && agendamento.itens.length > 0) {
             breakdown = agendamento.itens.map((item: any) => {
               const valServico = Number(item.valor) || 0
-              const pctComissao = Number(item.comissao_percentual ?? item.servico?.comissao_percentual ?? item.profissional?.comissao_percentual ?? 0)
+              const pctComissao = getPct(item)
               const valComissao = Math.round(valServico * (pctComissao / 100) * 100) / 100
 
               return {
-                profissional_id: item.profissional_id,
+                profissional_id: item.profissional_id || agendamento.profissional_id,
                 profissional_nome: item.profissional?.nome || agendamento.profissional?.nome || 'Profissional',
                 servico_id: item.servico_id,
                 servico_nome: item.servico?.nome || 'Serviço',
@@ -100,7 +116,7 @@ export const caixaService = {
             })
           } else {
             const valServico = Number(transacao.valor) || 0
-            const pctComissao = Number(agendamento.servico?.comissao_percentual ?? agendamento.profissional?.comissao_percentual ?? 0)
+            const pctComissao = getPct(agendamento)
             const valComissao = Math.round(valServico * (pctComissao / 100) * 100) / 100
 
             breakdown = [{
