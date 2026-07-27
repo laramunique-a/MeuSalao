@@ -90,21 +90,20 @@ export const bloqueioAgendaService = {
 
   async checkBloqueio(
     profissionalId: string,
-    dataHora: string
+    dataHora: string,
+    duracaoMinutos: number = 30
   ): Promise<boolean> {
-    const data = new Date(dataHora)
-    const dataStr = data.toISOString().split('T')[0]
-    const horario = data.toTimeString().slice(0, 5)
+    const slotStart = new Date(dataHora)
+    const slotEnd = new Date(slotStart.getTime() + duracaoMinutos * 60000)
 
     try {
       const { data: bloqueios, error } = await (supabase
         .from('bloqueio_agenda') as any)
         .select('*')
         .eq('profissional_id', profissionalId)
-        .lte('data_inicio', dataStr)
-        .gte('data_fim', dataStr)
+        .lte('data_inicio', slotEnd.toISOString())
+        .gte('data_fim', slotStart.toISOString())
 
-      // Se a tabela não existir ainda, não bloqueia
       if (error) {
         if (error.message?.includes('does not exist') || error.message?.includes('schema cache')) {
           return false
@@ -112,8 +111,12 @@ export const bloqueioAgendaService = {
         throw new Error(error.message)
       }
 
-      return (bloqueios || []).some((bloqueio: any) => {
-        return horario >= bloqueio.horario_inicio && horario < bloqueio.horario_fim
+      return (bloqueios || []).some((b: any) => {
+        const blockStart = new Date(b.data_inicio).getTime()
+        const blockEnd = new Date(b.data_fim).getTime()
+        const sStart = slotStart.getTime()
+        const sEnd = slotEnd.getTime()
+        return sStart < blockEnd && sEnd > blockStart
       })
     } catch (error) {
       console.error('Erro ao verificar bloqueio de agenda:', error)

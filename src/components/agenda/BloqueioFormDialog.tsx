@@ -83,13 +83,25 @@ export function BloqueioFormDialog({ open, onOpenChange, bloqueio }: BloqueioFor
 
   async function onSubmit(data: BloqueioAgendaFormData) {
     try {
+      const startIso = `${data.data_inicio}T${data.horario_inicio}:00`
+      const endIso = `${data.data_fim}T${data.horario_fim}:00`
+
+      if (new Date(endIso) <= new Date(startIso)) {
+        toast({
+          title: 'Período Inválido',
+          description: 'A data e hora final do bloqueio devem ser posteriores à data e hora inicial.',
+          variant: 'destructive',
+        })
+        return
+      }
+
       if (bloqueio) {
         await updateBloqueio.mutateAsync({
           id: bloqueio.id,
           data: {
             profissional_id: !isAdmin ? usuario!.id : data.profissional_id,
-            data_inicio: `${data.data_inicio}T00:00:00`,
-            data_fim: `${data.data_fim}T23:59:59`,
+            data_inicio: startIso,
+            data_fim: endIso,
             horario_inicio: data.horario_inicio,
             horario_fim: data.horario_fim,
             motivo: data.motivo || null,
@@ -103,8 +115,8 @@ export function BloqueioFormDialog({ open, onOpenChange, bloqueio }: BloqueioFor
         await createBloqueio.mutateAsync({
           salao_id: usuario!.salao_id as string,
           profissional_id: !isAdmin ? usuario!.id : data.profissional_id,
-          data_inicio: `${data.data_inicio}T00:00:00`,
-          data_fim: `${data.data_fim}T23:59:59`,
+          data_inicio: startIso,
+          data_fim: endIso,
           horario_inicio: data.horario_inicio,
           horario_fim: data.horario_fim,
           motivo: data.motivo || null,
