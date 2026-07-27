@@ -230,7 +230,7 @@ export default function Agenda() {
       await updateStatus.mutateAsync({ id: agendamento.id, status })
       toast({
         title: 'Status atualizado!',
-        description: `Agendamento alterado para ${status}.`,
+        description: `Agendamento alterado para ${STATUS_AGENDAMENTO_LABELS[status] || status}.`,
       })
     } catch (error: any) {
       toast({

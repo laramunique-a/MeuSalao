@@ -44,6 +44,7 @@ import {
 import { format, startOfMonth, endOfMonth, subMonths, addMonths, differenceInDays, subDays, addDays, startOfDay, endOfDay } from 'date-fns'
 import { cn } from '@/lib/utils'
 import { DateNavigator } from '@/components/ui/date-navigator'
+import { FORMAS_PAGAMENTO_LABELS } from '@/lib/constants'
 
 const formatCurrency = (value: number) => {
   return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
@@ -994,7 +995,7 @@ export default function Relatorios() {
                             {profNome}
                           </td>
                           <td className="px-4 py-3.5 capitalize text-muted-foreground font-semibold uppercase tracking-wider text-center text-[10px]">
-                            {item.forma_pagamento}
+                            {FORMAS_PAGAMENTO_LABELS[item.forma_pagamento] || item.forma_pagamento}
                           </td>
                           <td className="px-4 py-3.5 text-muted-foreground text-[10px] uppercase font-semibold">
                             {item.usuario?.nome || 'Administrador'}
