@@ -451,9 +451,9 @@ export function AgendamentoFormDialog({
 
               {/* Seção Serviços e Profissionais */}
               <div className="space-y-3">
-                <FormLabel className="text-sm font-medium text-foreground">
+                <label className="text-sm font-medium text-foreground">
                   Serviços e Profissionais *
-                </FormLabel>
+                </label>
 
                 {/* Lista de cards de serviço */}
                 <div className="space-y-3">
