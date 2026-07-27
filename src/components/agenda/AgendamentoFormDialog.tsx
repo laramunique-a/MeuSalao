@@ -1,4 +1,4 @@
-import { useForm } from 'react-hook-form'
+import { useForm, useFieldArray } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { agendamentoSchema, type AgendamentoFormData } from '@/schemas/agendamento.schema'
 import { Button } from '@/components/ui/button'
@@ -51,8 +51,8 @@ import { useProfissionais } from '@/hooks/useProfissionais'
 import { useToast } from '@/hooks/use-toast'
 import { useEffect, useState } from 'react'
 import type { Agendamento } from '@/types/models'
-import { format } from 'date-fns'
-import { Check, ChevronsUpDown, UserPlus, AlertCircle } from 'lucide-react'
+import { format, addMinutes } from 'date-fns'
+import { Check, ChevronsUpDown, UserPlus, AlertCircle, Plus, Trash2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { ClienteFormDialog } from '@/components/clientes/ClienteFormDialog'
 import { ConflictWarningDialog } from './ConflictWarningDialog'
@@ -81,7 +81,6 @@ export function AgendamentoFormDialog({
   const { data: profissionais = [] } = useProfissionais()
   const { data: pendenciasGlobais = [] } = usePendenciasGlobais()
 
-  const [selectedServico, setSelectedServico] = useState<string>('')
   const [clienteNaoCadastrado, setClienteNaoCadastrado] = useState<string | null>(null)
   const [showClienteFormDialog, setShowClienteFormDialog] = useState(false)
   const [showConflictDialog, setShowConflictDialog] = useState(false)
@@ -94,60 +93,95 @@ export function AgendamentoFormDialog({
     resolver: zodResolver(agendamentoSchema),
     defaultValues: {
       cliente_id: '',
-      profissional_id: '',
-      servico_id: '',
+      itens: [
+        {
+          servico_id: '',
+          profissional_id: '',
+        },
+      ],
       data: defaultDate ? format(defaultDate, 'yyyy-MM-dd') : format(new Date(), 'yyyy-MM-dd'),
       hora: '',
       observacoes: '',
     },
   })
 
+  const { fields, append, remove } = useFieldArray({
+    control: form.control,
+    name: 'itens',
+  })
+
   const selectedClienteId = form.watch('cliente_id')
+  const watchedItens = form.watch('itens') || []
+
   const clientHasDebt = selectedClienteId
     ? pendenciasGlobais.some((p) => p.cliente_id === selectedClienteId)
     : false
+
+  const totalValor = watchedItens.reduce((acc, item) => {
+    const serv = servicos.find((s) => s.id === item.servico_id)
+    return acc + (serv?.valor || 0)
+  }, 0)
+
+  const totalDuracao = watchedItens.reduce((acc, item) => {
+    const serv = servicos.find((s) => s.id === item.servico_id)
+    return acc + (serv?.duracao_minutos || 0)
+  }, 0)
 
   useEffect(() => {
     if (agendamento) {
       const dataHora = new Date(agendamento.data_hora)
       form.reset({
         cliente_id: agendamento.cliente_id,
-        profissional_id: agendamento.profissional_id,
-        servico_id: agendamento.servico_id,
+        itens: [
+          {
+            servico_id: agendamento.servico_id,
+            profissional_id: agendamento.profissional_id,
+          },
+        ],
         data: format(dataHora, 'yyyy-MM-dd'),
         hora: format(dataHora, 'HH:mm'),
         observacoes: agendamento.observacoes || '',
       })
-      setSelectedServico(agendamento.servico_id)
     } else {
       form.reset({
         cliente_id: '',
-        profissional_id: '',
-        servico_id: '',
+        itens: [
+          {
+            servico_id: '',
+            profissional_id: '',
+          },
+        ],
         data: defaultDate ? format(defaultDate, 'yyyy-MM-dd') : format(new Date(), 'yyyy-MM-dd'),
         hora: '',
         observacoes: '',
       })
-      setSelectedServico('')
     }
   }, [agendamento, defaultDate, form, open])
 
   async function onSubmit(data: AgendamentoFormData) {
     try {
-      const servico = servicos.find((s) => s.id === data.servico_id)
-      if (!servico) {
+      if (!data.itens || data.itens.length === 0) {
         toast({
           title: 'Erro',
-          description: 'Serviço não encontrado',
+          description: 'Adicione pelo menos um serviço ao agendamento.',
           variant: 'destructive',
         })
         return
       }
 
-      const dataHora = new Date(`${data.data}T${data.hora}:00`)
+      const invalidItem = data.itens.find((it) => !it.servico_id || !it.profissional_id)
+      if (invalidItem) {
+        toast({
+          title: 'Campos incompletos',
+          description: 'Selecione o serviço e o profissional correspondente.',
+          variant: 'destructive',
+        })
+        return
+      }
 
-      // Validar se o horário não está no passado
-      if (dataHora < new Date()) {
+      const currentDataHora = new Date(`${data.data}T${data.hora}:00`)
+
+      if (currentDataHora < new Date()) {
         toast({
           title: 'Horário Inválido',
           description: 'Não é possível agendar para um horário que já passou.',
@@ -156,43 +190,49 @@ export function AgendamentoFormDialog({
         return
       }
 
-      // Verificar se horário está bloqueado
-      const isBloqueado = await checkBloqueio.mutateAsync({
-        profissionalId: data.profissional_id,
-        dataHora: dataHora.toISOString(),
-      })
+      let itemStart = new Date(currentDataHora)
 
-      if (isBloqueado) {
-        toast({
-          title: 'Horário bloqueado',
-          description: 'Este horário está bloqueado para o profissional selecionado.',
-          variant: 'destructive',
+      for (let i = 0; i < data.itens.length; i++) {
+        const item = data.itens[i]
+        const servico = servicos.find((s) => s.id === item.servico_id)
+        if (!servico) continue
+
+        const isBloqueado = await checkBloqueio.mutateAsync({
+          profissionalId: item.profissional_id,
+          dataHora: itemStart.toISOString(),
         })
-        return
+
+        if (isBloqueado) {
+          toast({
+            title: 'Horário bloqueado',
+            description: `Este horário está bloqueado para o profissional no serviço #${i + 1}.`,
+            variant: 'destructive',
+          })
+          return
+        }
+
+        const conflictResult = await checkConflict.mutateAsync({
+          profissionalId: item.profissional_id,
+          dataHora: itemStart.toISOString(),
+          duracaoMinutos: servico.duracao_minutos,
+          excludeId: i === 0 ? agendamento?.id : undefined,
+        })
+
+        if (conflictResult.hasConflict) {
+          setPendingAgendamento({
+            data,
+            servico,
+            dataHora: currentDataHora,
+          })
+          setConflictData(conflictResult)
+          setShowConflictDialog(true)
+          return
+        }
+
+        itemStart = addMinutes(itemStart, servico.duracao_minutos)
       }
 
-      // Verificar conflito de horário avançado
-      const conflictResult = await checkConflict.mutateAsync({
-        profissionalId: data.profissional_id,
-        dataHora: dataHora.toISOString(),
-        duracaoMinutos: servico.duracao_minutos,
-        excludeId: agendamento?.id,
-      })
-
-      if (conflictResult.hasConflict) {
-        // Armazenar dados do agendamento pendente
-        setPendingAgendamento({
-          data,
-          servico,
-          dataHora,
-        })
-        setConflictData(conflictResult)
-        setShowConflictDialog(true)
-        return
-      }
-
-      // Prosseguir com salvamento
-      await saveAgendamento(data, servico, dataHora)
+      await saveAgendamentos(data)
     } catch (error: any) {
       toast({
         title: 'Erro ao salvar agendamento',
@@ -202,37 +242,74 @@ export function AgendamentoFormDialog({
     }
   }
 
-  async function saveAgendamento(data: AgendamentoFormData, servico: any, dataHora: Date) {
+  async function saveAgendamentos(data: AgendamentoFormData) {
     try {
+      let currentDataHora = new Date(`${data.data}T${data.hora}:00`)
+
       if (agendamento) {
+        const firstItem = data.itens[0]
+        const firstServico = servicos.find((s) => s.id === firstItem.servico_id)
+
         await updateAgendamento.mutateAsync({
           id: agendamento.id,
           data: {
             cliente_id: data.cliente_id,
-            profissional_id: data.profissional_id,
-            servico_id: data.servico_id,
-            data_hora: dataHora.toISOString(),
-            valor: servico.valor,
+            profissional_id: firstItem.profissional_id,
+            servico_id: firstItem.servico_id,
+            data_hora: currentDataHora.toISOString(),
+            valor: firstServico?.valor || 0,
             observacoes: data.observacoes || null,
           },
         })
+
+        currentDataHora = addMinutes(currentDataHora, firstServico?.duracao_minutos || 30)
+
+        for (let i = 1; i < data.itens.length; i++) {
+          const item = data.itens[i]
+          const servico = servicos.find((s) => s.id === item.servico_id)
+
+          await createAgendamento.mutateAsync({
+            cliente_id: data.cliente_id,
+            profissional_id: item.profissional_id,
+            servico_id: item.servico_id,
+            data_hora: currentDataHora.toISOString(),
+            status: 'agendado',
+            valor: servico?.valor || 0,
+            observacoes: data.observacoes ? `(${i + 1}º serviço) ${data.observacoes}` : null,
+          })
+
+          currentDataHora = addMinutes(currentDataHora, servico?.duracao_minutos || 30)
+        }
+
         toast({
           title: 'Agendamento atualizado!',
-          description: 'O agendamento foi atualizado com sucesso.',
+          description: data.itens.length > 1 
+            ? `${data.itens.length} serviços agendados com sucesso.` 
+            : 'O agendamento foi atualizado com sucesso.',
         })
       } else {
-        await createAgendamento.mutateAsync({
-          cliente_id: data.cliente_id,
-          profissional_id: data.profissional_id,
-          servico_id: data.servico_id,
-          data_hora: dataHora.toISOString(),
-          status: 'agendado',
-          valor: servico.valor,
-          observacoes: data.observacoes || null,
-        })
+        for (let i = 0; i < data.itens.length; i++) {
+          const item = data.itens[i]
+          const servico = servicos.find((s) => s.id === item.servico_id)
+
+          await createAgendamento.mutateAsync({
+            cliente_id: data.cliente_id,
+            profissional_id: item.profissional_id,
+            servico_id: item.servico_id,
+            data_hora: currentDataHora.toISOString(),
+            status: 'agendado',
+            valor: servico?.valor || 0,
+            observacoes: data.observacoes || null,
+          })
+
+          currentDataHora = addMinutes(currentDataHora, servico?.duracao_minutos || 30)
+        }
+
         toast({
           title: 'Agendamento criado!',
-          description: 'O agendamento foi criado com sucesso.',
+          description: data.itens.length > 1 
+            ? `${data.itens.length} serviços agendados com sucesso.` 
+            : 'O agendamento foi criado com sucesso.',
         })
       }
 
@@ -247,8 +324,6 @@ export function AgendamentoFormDialog({
     }
   }
 
-  const servicoSelecionado = servicos.find((s) => s.id === selectedServico)
-
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
@@ -260,7 +335,7 @@ export function AgendamentoFormDialog({
             <DialogDescription>
               {agendamento
                 ? 'Edite as informações do agendamento abaixo.'
-                : 'Preencha os dados do novo agendamento.'}
+                : 'Selecione o cliente, os serviços e os profissionais correspondentes.'}
             </DialogDescription>
           </DialogHeader>
 
@@ -286,7 +361,7 @@ export function AgendamentoFormDialog({
                               role="combobox"
                               aria-expanded={openCombobox}
                               className={cn(
-                                'flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background cursor-pointer',
+                                'flex h-10 w-full items-center justify-between rounded-md border border-input bg-white dark:bg-card px-3 py-2 text-sm ring-offset-background cursor-pointer',
                                 'hover:bg-accent hover:text-accent-foreground',
                                 'focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2',
                                 !field.value && 'text-muted-foreground'
@@ -373,66 +448,130 @@ export function AgendamentoFormDialog({
                 </div>
               )}
 
-              <FormField
-                control={form.control}
-                name="profissional_id"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Profissional *</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Selecione o profissional" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {profissionais.map((profissional) => (
-                          <SelectItem key={profissional.id} value={profissional.id}>
-                            {profissional.nome}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              {/* Seção Serviços e Profissionais */}
+              <div className="space-y-3">
+                <FormLabel className="text-sm font-medium text-foreground">
+                  Serviços e Profissionais *
+                </FormLabel>
 
-              <FormField
-                control={form.control}
-                name="servico_id"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Serviço *</FormLabel>
-                    <Select
-                      onValueChange={(value) => {
-                        field.onChange(value)
-                        setSelectedServico(value)
-                      }}
-                      value={field.value}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Selecione o serviço" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {servicosAtivos.map((servico) => (
-                          <SelectItem key={servico.id} value={servico.id}>
-                            {servico.nome}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                    {servicoSelecionado && (
-                      <p className="text-sm text-gray-600 dark:text-gray-400">
-                        Valor: R$ {servicoSelecionado.valor.toFixed(2)} | Duração: {servicoSelecionado.duracao_minutos} minutos
-                      </p>
-                    )}
-                  </FormItem>
-                )}
-              />
+                {/* Lista de cards de serviço */}
+                <div className="space-y-3">
+                  {fields.map((fieldItem, index) => {
+                    const itemServicoId = form.watch(`itens.${index}.servico_id`)
+                    const itemServico = servicos.find((s) => s.id === itemServicoId)
+
+                    return (
+                      <div
+                        key={fieldItem.id}
+                        className="p-4 bg-white dark:bg-card border border-border rounded-xl space-y-3 shadow-sm"
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                            Serviço #{index + 1}
+                          </span>
+                          {fields.length > 1 && (
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              className="h-6 w-6 text-muted-foreground hover:text-destructive"
+                              onClick={() => remove(index)}
+                              title="Remover serviço"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          )}
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                          <FormField
+                            control={form.control}
+                            name={`itens.${index}.servico_id`}
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel className="text-xs font-medium text-muted-foreground">
+                                  Serviço
+                                </FormLabel>
+                                <Select onValueChange={field.onChange} value={field.value}>
+                                  <FormControl>
+                                    <SelectTrigger className="bg-white dark:bg-card">
+                                      <SelectValue placeholder="Selecione o serviço" />
+                                    </SelectTrigger>
+                                  </FormControl>
+                                  <SelectContent>
+                                    {servicosAtivos.map((servico) => (
+                                      <SelectItem key={servico.id} value={servico.id}>
+                                        {servico.nome}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+
+                          <FormField
+                            control={form.control}
+                            name={`itens.${index}.profissional_id`}
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel className="text-xs font-medium text-muted-foreground">
+                                  Profissional
+                                </FormLabel>
+                                <Select onValueChange={field.onChange} value={field.value}>
+                                  <FormControl>
+                                    <SelectTrigger className="bg-white dark:bg-card">
+                                      <SelectValue placeholder="Selecione o profissional" />
+                                    </SelectTrigger>
+                                  </FormControl>
+                                  <SelectContent>
+                                    {profissionais.map((profissional) => (
+                                      <SelectItem key={profissional.id} value={profissional.id}>
+                                        {profissional.nome}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                        </div>
+
+                        <div className="text-xs font-medium text-muted-foreground pt-1">
+                          R$ {(itemServico?.valor || 0).toFixed(2)} • {itemServico?.duracao_minutos || 30} min
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+
+                {/* Botão de Adicionar Serviço (posicionado entre serviço 1 e o total) */}
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    const firstProfId = form.getValues('itens.0.profissional_id') || ''
+                    append({ servico_id: '', profissional_id: firstProfId })
+                  }}
+                  className="w-full h-10 border-dashed border-border bg-white dark:bg-card hover:bg-accent/80 text-foreground font-semibold text-xs uppercase tracking-wider rounded-xl flex items-center justify-center gap-2 transition-all shadow-none"
+                >
+                  <Plus className="h-4 w-4" />
+                  Adicionar Serviço
+                </Button>
+
+                {/* Box do Total */}
+                <div className="p-4 bg-white dark:bg-card border border-border rounded-xl flex items-center justify-between shadow-sm text-sm">
+                  <span className="font-semibold text-foreground">
+                    Total: <span className="font-bold text-foreground">R$ {totalValor.toFixed(2)}</span>
+                  </span>
+                  <span className="text-muted-foreground font-medium">
+                    Duração estimada: <span className="font-semibold text-foreground">{totalDuracao} minutos</span>
+                  </span>
+                </div>
+              </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <FormField
@@ -445,7 +584,7 @@ export function AgendamentoFormDialog({
                         <Input
                           type="date"
                           {...field}
-                          className="text-foreground bg-background [color-scheme:light] dark:[color-scheme:dark] h-10 w-full"
+                          className="text-foreground bg-white dark:bg-card [color-scheme:light] dark:[color-scheme:dark] h-10 w-full"
                         />
                       </FormControl>
                       <FormMessage />
@@ -458,7 +597,7 @@ export function AgendamentoFormDialog({
                   name="hora"
                   render={({ field }) => (
                     <FormItem className="sm:col-span-2">
-                      <FormLabel>Hora * <span className="text-xs font-normal text-muted-foreground">(formato 24h)</span></FormLabel>
+                      <FormLabel>Hora de Início * <span className="text-xs font-normal text-muted-foreground">(formato 24h)</span></FormLabel>
                       <FormControl>
                         <TimePicker
                           value={field.value || ''}
@@ -481,7 +620,7 @@ export function AgendamentoFormDialog({
                     <FormControl>
                       <Textarea
                         placeholder="Informações adicionais..."
-                        className="resize-none"
+                        className="resize-none bg-white dark:bg-card"
                         rows={2}
                         {...field}
                       />
@@ -556,8 +695,10 @@ export function AgendamentoFormDialog({
           form.setValue('hora', newTime)
           setShowConflictDialog(false)
           if (pendingAgendamento) {
-            const newDataHora = new Date(`${pendingAgendamento.data.data}T${newTime}:00`)
-            saveAgendamento(pendingAgendamento.data, pendingAgendamento.servico, newDataHora)
+            saveAgendamentos({
+              ...pendingAgendamento.data,
+              hora: newTime,
+            })
           }
         }}
         onSelectDate={(newDate) => {
@@ -565,15 +706,16 @@ export function AgendamentoFormDialog({
           form.setValue('data', formattedDate)
           setShowConflictDialog(false)
           if (pendingAgendamento) {
-            const currentHour = form.getValues('hora')
-            const newDataHora = new Date(`${formattedDate}T${currentHour}:00`)
-            saveAgendamento(pendingAgendamento.data, pendingAgendamento.servico, newDataHora)
+            saveAgendamentos({
+              ...pendingAgendamento.data,
+              data: formattedDate,
+            })
           }
         }}
         onForceConfirm={() => {
           setShowConflictDialog(false)
           if (pendingAgendamento) {
-            saveAgendamento(pendingAgendamento.data, pendingAgendamento.servico, pendingAgendamento.dataHora)
+            saveAgendamentos(pendingAgendamento.data)
           }
         }}
       />

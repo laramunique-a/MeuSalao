@@ -10,6 +10,8 @@ interface TimePickerProps {
 }
 
 export function TimePicker({ value, onChange, disabled, className }: TimePickerProps) {
+    const minuteInputRef = React.useRef<HTMLInputElement>(null)
+
     const [hValue, mValue] = React.useMemo(() => {
         if (!value || !value.includes(":")) return ["", ""]
         return value.split(":")
@@ -32,7 +34,9 @@ export function TimePicker({ value, onChange, disabled, className }: TimePickerP
             const num = parseInt(val)
             if (num > 23) val = "23"
             setLocalHour(val)
-            onChange(`${val}:${localMinute.padStart(2, '0')}`)
+            onChange(`${val}:${localMinute ? localMinute.padStart(2, '0') : '00'}`)
+            minuteInputRef.current?.focus()
+            minuteInputRef.current?.select()
         }
     }
 
@@ -106,6 +110,7 @@ export function TimePicker({ value, onChange, disabled, className }: TimePickerP
             <span className="text-muted-foreground font-bold text-lg">:</span>
             <div className="flex-1 max-w-[70px]">
                 <Input
+                    ref={minuteInputRef}
                     type="text"
                     inputMode="numeric"
                     value={localMinute}
