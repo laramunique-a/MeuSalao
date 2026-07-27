@@ -333,7 +333,7 @@ export default function Caixa() {
                 </Badge>
 
                 {isAdmin && (
-                  <Badge variant="secondary" className="h-7 px-3 text-[10px] font-semibold bg-primary text-primary-foreground border border-transparent rounded-full">
+                  <Badge className="h-7 px-3 text-[10px] font-semibold bg-primary text-primary-foreground hover:bg-primary/90 border border-transparent rounded-full">
                     Saldo: <span className="ml-1">R$ {resumoAtivo.saldo.toFixed(2).replace('.', ',')}</span>
                   </Badge>
                 )}
