@@ -26,6 +26,13 @@ export function TimePicker({ value, onChange, disabled, className }: TimePickerP
         setLocalMinute(mValue)
     }, [hValue, mValue])
 
+    const handleFocus = (e: React.FocusEvent<HTMLInputElement>) => {
+        const target = e.currentTarget
+        setTimeout(() => {
+            target.select()
+        }, 0)
+    }
+
     const handleHourChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         let val = e.target.value.replace(/\D/g, '').slice(0, 2)
         setLocalHour(val)
@@ -34,9 +41,13 @@ export function TimePicker({ value, onChange, disabled, className }: TimePickerP
             const num = parseInt(val)
             if (num > 23) val = "23"
             setLocalHour(val)
-            onChange(`${val}:${localMinute ? localMinute.padStart(2, '0') : '00'}`)
-            minuteInputRef.current?.focus()
-            minuteInputRef.current?.select()
+            onChange(`${val}:${localMinute}`)
+            setTimeout(() => {
+                if (minuteInputRef.current) {
+                    minuteInputRef.current.focus()
+                    minuteInputRef.current.select()
+                }
+            }, 10)
         }
     }
 
@@ -101,7 +112,7 @@ export function TimePicker({ value, onChange, disabled, className }: TimePickerP
                     value={localHour}
                     onChange={handleHourChange}
                     onBlur={handleBlur}
-                    onFocus={(e) => e.target.select()}
+                    onFocus={handleFocus}
                     disabled={disabled}
                     placeholder="HH"
                     className="text-center font-medium"
@@ -116,7 +127,7 @@ export function TimePicker({ value, onChange, disabled, className }: TimePickerP
                     value={localMinute}
                     onChange={handleMinuteChange}
                     onBlur={handleBlur}
-                    onFocus={(e) => e.target.select()}
+                    onFocus={handleFocus}
                     disabled={disabled}
                     placeholder="mm"
                     className="text-center font-medium"
