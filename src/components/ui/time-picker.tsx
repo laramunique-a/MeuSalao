@@ -115,7 +115,7 @@ export function TimePicker({ value, onChange, disabled, className }: TimePickerP
                     onFocus={handleFocus}
                     disabled={disabled}
                     placeholder="HH"
-                    className="text-center font-medium"
+                    className="text-center font-medium bg-white dark:bg-card"
                 />
             </div>
             <span className="text-muted-foreground font-bold text-lg">:</span>
@@ -130,7 +130,7 @@ export function TimePicker({ value, onChange, disabled, className }: TimePickerP
                     onFocus={handleFocus}
                     disabled={disabled}
                     placeholder="mm"
-                    className="text-center font-medium"
+                    className="text-center font-medium bg-white dark:bg-card"
                 />
             </div>
         </div>
