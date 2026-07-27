@@ -87,6 +87,9 @@ export function AgendamentoFormDialog({
   const [conflictData, setConflictData] = useState<any>(null)
   const [pendingAgendamento, setPendingAgendamento] = useState<any>(null)
 
+  // Estado para guardar a duração personalizada informada pelo usuário
+  const [customDuracao, setCustomDuracao] = useState<number | null>(null)
+
   const servicosAtivos = servicos.filter((s) => s.ativo)
 
   const form = useForm<AgendamentoFormData>({
@@ -122,14 +125,23 @@ export function AgendamentoFormDialog({
     return acc + (serv?.valor || 0)
   }, 0)
 
-  const totalDuracao = watchedItens.reduce((acc, item) => {
+  const sumDuracaoServicos = watchedItens.reduce((acc, item) => {
     const serv = servicos.find((s) => s.id === item.servico_id)
     return acc + (serv?.duracao_minutos || 0)
   }, 0)
 
+  // Se o usuário editou manualmente a duração, usamos ela; caso contrário, usamos a soma dos serviços
+  const effectiveDuracao = customDuracao !== null && customDuracao >= 0 ? customDuracao : sumDuracaoServicos
+
   useEffect(() => {
     if (agendamento) {
       const dataHora = new Date(agendamento.data_hora)
+
+      const initialDur = agendamento.itens && agendamento.itens.length > 0
+        ? agendamento.itens.reduce((acc, it) => acc + (it.duracao_minutos || 0), 0)
+        : (agendamento.servico?.duracao_minutos || null)
+      
+      setCustomDuracao(initialDur)
 
       if (agendamento.itens && agendamento.itens.length > 0) {
         form.reset({
@@ -157,6 +169,7 @@ export function AgendamentoFormDialog({
         })
       }
     } else {
+      setCustomDuracao(null)
       form.reset({
         cliente_id: '',
         itens: [
@@ -225,10 +238,12 @@ export function AgendamentoFormDialog({
           return
         }
 
+        const duracaoItemCheck = data.itens.length === 1 ? (effectiveDuracao || servico.duracao_minutos) : servico.duracao_minutos
+
         const conflictResult = await checkConflict.mutateAsync({
           profissionalId: item.profissional_id,
           dataHora: itemStart.toISOString(),
-          duracaoMinutos: servico.duracao_minutos,
+          duracaoMinutos: duracaoItemCheck,
           excludeId: i === 0 ? agendamento?.id : undefined,
         })
 
@@ -243,7 +258,7 @@ export function AgendamentoFormDialog({
           return
         }
 
-        itemStart = addMinutes(itemStart, servico.duracao_minutos)
+        itemStart = addMinutes(itemStart, duracaoItemCheck)
       }
 
       await saveAgendamentos(data)
@@ -266,11 +281,12 @@ export function AgendamentoFormDialog({
 
       const mappedItens: AgendamentoServico[] = itensList.map((it) => {
         const serv = servicos.find((s) => s.id === it.servico_id)
+        const dur = itensList.length === 1 ? effectiveDuracao : (serv?.duracao_minutos || 30)
         return {
           servico_id: it.servico_id,
           profissional_id: it.profissional_id,
           valor: serv?.valor || 0,
-          duracao_minutos: serv?.duracao_minutos || 30,
+          duracao_minutos: dur,
         }
       })
 
@@ -564,13 +580,35 @@ export function AgendamentoFormDialog({
                 </Button>
 
                 {/* Box do Total */}
-                <div className="p-4 bg-white dark:bg-card border border-border rounded-xl flex items-center justify-between shadow-sm text-sm">
+                <div className="p-4 bg-white dark:bg-card border border-border rounded-xl flex flex-wrap items-center justify-between gap-3 shadow-sm text-sm">
                   <span className="font-semibold text-foreground">
                     Total: <span className="font-bold text-foreground">R$ {totalValor.toFixed(2)}</span>
                   </span>
-                  <span className="text-muted-foreground font-medium">
-                    Duração estimada: <span className="font-semibold text-foreground">{totalDuracao} minutos</span>
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-muted-foreground font-medium">
+                      Duração estimada:
+                    </span>
+                    <div className="flex items-center gap-1.5">
+                      <Input
+                        type="number"
+                        min={1}
+                        step={5}
+                        value={customDuracao !== null ? customDuracao : (sumDuracaoServicos || 30)}
+                        onChange={(e) => {
+                          const val = parseInt(e.target.value)
+                          if (!isNaN(val) && val >= 0) {
+                            setCustomDuracao(val)
+                          } else if (e.target.value === '') {
+                            setCustomDuracao(null)
+                          }
+                        }}
+                        className="w-20 h-8 text-center font-bold text-sm bg-white dark:bg-card px-1 py-0"
+                      />
+                      <span className="text-foreground font-semibold">
+                        minutos
+                      </span>
+                    </div>
+                  </div>
                 </div>
               </div>
 
