@@ -229,10 +229,9 @@ export function AgendamentosList({
                       <div className="space-y-1">
                         {agendamento.itens.map((it: any, idx: number) => (
                           <div key={idx} className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                            <Scissors className="h-3.5 w-3.5 text-purple-600 shrink-0" />
+                            <Scissors className="h-3.5 w-3.5 text-muted-foreground/60 shrink-0" />
                             <span className="font-semibold text-foreground">{it.servico?.nome || 'Serviço'}</span>
                             <span className="text-[11px] text-muted-foreground">({it.profissional?.nome || agendamento.profissional?.nome})</span>
-                            <span className="text-[11px] font-bold text-purple-600 ml-auto">R$ {Number(it.valor).toFixed(2)}</span>
                           </div>
                         ))}
                       </div>

@@ -184,9 +184,6 @@ export function AgendamentosColumns({
                                 <p className="text-xs text-gray-600 dark:text-gray-400 truncate">
                                   {agendamento.servico?.nome}
                                 </p>
-                                <p className="text-xs font-semibold text-primary">
-                                  R$ {agendamento.valor.toFixed(2)}
-                                </p>
                               </div>
                               <div className="flex flex-col gap-1">
                                 <Badge variant={getStatusBadgeVariant(agendamento.status)} className="text-xs px-1 py-0">
