@@ -77,17 +77,6 @@ export function mapAgendamentoRealTimeStatus(ag: any): any {
 }
 
 export const agendamentoService = {
-  async getById(id: string) {
-    const { data, error } = await supabase
-      .from('agendamento')
-      .select(AGENDAMENTO_SELECT)
-      .eq('id', id)
-      .single()
-
-    if (error) throw error
-    return mapAgendamentoRealTimeStatus(data) as unknown as Agendamento
-  },
-
   async getAll() {
     const usuario = useAuthStore.getState().usuario
     if (!usuario || !usuario.salao_id) throw new Error('Usuário não autenticado')

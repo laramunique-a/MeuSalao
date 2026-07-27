@@ -219,8 +219,6 @@ export function DarBaixaDialog({ open, onOpenChange, agendamento }: DarBaixaDial
 
     try {
       const servico = agendamento.servico
-      const profissional = agendamento.profissional
-      const comissaoPercentual = (profissional as any)?.comissao_percentual || 0
 
       if (data.is_split && data.valor_pagamento_1 && data.valor_pagamento_2 && data.forma_pagamento_2) {
         if (Math.abs(totalBruto - totalBrutoCalculado) > 0.01) {
