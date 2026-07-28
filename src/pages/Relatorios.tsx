@@ -201,7 +201,10 @@ export default function Relatorios() {
 
   const totalPago = transacoes
     .filter((t) => t.tipo === 'entrada' && t.status === 'ativo')
-    .reduce((acc, t) => acc + Number(t.valor), 0)
+    .reduce((acc, t: any) => {
+      const bruto = Number(t.metadata?.pagamento?.valor_bruto)
+      return acc + (!isNaN(bruto) && bruto > 0 ? bruto : (Number(t.valor) || 0))
+    }, 0)
 
   const ticketMedio = atendimentosConcluidos.length > 0
     ? totalPago / atendimentosConcluidos.length
