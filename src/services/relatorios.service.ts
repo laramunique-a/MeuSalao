@@ -149,12 +149,15 @@ export const relatoriosService = {
     const { data: geradasData, error: errGeradas } = await supabase
       .from('transacao_caixa')
       .select(`
+        id,
+        agendamento_id,
         comissao_valor,
         data_hora,
         metadata,
         descricao,
         valor,
         agendamento:agendamento_id (
+          id,
           profissional_id,
           profissional:profissional_id (id, nome),
           cliente:cliente_id (nome)
