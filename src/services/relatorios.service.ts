@@ -163,7 +163,6 @@ export const relatoriosService = {
       .eq('salao_id', usuario.salao_id)
       .eq('tipo', 'entrada')
       .eq('status', 'ativo')
-      .gt('comissao_valor', 0)
 
     if (errGeradas) throw errGeradas
 
