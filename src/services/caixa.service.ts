@@ -93,9 +93,6 @@ export const caixaService = {
             if (item && item.comissao_percentual !== null && item.comissao_percentual !== undefined && Number(item.comissao_percentual) > 0) {
               return Number(item.comissao_percentual)
             }
-            if (item && item.servico && item.servico.comissao_percentual !== null && item.servico.comissao_percentual !== undefined && Number(item.servico.comissao_percentual) > 0) {
-              return Number(item.servico.comissao_percentual)
-            }
             if (item && item.profissional && item.profissional.comissao_percentual !== null && item.profissional.comissao_percentual !== undefined && Number(item.profissional.comissao_percentual) > 0) {
               return Number(item.profissional.comissao_percentual)
             }

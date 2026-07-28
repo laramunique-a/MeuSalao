@@ -244,9 +244,8 @@ export function DarBaixaDialog({ open, onOpenChange, agendamento }: DarBaixaDial
         profissionalId: string | null
       }[] = []
 
-      const getEffectivePct = (itPct: any, servPct: any, profPct: any) => {
+      const getEffectivePct = (itPct: any, profPct: any) => {
         if (itPct !== null && itPct !== undefined && Number(itPct) > 0) return Number(itPct)
-        if (servPct !== null && servPct !== undefined && Number(servPct) > 0) return Number(servPct)
         if (profPct !== null && profPct !== undefined && Number(profPct) > 0) return Number(profPct)
         return 0
       }
@@ -261,7 +260,7 @@ export function DarBaixaDialog({ open, onOpenChange, agendamento }: DarBaixaDial
         agendamento.itens.forEach((it: any) => {
           const servObj = todosServicos.find((s) => s.id === it.servico_id) || it.servico
           const profObj = todosProfissionais.find((p) => p.id === it.profissional_id) || it.profissional
-          const pctComissao = getEffectivePct(it.comissao_percentual, servObj?.comissao_percentual, profObj?.comissao_percentual)
+          const pctComissao = getEffectivePct(it.comissao_percentual, profObj?.comissao_percentual)
           const valorBaseItem = (Number(it.valor) || 0) * proporcaoDesconto
 
           itensReceita.push({
@@ -276,8 +275,7 @@ export function DarBaixaDialog({ open, onOpenChange, agendamento }: DarBaixaDial
       } else {
         const valorPrincipalComDesconto = Math.max(0, agValor - descontoVal)
         const profObj = todosProfissionais.find((p) => p.id === agendamento.profissional_id) || agendamento.profissional
-        const servObj = todosServicos.find((s) => s.id === agendamento.servico_id) || agendamento.servico
-        const pctComissao = getEffectivePct(null, servObj?.comissao_percentual, (profObj as any)?.comissao_percentual)
+        const pctComissao = getEffectivePct(null, (profObj as any)?.comissao_percentual)
 
         itensReceita.push({
           tipo: 'principal',
@@ -293,7 +291,7 @@ export function DarBaixaDialog({ open, onOpenChange, agendamento }: DarBaixaDial
       servicosAdicionais.forEach(sa => {
         const servObj = todosServicos.find(s => s.id === sa.servicoId)
         const profObj = todosProfissionais.find(p => p.id === sa.profissionalId)
-        const pctComissao = getEffectivePct(null, servObj?.comissao_percentual, profObj?.comissao_percentual)
+        const pctComissao = getEffectivePct(null, profObj?.comissao_percentual)
         
         itensReceita.push({
           tipo: 'adicional',
