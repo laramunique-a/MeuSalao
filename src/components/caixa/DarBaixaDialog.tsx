@@ -298,6 +298,38 @@ export function DarBaixaDialog({ open, onOpenChange, agendamento }: DarBaixaDial
         })
       })
 
+      // Montar breakdown de comissões com taxas de cartão já descontadas e rateio proporcional
+      const comissoesBreakdown = itensReceita.map((item) => {
+        const bruto1 = item.valorBase * prop1
+        const pctTaxa1 = getTaxaPercentual(data.forma_pagamento, data.bandeira_1)
+        const taxa1 = (bruto1 * pctTaxa1) / 100
+        const liquido1 = bruto1 - taxa1
+        const comissao1 = (liquido1 * item.comissaoPercentual) / 100
+
+        let bruto2 = 0, taxa2 = 0, liquido2 = 0, comissao2 = 0
+        if (data.is_split && prop2 > 0) {
+          bruto2 = item.valorBase * prop2
+          const pctTaxa2 = getTaxaPercentual(data.forma_pagamento_2 || '', data.bandeira_2)
+          taxa2 = (bruto2 * pctTaxa2) / 100
+          liquido2 = bruto2 - taxa2
+          comissao2 = (liquido2 * item.comissaoPercentual) / 100
+        }
+
+        const netTotalItem = liquido1 + liquido2
+        const comissaoTotalItem = comissao1 + comissao2
+
+        const profObj = todosProfissionais.find((p) => p.id === item.profissionalId)
+
+        return {
+          profissional_id: item.profissionalId,
+          profissional_nome: profObj?.nome || 'Profissional',
+          servico_nome: item.descricao.replace(/ - .*$/, '').replace(/^\[Adicional\] /, ''),
+          valor_servico: Math.round(netTotalItem * 100) / 100,
+          comissao_percentual: item.comissaoPercentual,
+          comissao_valor: Math.round(comissaoTotalItem * 100) / 100,
+        }
+      })
+
       // Lançar as transações proporcionalmente no split
       for (const item of itensReceita) {
         // Lançar Parte 1 (Forma 1)
@@ -318,7 +350,8 @@ export function DarBaixaDialog({ open, onOpenChange, agendamento }: DarBaixaDial
               valor_liquido: liquido1,
               base_comissao: liquido1
             },
-            profissional_id: item.profissionalId
+            profissional_id: item.profissionalId,
+            comissoes_breakdown: comissoesBreakdown
           }
 
           await createTransacao.mutateAsync({
@@ -355,7 +388,8 @@ export function DarBaixaDialog({ open, onOpenChange, agendamento }: DarBaixaDial
                 valor_liquido: liquido2,
                 base_comissao: liquido2
               },
-              profissional_id: item.profissionalId
+              profissional_id: item.profissionalId,
+              comissoes_breakdown: comissoesBreakdown
             }
 
             await createTransacao.mutateAsync({

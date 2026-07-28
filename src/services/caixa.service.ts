@@ -79,9 +79,16 @@ export const caixaService = {
     // Se houver agendamento vinculado, calcular comissões detalhadas por item/profissional
     if (transacao.agendamento_id) {
       try {
-        const agendamento = await agendamentoService.getById(transacao.agendamento_id)
-        if (agendamento) {
-          const getPct = (item: any): number => {
+        if (transacao.metadata?.comissoes_breakdown && Array.isArray(transacao.metadata.comissoes_breakdown) && transacao.metadata.comissoes_breakdown.length > 0) {
+          finalMetadata.comissoes_breakdown = transacao.metadata.comissoes_breakdown
+          const calcSum = transacao.metadata.comissoes_breakdown.reduce((acc: number, b: any) => acc + (Number(b.comissao_valor) || 0), 0)
+          if (calcSum > 0) {
+            totalComissaoCalculada = calcSum
+          }
+        } else {
+          const agendamento = await agendamentoService.getById(transacao.agendamento_id)
+          if (agendamento) {
+            const getPct = (item: any): number => {
             if (item && item.comissao_percentual !== null && item.comissao_percentual !== undefined && Number(item.comissao_percentual) > 0) {
               return Number(item.comissao_percentual)
             }
@@ -142,6 +149,7 @@ export const caixaService = {
               } else {
                 totalComissaoCalculada = calcSum
               }
+            }
             }
           }
         }
