@@ -133,7 +133,16 @@ export const caixaService = {
           finalMetadata.comissoes_breakdown = breakdown
           const calcSum = breakdown.reduce((acc: number, b: any) => acc + b.comissao_valor, 0)
           if (calcSum > 0) {
-            totalComissaoCalculada = calcSum
+            if (transacao.comissao_valor !== undefined && transacao.comissao_valor !== null && Number(transacao.comissao_valor) >= 0) {
+              totalComissaoCalculada = Number(transacao.comissao_valor)
+            } else {
+              const totalAgendamentoValor = Number(agendamento.valor) || breakdown.reduce((acc: number, b: any) => acc + (b.valor_servico || 0), 0)
+              if (totalAgendamentoValor > 0 && Number(transacao.valor) > 0 && Number(transacao.valor) < totalAgendamentoValor) {
+                totalComissaoCalculada = Math.round((Number(transacao.valor) / totalAgendamentoValor) * calcSum * 100) / 100
+              } else {
+                totalComissaoCalculada = calcSum
+              }
+            }
           }
         }
       } catch (err) {

@@ -218,10 +218,18 @@ export const relatoriosService = {
     })
 
     // Agrupar comissões geradas
+    const processedAgendamentoIds = new Set<string>()
+
     geradasData?.forEach((t: any) => {
       const breakdown = t.metadata?.comissoes_breakdown
       if (Array.isArray(breakdown) && breakdown.length > 0) {
-        // Multi-profissional rateio de comissão
+        const agId = t.agendamento_id || (t.agendamento as any)?.id
+        if (agId) {
+          if (processedAgendamentoIds.has(agId)) return
+          processedAgendamentoIds.add(agId)
+        }
+
+        // Multi-profissional rateio de comissão (processado 1x por agendamento)
         breakdown.forEach((item: any) => {
           const profId = item.profissional_id
           if (!profId || !saldosMap[profId]) return
@@ -240,7 +248,7 @@ export const relatoriosService = {
             saldosMap[profId].detalhes.push({
               data_hora: t.data_hora,
               cliente: clienteNome,
-              descricao: `${item.servico_nome || 'Serviço'} (Cobrança Unificada)`,
+              descricao: item.servico_nome || 'Serviço',
               valor_bruto: valorBruto,
               comissao_valor: valorComissao
             })
