@@ -24,7 +24,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
-import { User, Scissors, MoreVertical, Pencil, Ban, Check, Trash2, UserCheck, UserX } from 'lucide-react'
+import { User, Scissors, MoreVertical, Pencil, Ban, Check, Trash2, UserCheck, UserX, Clock } from 'lucide-react'
 import type { Agendamento } from '@/types/models'
 import { format, isAfter, addMinutes } from 'date-fns'
 import { STATUS_AGENDAMENTO_LABELS } from '@/lib/constants'
@@ -158,6 +158,12 @@ export function AgendamentosList({
                     <Badge className={cn("px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider border shadow-none", getStatusBadgeStyles(agendamento.status))}>
                       {STATUS_AGENDAMENTO_LABELS[agendamento.status]}
                     </Badge>
+                    {(agendamento as any).metadata?.retroativo && (
+                      <Badge className="px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider border shadow-none bg-amber-100 text-amber-700 border-amber-300 dark:bg-amber-900/30 dark:text-amber-400 dark:border-amber-700 flex items-center gap-1">
+                        <Clock className="h-2.5 w-2.5" />
+                        Retroativo
+                      </Badge>
+                    )}
                     {!['concluido', 'cancelado', 'pendente_caixa'].includes(agendamento.status) && (
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>

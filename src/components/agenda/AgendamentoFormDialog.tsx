@@ -49,10 +49,10 @@ import { useClientes } from '@/hooks/useClientes'
 import { useServicos } from '@/hooks/useServicos'
 import { useProfissionais } from '@/hooks/useProfissionais'
 import { useToast } from '@/hooks/use-toast'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import type { Agendamento, AgendamentoServico } from '@/types/models'
 import { format, addMinutes } from 'date-fns'
-import { Check, ChevronsUpDown, UserPlus, AlertCircle, Plus, Trash2 } from 'lucide-react'
+import { Check, ChevronsUpDown, UserPlus, AlertCircle, Plus, Trash2, Clock } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { ClienteFormDialog } from '@/components/clientes/ClienteFormDialog'
 import { ConflictWarningDialog } from './ConflictWarningDialog'
@@ -89,6 +89,10 @@ export function AgendamentoFormDialog({
 
   // Estado para guardar a duração personalizada informada pelo usuário
   const [customDuracao, setCustomDuracao] = useState<number | null>(null)
+
+  // Controla se é um agendamento retroativo (atendimento já realizado)
+  const [isRetroativo, setIsRetroativo] = useState(false)
+  const isRetroativoRef = useRef(false)
 
   const servicosAtivos = servicos.filter((s) => s.ativo)
 
@@ -170,6 +174,8 @@ export function AgendamentoFormDialog({
       }
     } else {
       setCustomDuracao(null)
+      setIsRetroativo(false)
+      isRetroativoRef.current = false
       form.reset({
         cliente_id: '',
         itens: [
@@ -208,57 +214,61 @@ export function AgendamentoFormDialog({
 
       const currentDataHora = new Date(`${data.data}T${data.hora}:00`)
 
-      if (currentDataHora < new Date()) {
+      // Só valida horário futuro se NÃO for retroativo
+      if (!isRetroativo && currentDataHora < new Date()) {
         toast({
           title: 'Horário Inválido',
-          description: 'Não é possível agendar para um horário que já passou.',
+          description: 'Não é possível agendar para um horário que já passou. Para registrar um atendimento realizado, ative "Atendimento já realizado".',
           variant: 'destructive',
         })
         return
       }
 
-      let itemStart = new Date(currentDataHora)
+      // Verificações de bloqueio e conflito somente para agendamentos futuros
+      if (!isRetroativo) {
+        let itemStart = new Date(currentDataHora)
 
-      for (let i = 0; i < data.itens.length; i++) {
-        const item = data.itens[i]
-        const servico = servicos.find((s) => s.id === item.servico_id)
-        if (!servico) continue
+        for (let i = 0; i < data.itens.length; i++) {
+          const item = data.itens[i]
+          const servico = servicos.find((s) => s.id === item.servico_id)
+          if (!servico) continue
 
-        const isBloqueado = await checkBloqueio.mutateAsync({
-          profissionalId: item.profissional_id,
-          dataHora: itemStart.toISOString(),
-        })
-
-        if (isBloqueado) {
-          toast({
-            title: 'Horário bloqueado',
-            description: `Este horário está bloqueado para o profissional no serviço #${i + 1}.`,
-            variant: 'destructive',
+          const isBloqueado = await checkBloqueio.mutateAsync({
+            profissionalId: item.profissional_id,
+            dataHora: itemStart.toISOString(),
           })
-          return
-        }
 
-        const duracaoItemCheck = data.itens.length === 1 ? (effectiveDuracao || servico.duracao_minutos) : servico.duracao_minutos
+          if (isBloqueado) {
+            toast({
+              title: 'Horário bloqueado',
+              description: `Este horário está bloqueado para o profissional no serviço #${i + 1}.`,
+              variant: 'destructive',
+            })
+            return
+          }
 
-        const conflictResult = await checkConflict.mutateAsync({
-          profissionalId: item.profissional_id,
-          dataHora: itemStart.toISOString(),
-          duracaoMinutos: duracaoItemCheck,
-          excludeId: i === 0 ? agendamento?.id : undefined,
-        })
+          const duracaoItemCheck = data.itens.length === 1 ? (effectiveDuracao || servico.duracao_minutos) : servico.duracao_minutos
 
-        if (conflictResult.hasConflict) {
-          setPendingAgendamento({
-            data,
-            servico,
-            dataHora: currentDataHora,
+          const conflictResult = await checkConflict.mutateAsync({
+            profissionalId: item.profissional_id,
+            dataHora: itemStart.toISOString(),
+            duracaoMinutos: duracaoItemCheck,
+            excludeId: i === 0 ? agendamento?.id : undefined,
           })
-          setConflictData(conflictResult)
-          setShowConflictDialog(true)
-          return
-        }
 
-        itemStart = addMinutes(itemStart, duracaoItemCheck)
+          if (conflictResult.hasConflict) {
+            setPendingAgendamento({
+              data,
+              servico,
+              dataHora: currentDataHora,
+            })
+            setConflictData(conflictResult)
+            setShowConflictDialog(true)
+            return
+          }
+
+          itemStart = addMinutes(itemStart, duracaoItemCheck)
+        }
       }
 
       await saveAgendamentos(data)
@@ -311,23 +321,32 @@ export function AgendamentoFormDialog({
             : 'O agendamento foi atualizado com sucesso.',
         })
       } else {
+        const isRetro = isRetroativoRef.current
         await createAgendamento.mutateAsync({
           cliente_id: data.cliente_id,
           profissional_id: mainProf,
           servico_id: mainServ,
           data_hora: currentDataHora.toISOString(),
-          status: 'agendado',
+          status: isRetro ? 'pendente_caixa' : 'agendado',
           valor: totalValor,
           observacoes: data.observacoes || null,
           itens: mappedItens,
-        })
+          metadata: isRetro ? { retroativo: true } : undefined,
+        } as any)
 
-        toast({
-          title: 'Agendamento criado!',
-          description: itensList.length > 1 
-            ? `${itensList.length} serviços agendados com sucesso.` 
-            : 'O agendamento foi criado com sucesso.',
-        })
+        if (isRetro) {
+          toast({
+            title: 'Atendimento registrado!',
+            description: 'O atendimento foi registrado. Acesse o Caixa para realizar a baixa.',
+          })
+        } else {
+          toast({
+            title: 'Agendamento criado!',
+            description: itensList.length > 1 
+              ? `${itensList.length} serviços agendados com sucesso.` 
+              : 'O agendamento foi criado com sucesso.',
+          })
+        }
       }
 
       onOpenChange(false)
@@ -347,14 +366,58 @@ export function AgendamentoFormDialog({
         <DialogContent onOpenAutoFocus={(e) => e.preventDefault()} className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
-              {agendamento ? 'Editar Agendamento' : 'Novo Agendamento'}
+              {agendamento ? 'Editar Agendamento' : isRetroativo ? '⏪ Atendimento Realizado' : 'Novo Agendamento'}
             </DialogTitle>
             <DialogDescription>
               {agendamento
                 ? 'Edite as informações do agendamento abaixo.'
-                : 'Selecione o cliente, os serviços e os profissionais correspondentes.'}
+                : isRetroativo
+                  ? 'Registre um atendimento já realizado. Será encaminhado direto para baixa no caixa.'
+                  : 'Selecione o cliente, os serviços e os profissionais correspondentes.'}
             </DialogDescription>
           </DialogHeader>
+
+          {/* Toggle Retroativo — apenas em novo agendamento */}
+          {!agendamento && (
+            <button
+              type="button"
+              onClick={() => {
+                const next = !isRetroativo
+                setIsRetroativo(next)
+                isRetroativoRef.current = next
+                if (next) {
+                  // Pré-preenche com a data de hoje se não tiver nada
+                  const today = format(new Date(), 'yyyy-MM-dd')
+                  if (!form.getValues('data')) form.setValue('data', today)
+                }
+              }}
+              className={cn(
+                'w-full flex items-center gap-3 rounded-lg border px-4 py-3 text-left transition-all',
+                isRetroativo
+                  ? 'border-amber-400 bg-amber-50 dark:bg-amber-950/30 text-amber-800 dark:text-amber-200'
+                  : 'border-border bg-card text-muted-foreground hover:bg-accent/50'
+              )}
+            >
+              <Clock className={cn('h-5 w-5 shrink-0', isRetroativo ? 'text-amber-500' : 'text-muted-foreground/50')} />
+              <div className="flex-1">
+                <p className={cn('text-xs font-bold uppercase tracking-wider', isRetroativo ? 'text-amber-700 dark:text-amber-400' : '')}>
+                  Atendimento já realizado
+                </p>
+                <p className="text-[11px] text-muted-foreground mt-0.5">
+                  {isRetroativo ? 'Ativo — registra como pendente de pagamento imediatamente' : 'Ativar para registrar atendimento retroativo'}
+                </p>
+              </div>
+              <div className={cn(
+                'h-5 w-9 rounded-full transition-all border',
+                isRetroativo ? 'bg-amber-500 border-amber-500' : 'bg-muted border-border'
+              )}>
+                <div className={cn(
+                  'h-4 w-4 rounded-full bg-white shadow transition-transform mt-0.5',
+                  isRetroativo ? 'translate-x-4 ml-0.5' : 'translate-x-0.5'
+                )} />
+              </div>
+            </button>
+          )}
 
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
