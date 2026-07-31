@@ -107,34 +107,62 @@ export default function Caixa() {
     return dataAgendamento < dataAberturaCaixa
   })
 
-  // Calcular comissões por profissional (dos agendamentos concluídos no período ou caixa aberto)
+  // Calcular comissões por profissional usando comissoes_breakdown com deduplicação por agendamento_id
+  // (igual ao relatório de comissões) para evitar duplicação quando o pagamento é dividido em múltiplas formas
   const comissoesPorProfissional = useMemo(() => {
     const list = caixaAberto ? transacoesCaixa : transacoes
-    return list?.reduce((acc: any, t: any) => {
-      if (t.status === 'ativo' && t.comissao_valor) {
-        const metadataProfId = t.metadata?.profissional_id
-        const profId = metadataProfId || t.agendamento?.profissional_id || t.agendamento?.profissional?.id
-        
-        if (!profId) return acc
+    if (!list) return {}
 
-        // Se não for admin, mostrar apenas as comissões do próprio usuário
-        if (!isAdmin && profId !== usuario?.id) {
-          return acc
+    const processedAgendamentoIds = new Set<string>()
+    const acc: Record<string, { nome: string; total: number }> = {}
+
+    for (const t of list as any[]) {
+      if (t.status !== 'ativo') continue
+
+      const breakdown = t.metadata?.comissoes_breakdown
+      if (Array.isArray(breakdown) && breakdown.length > 0) {
+        // Deduplica por agendamento_id — processa o breakdown apenas 1 vez por agendamento
+        const agId = t.agendamento_id || t.agendamento?.id
+        if (agId) {
+          if (processedAgendamentoIds.has(agId)) continue
+          processedAgendamentoIds.add(agId)
         }
 
-        let profNome = ''
-        if (metadataProfId) {
-          const profObj = todosProfissionais.find(p => p.id === metadataProfId)
-          profNome = profObj?.nome || 'Profissional'
-        } else {
-          profNome = t.agendamento?.profissional?.nome || 'Profissional'
+        for (const item of breakdown) {
+          const profId = item.profissional_id
+          if (!profId) continue
+
+          // Se não for admin, mostrar apenas as comissões do próprio usuário
+          if (!isAdmin && profId !== usuario?.id) continue
+
+          const profObj = todosProfissionais.find((p: any) => p.id === profId)
+          const profNome = item.profissional_nome || profObj?.nome || 'Profissional'
+          const valorComissao = Number(item.comissao_valor) || 0
+
+          if (!acc[profId]) acc[profId] = { nome: profNome, total: 0 }
+          acc[profId].total += valorComissao
         }
+      } else if (t.comissao_valor && Number(t.comissao_valor) > 0) {
+        // Fallback: transação sem breakdown (agendamento simples legado)
+        const agId = t.agendamento_id || t.agendamento?.id
+        if (agId) {
+          if (processedAgendamentoIds.has(agId)) continue
+          processedAgendamentoIds.add(agId)
+        }
+
+        const profId = t.metadata?.profissional_id || t.agendamento?.profissional_id || t.agendamento?.profissional?.id
+        if (!profId) continue
+        if (!isAdmin && profId !== usuario?.id) continue
+
+        const profObj = todosProfissionais.find((p: any) => p.id === profId)
+        const profNome = profObj?.nome || t.agendamento?.profissional?.nome || 'Profissional'
 
         if (!acc[profId]) acc[profId] = { nome: profNome, total: 0 }
-        acc[profId].total += t.comissao_valor
+        acc[profId].total += Number(t.comissao_valor)
       }
-      return acc
-    }, {})
+    }
+
+    return acc
   }, [caixaAberto, transacoesCaixa, transacoes, isAdmin, usuario?.id, todosProfissionais])
 
   const totalComissoes = useMemo(() => {
