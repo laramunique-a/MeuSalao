@@ -189,7 +189,7 @@ export function DarBaixaDialog({ open, onOpenChange, agendamento }: DarBaixaDial
   const hasTaxas = taxasConfig.ativo
 
   const getTaxaPercentual = (forma: string, bandeira: string | undefined): number => {
-    if (!hasTaxas || forma !== 'cartao_credito') return 0
+    if (!hasTaxas || !['cartao_credito', 'cartao_debito'].includes(forma)) return 0
     if (taxasConfig.modo === 'unica') return taxasConfig.taxa_unica || 0
     if (taxasConfig.modo === 'bandeira') {
       const rate = taxasConfig.taxas_bandeira[bandeira || 'Outros']

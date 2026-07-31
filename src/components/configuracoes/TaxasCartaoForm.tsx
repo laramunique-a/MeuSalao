@@ -80,7 +80,7 @@ export function TaxasCartaoForm({ salao }: TaxasCartaoFormProps) {
 
       toast({
         title: 'Taxas atualizadas!',
-        description: 'As configurações de cartão de crédito foram salvas com sucesso.',
+        description: 'As configurações de cartão foram salvas com sucesso.',
       })
     } catch (error) {
       toast({
@@ -111,7 +111,7 @@ export function TaxasCartaoForm({ salao }: TaxasCartaoFormProps) {
         <div className="space-y-1">
           <CardTitle className="text-sm font-semibold uppercase tracking-wider text-foreground">Taxas de Cartão</CardTitle>
           <p className="text-xs text-muted-foreground mt-0.5">
-            Configure as taxas aplicadas no cartão de crédito para cálculos corretos de caixa e comissão.
+            Configure as taxas aplicadas em cartão de crédito e débito para cálculos corretos de caixa e comissão.
           </p>
         </div>
       </CardHeader>
