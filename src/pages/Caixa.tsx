@@ -138,13 +138,11 @@ export default function Caixa() {
     return dataAgendamento < dataAberturaCaixa
   })
 
-  // Calcular comissões por profissional usando comissoes_breakdown com deduplicação por agendamento_id
-  // (igual ao relatório de comissões) para evitar duplicação quando o pagamento é dividido em múltiplas formas
+  // Calcular comissões por profissional acumulando cada transação ativa individualmente
   const comissoesPorProfissional = useMemo(() => {
     const list = caixaAberto ? transacoesCaixa : transacoes
     if (!list) return {}
 
-    const processedAgendamentoIds = new Set<string>()
     const acc: Record<string, { nome: string; total: number }> = {}
 
     for (const t of list as any[]) {
@@ -152,13 +150,6 @@ export default function Caixa() {
 
       const breakdown = t.metadata?.comissoes_breakdown
       if (Array.isArray(breakdown) && breakdown.length > 0) {
-        // Deduplica por agendamento_id — processa o breakdown apenas 1 vez por agendamento
-        const agId = t.agendamento_id || t.agendamento?.id
-        if (agId) {
-          if (processedAgendamentoIds.has(agId)) continue
-          processedAgendamentoIds.add(agId)
-        }
-
         for (const item of breakdown) {
           const profId = item.profissional_id
           if (!profId) continue
@@ -168,19 +159,15 @@ export default function Caixa() {
 
           const profObj = todosProfissionais.find((p: any) => p.id === profId)
           const profNome = item.profissional_nome || profObj?.nome || 'Profissional'
-          const valorComissao = Number(item.comissao_valor) || 0
+
+          const rawComissao = Number(item.comissao_valor) || 0
+          const tComissao = Number(t.comissao_valor)
+          const valorComissao = (tComissao > 0 && rawComissao > tComissao) ? tComissao : rawComissao
 
           if (!acc[profId]) acc[profId] = { nome: profNome, total: 0 }
           acc[profId].total += valorComissao
         }
       } else if (t.comissao_valor && Number(t.comissao_valor) > 0) {
-        // Fallback: transação sem breakdown (agendamento simples legado)
-        const agId = t.agendamento_id || t.agendamento?.id
-        if (agId) {
-          if (processedAgendamentoIds.has(agId)) continue
-          processedAgendamentoIds.add(agId)
-        }
-
         const profId = t.metadata?.profissional_id || t.agendamento?.profissional_id || t.agendamento?.profissional?.id
         if (!profId) continue
         if (!isAdmin && profId !== usuario?.id) continue
@@ -603,7 +590,7 @@ export default function Caixa() {
                                 {t.agendamento && <span className="block text-[8px] text-muted-foreground font-bold uppercase mt-0.5">Automático</span>}
                               </td>
                               <td className="px-4 py-3.5 text-[10px] text-muted-foreground text-center font-semibold uppercase tracking-wider">
-                                <span className="line-clamp-2">{t.agendamento?.profissional?.nome || t.usuario?.nome || '—'}</span>
+                                <span className="line-clamp-2">{t.usuario?.nome || t.agendamento?.profissional?.nome || '—'}</span>
                               </td>
                               <td className="px-4 py-3.5">
                                 <Badge variant="outline" className="text-[8px] font-bold rounded-lg px-2 h-5 border-border uppercase bg-background text-muted-foreground leading-tight">
