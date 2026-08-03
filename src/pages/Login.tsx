@@ -61,9 +61,9 @@ export default function Login() {
               <Scissors className="h-6 w-6" />
             </div>
           </div>
-          <CardTitle className="text-2xl font-semibold text-center tracking-tight text-foreground">MeuSalão</CardTitle>
+          <CardTitle className="text-2xl font-semibold text-center tracking-tight text-foreground">Munix</CardTitle>
           <CardDescription className="text-center text-[10px] text-muted-foreground uppercase tracking-widest font-medium mt-1">
-            Sistema de Gestão 3D
+            Sistema de Gestão
           </CardDescription>
         </CardHeader>
         <CardContent>
