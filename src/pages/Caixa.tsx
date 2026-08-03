@@ -347,15 +347,15 @@ export default function Caixa() {
           </button>
         </div>
 
-        {/* Status Badges — only in Hoje tab */}
+        {/* Status Badges — apenas na aba Hoje */}
         {activeTab === 'hoje' && (
-          <div className="flex flex-wrap items-center gap-2">
-            <Badge variant="secondary" className={cn("h-7 px-3 text-[10px] font-semibold border rounded-full uppercase tracking-wider", caixaAberto ? 'bg-accent border-border text-foreground' : 'bg-red-500/10 border-border text-red-500')}>
+          <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 max-w-full overflow-x-auto pb-1 sm:pb-0">
+            <Badge variant="secondary" className={cn("h-7 px-3 text-[10px] font-semibold border rounded-full uppercase tracking-wider shrink-0", caixaAberto ? 'bg-accent border-border text-foreground' : 'bg-red-500/10 border-border text-red-500')}>
               Status: <span className="ml-1">{caixaAberto ? 'Aberto' : 'Fechado'}</span>
             </Badge>
 
             {pendencias && pendencias.length > 0 && (
-              <Badge variant="secondary" className="h-7 px-3 text-[10px] font-semibold bg-amber-500/10 text-amber-600 border border-border rounded-full uppercase tracking-wider">
+              <Badge variant="secondary" className="h-7 px-3 text-[10px] font-semibold bg-amber-500/10 text-amber-600 border border-border rounded-full uppercase tracking-wider shrink-0">
                 <AlertCircle className="h-3.5 w-3.5 mr-1" />
                 {pendencias.length} {pendencias.length === 1 ? 'Pendência' : 'Pendências'}
               </Badge>
@@ -365,21 +365,21 @@ export default function Caixa() {
               <>
                 {isAdmin && (
                   <>
-                    <Badge variant="secondary" className="h-7 px-3 text-[10px] font-semibold bg-background border border-border text-muted-foreground rounded-full">
+                    <Badge variant="secondary" className="h-7 px-3 text-[10px] font-semibold bg-background border border-border text-muted-foreground rounded-full shrink-0">
                       Entradas: <span className="text-foreground ml-1">R$ {resumoAtivo.entradas.toFixed(2).replace('.', ',')}</span>
                     </Badge>
-                    <Badge variant="secondary" className="h-7 px-3 text-[10px] font-semibold bg-background border border-border text-muted-foreground rounded-full">
+                    <Badge variant="secondary" className="h-7 px-3 text-[10px] font-semibold bg-background border border-border text-muted-foreground rounded-full shrink-0">
                       Saídas: <span className="text-foreground ml-1">R$ {resumoAtivo.saidas.toFixed(2).replace('.', ',')}</span>
                     </Badge>
                   </>
                 )}
                 
-                <Badge variant="secondary" className="h-7 px-3 text-[10px] font-semibold bg-background border border-border text-muted-foreground rounded-full">
+                <Badge variant="secondary" className="h-7 px-3 text-[10px] font-semibold bg-background border border-border text-muted-foreground rounded-full shrink-0">
                   Comissões: <span className="text-foreground ml-1">R$ {totalComissoes.toFixed(2).replace('.', ',')}</span>
                 </Badge>
 
                 {isAdmin && (
-                  <Badge className="h-7 px-3 text-[10px] font-semibold bg-primary text-primary-foreground hover:bg-primary/90 border border-transparent rounded-full">
+                  <Badge className="h-7 px-3 text-[10px] font-semibold bg-primary text-primary-foreground hover:bg-primary/90 border border-transparent rounded-full shrink-0">
                     Saldo: <span className="ml-1">R$ {resumoAtivo.saldo.toFixed(2).replace('.', ',')}</span>
                   </Badge>
                 )}

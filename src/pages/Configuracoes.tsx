@@ -153,25 +153,25 @@ export default function Configuracoes() {
       <Tabs defaultValue="salao" className="space-y-6">
         {/* Tab Navigation - Caixa Submenu Pattern */}
         <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 mb-8 bg-card p-3 rounded-lg border border-border">
-          <div className="flex items-center gap-1 bg-background rounded-lg border border-border p-0.5 w-fit">
-            <TabsList className="bg-transparent h-8 gap-0 p-0">
+          <div className="flex items-center gap-1 bg-background rounded-lg border border-border p-0.5 w-full sm:w-fit overflow-x-auto max-w-full pb-1 sm:pb-0">
+            <TabsList className="bg-transparent h-8 gap-0 p-0 shrink-0">
               <TabsTrigger 
                 value="salao" 
-                className="px-4 py-1.5 rounded-lg text-xs font-semibold uppercase tracking-wider transition-colors data-[state=active]:bg-accent data-[state=active]:text-foreground data-[state=active]:font-bold text-muted-foreground hover:text-foreground shadow-none"
+                className="px-4 py-1.5 rounded-lg text-xs font-semibold uppercase tracking-wider transition-colors data-[state=active]:bg-accent data-[state=active]:text-foreground data-[state=active]:font-bold text-muted-foreground hover:text-foreground shadow-none shrink-0"
               >
                 <Building2 className="h-3.5 w-3.5 mr-1.5" />
                 Dados do Salão
               </TabsTrigger>
               <TabsTrigger 
                 value="servicos" 
-                className="px-4 py-1.5 rounded-lg text-xs font-semibold uppercase tracking-wider transition-colors data-[state=active]:bg-accent data-[state=active]:text-foreground data-[state=active]:font-bold text-muted-foreground hover:text-foreground shadow-none"
+                className="px-4 py-1.5 rounded-lg text-xs font-semibold uppercase tracking-wider transition-colors data-[state=active]:bg-accent data-[state=active]:text-foreground data-[state=active]:font-bold text-muted-foreground hover:text-foreground shadow-none shrink-0"
               >
                 <Scissors className="h-3.5 w-3.5 mr-1.5" />
                 Serviços
               </TabsTrigger>
               <TabsTrigger 
                 value="usuarios" 
-                className="px-4 py-1.5 rounded-lg text-xs font-semibold uppercase tracking-wider transition-colors data-[state=active]:bg-accent data-[state=active]:text-foreground data-[state=active]:font-bold text-muted-foreground hover:text-foreground shadow-none"
+                className="px-4 py-1.5 rounded-lg text-xs font-semibold uppercase tracking-wider transition-colors data-[state=active]:bg-accent data-[state=active]:text-foreground data-[state=active]:font-bold text-muted-foreground hover:text-foreground shadow-none shrink-0"
               >
                 <Users className="h-3.5 w-3.5 mr-1.5" />
                 Usuários 
@@ -179,7 +179,7 @@ export default function Configuracoes() {
               </TabsTrigger>
               <TabsTrigger 
                 value="financeiro" 
-                className="px-4 py-1.5 rounded-lg text-xs font-semibold uppercase tracking-wider transition-colors data-[state=active]:bg-accent data-[state=active]:text-foreground data-[state=active]:font-bold text-muted-foreground hover:text-foreground shadow-none"
+                className="px-4 py-1.5 rounded-lg text-xs font-semibold uppercase tracking-wider transition-colors data-[state=active]:bg-accent data-[state=active]:text-foreground data-[state=active]:font-bold text-muted-foreground hover:text-foreground shadow-none shrink-0"
               >
                 <CreditCard className="h-3.5 w-3.5 mr-1.5" />
                 Financeiro
