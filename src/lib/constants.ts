@@ -1,5 +1,5 @@
-export const APP_NAME = 'MeuSalão'
-export const APP_DESCRIPTION = 'Sistema de Gestão de Salão de Beleza'
+export const APP_NAME = 'Munix'
+export const APP_DESCRIPTION = 'Sistema de Gestão Completo'
 
 export const PERFIS = {
   ADMINISTRADOR: 'administrador' as const,

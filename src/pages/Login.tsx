@@ -6,10 +6,9 @@ import * as z from 'zod'
 import { useAuth } from '@/hooks/useAuth'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardDescription, CardHeader } from '@/components/ui/card'
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
 import { useToast } from '@/hooks/use-toast'
-import { Scissors } from 'lucide-react'
 
 const loginSchema = z.object({
   email: z.string().email('Email inválido'),
@@ -56,12 +55,13 @@ export default function Login() {
     <div className="min-h-screen flex items-center justify-center bg-background p-4 font-sans">
       <Card className="w-full max-w-sm border-none bg-card shadow-2xl rounded-3xl p-3">
         <CardHeader className="space-y-1 pb-4">
-          <div className="flex justify-center mb-3">
-            <div className="p-3 bg-accent text-foreground rounded-2xl shadow-sm border border-border/10">
-              <Scissors className="h-6 w-6" />
-            </div>
+          <div className="flex justify-center mb-2">
+            <img 
+              src="/logo-munix.jpg" 
+              alt="Munix" 
+              className="h-20 w-auto object-contain rounded-2xl drop-shadow-md hover:scale-105 transition-transform duration-300" 
+            />
           </div>
-          <CardTitle className="text-2xl font-semibold text-center tracking-tight text-foreground">Munix</CardTitle>
           <CardDescription className="text-center text-[10px] text-muted-foreground uppercase tracking-widest font-medium mt-1">
             Sistema de Gestão
           </CardDescription>
