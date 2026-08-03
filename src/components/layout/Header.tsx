@@ -61,7 +61,7 @@ export function Header({ onMenuClick }: HeaderProps) {
 
           {/* Nome / Logo do Salão minimalista */}
           <div className="flex items-center gap-2.5 min-w-0">
-            <img src="/logo-munix.jpg" alt="Munix" className="h-7 w-auto object-contain rounded-md" />
+            <img src="/logo-munix.png" alt="Munix" className="h-7 w-auto object-contain bg-transparent" />
             <span className="text-sm font-semibold tracking-tight text-foreground truncate max-w-[120px] sm:max-w-[200px]">
               {salao?.nome || localStorage.getItem('salao_nome') || 'Munix'}
             </span>

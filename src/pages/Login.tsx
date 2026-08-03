@@ -55,11 +55,11 @@ export default function Login() {
     <div className="min-h-screen flex items-center justify-center bg-background p-4 font-sans">
       <Card className="w-full max-w-sm border-none bg-card shadow-2xl rounded-3xl p-3">
         <CardHeader className="space-y-1 pb-4">
-          <div className="flex justify-center mb-2">
+          <div className="flex justify-center mb-2 px-4">
             <img 
-              src="/logo-munix.jpg" 
+              src="/logo-munix.png" 
               alt="Munix" 
-              className="h-20 w-auto object-contain rounded-2xl drop-shadow-md hover:scale-105 transition-transform duration-300" 
+              className="h-20 w-auto object-contain bg-transparent border-none shadow-none hover:scale-105 transition-transform duration-300" 
             />
           </div>
           <CardDescription className="text-center text-[10px] text-muted-foreground uppercase tracking-widest font-medium mt-1">
