@@ -62,8 +62,8 @@ export default function Login() {
               className="h-20 w-auto object-contain bg-transparent border-none shadow-none hover:scale-105 transition-transform duration-300" 
             />
           </div>
-          <CardDescription className="text-center text-[10px] text-muted-foreground uppercase tracking-widest font-medium mt-1">
-            Sistema de Gestão
+          <CardDescription className="text-center text-xs text-muted-foreground font-medium mt-1">
+            Sua agenda. Sua gestão. Sem complicação.
           </CardDescription>
         </CardHeader>
         <CardContent>
