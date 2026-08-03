@@ -49,9 +49,9 @@ export function Header({ onMenuClick }: HeaderProps) {
 
   return (
     <header className="fixed top-0 left-0 right-0 z-20 h-14 bg-background border-b border-border transition-all duration-300">
-      <div className="flex h-full items-center justify-between px-6">
-        <div className="flex items-center gap-6 min-w-0">
-          {/* Menu Hambúrguer (Apenas Mobile - Ocultado em prol do BottomTabBar) */}
+      <div className="relative flex h-full items-center justify-between px-6">
+        {/* Esquerda: Símbolo da Munix + Nome Munix + Nome do Estabelecimento */}
+        <div className="flex items-center gap-3 min-w-0">
           <button
             onClick={onMenuClick}
             className="hidden p-2 -ml-2 text-muted-foreground hover:text-foreground rounded-lg transition-colors shrink-0"
@@ -59,34 +59,36 @@ export function Header({ onMenuClick }: HeaderProps) {
             <Menu className="h-5 w-5" />
           </button>
 
-          {/* Nome / Logo do Salão minimalista */}
           <div className="flex items-center gap-2.5 min-w-0">
-            <img src="/logo-munix.png" alt="Munix" className="h-7 w-auto object-contain bg-transparent" />
-            <span className="text-sm font-semibold tracking-tight text-foreground truncate max-w-[120px] sm:max-w-[200px]">
-              {salao?.nome || localStorage.getItem('salao_nome') || 'Munix'}
-            </span>
+            <img src="/logo-icon-munix.png" alt="Munix" className="h-6 w-auto object-contain bg-transparent shrink-0" />
+            <div className="flex items-center gap-1.5 min-w-0">
+              <span className="text-sm font-bold tracking-tight text-foreground shrink-0">Munix</span>
+              <span className="text-xs text-muted-foreground font-semibold truncate max-w-[120px] sm:max-w-[180px]">
+                {salao?.nome || localStorage.getItem('salao_nome') || ''}
+              </span>
+            </div>
           </div>
-
-          {/* Navegação Horizontal (Apenas Desktop) */}
-          <nav className="hidden lg:flex items-center gap-2">
-            {navigation.map((item) => (
-              <NavLink
-                key={item.name}
-                to={item.to}
-                className={({ isActive }) =>
-                  cn(
-                    'text-xs font-semibold uppercase tracking-wider px-3 py-2 rounded-lg transition-all duration-200 border border-transparent',
-                    isActive
-                      ? 'bg-primary text-primary-foreground font-bold active-menu-item'
-                      : 'text-muted-foreground hover:bg-accent/80 hover:text-foreground'
-                  )
-                }
-              >
-                {item.name}
-              </NavLink>
-            ))}
-          </nav>
         </div>
+
+        {/* Centro: Navegação Horizontal Centralizada com o quadro da aplicação (Apenas Desktop) */}
+        <nav className="hidden lg:flex items-center gap-1 absolute left-1/2 transform -translate-x-1/2">
+          {navigation.map((item) => (
+            <NavLink
+              key={item.name}
+              to={item.to}
+              className={({ isActive }) =>
+                cn(
+                  'text-xs font-semibold uppercase tracking-wider px-3.5 py-1.5 rounded-full transition-all duration-200 border border-transparent',
+                  isActive
+                    ? 'bg-primary text-primary-foreground font-bold active-menu-item shadow-sm'
+                    : 'text-muted-foreground hover:bg-accent/80 hover:text-foreground'
+                )
+              }
+            >
+              {item.name}
+            </NavLink>
+          ))}
+        </nav>
 
         {/* Lado Direito: Alternar Tema & Avatar */}
         <div className="flex items-center gap-4">
