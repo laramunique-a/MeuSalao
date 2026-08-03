@@ -220,18 +220,12 @@ export const relatoriosService = {
     })
 
     // Agrupar comissões geradas
-    const processedAgendamentoIds = new Set<string>()
-
+    // Com o novo modelo, cada transação carrega apenas o breakdown do seu próprio item/profissional.
+    // Não há mais necessidade de deduplicação por agendamento_id — cada transação contribui individualmente.
     geradasData?.forEach((t: any) => {
       const breakdown = t.metadata?.comissoes_breakdown
       if (Array.isArray(breakdown) && breakdown.length > 0) {
-        const agId = t.agendamento_id || (t.agendamento as any)?.id
-        if (agId) {
-          if (processedAgendamentoIds.has(agId)) return
-          processedAgendamentoIds.add(agId)
-        }
-
-        // Multi-profissional rateio de comissão (processado 1x por agendamento)
+        // Processar cada item do breakdown desta transação
         breakdown.forEach((item: any) => {
           const profId = item.profissional_id
           if (!profId || !saldosMap[profId]) return
@@ -257,7 +251,7 @@ export const relatoriosService = {
           }
         })
       } else {
-        // Agendamento tradicional com 1 único profissional
+        // Agendamento tradicional com 1 único profissional (sem breakdown)
         const profId = t.metadata?.profissional_id || t.agendamento?.profissional_id
         if (!profId || !saldosMap[profId]) return
 

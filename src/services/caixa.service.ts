@@ -81,10 +81,16 @@ export const caixaService = {
       try {
         const providedBreakdown = (transacao.metadata as any)?.comissoes_breakdown
         if (providedBreakdown && Array.isArray(providedBreakdown) && providedBreakdown.length > 0) {
+          // Breakdown fornecido pelo dialog já contém apenas o item desta transação.
+          // Usar o comissao_valor passado diretamente (já calculado individualmente no dialog).
+          // Não somar o breakdown para evitar duplicação quando múltiplos itens compartilham o mesmo agendamento_id.
           finalMetadata.comissoes_breakdown = providedBreakdown
-          const calcSum = providedBreakdown.reduce((acc: number, b: any) => acc + (Number(b.comissao_valor) || 0), 0)
-          if (calcSum > 0) {
-            totalComissaoCalculada = calcSum
+          if (transacao.comissao_valor !== undefined && transacao.comissao_valor !== null) {
+            totalComissaoCalculada = Number(transacao.comissao_valor)
+          } else {
+            // Fallback: somar o breakdown apenas se comissao_valor não foi fornecido
+            const calcSum = providedBreakdown.reduce((acc: number, b: any) => acc + (Number(b.comissao_valor) || 0), 0)
+            if (calcSum > 0) totalComissaoCalculada = calcSum
           }
         } else {
           const agendamento = await agendamentoService.getById(transacao.agendamento_id)

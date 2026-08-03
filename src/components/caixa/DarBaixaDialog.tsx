@@ -327,8 +327,9 @@ export function DarBaixaDialog({ open, onOpenChange, agendamento, agendamentos }
         })
       })
 
-      // Montar breakdown de comissões com taxas de cartão já descontadas e rateio proporcional
-      const comissoesBreakdown = itensReceita.map((item) => {
+      // Montar breakdown de comissões por item (indexado, 1:1 com itensReceita)
+      // Cada entrada representa apenas o item correspondente — não o total de todos os profissionais
+      const comissoesBreakdownPorItem = itensReceita.map((item) => {
         const bruto1 = item.valorBase * prop1
         const pctTaxa1 = getTaxaPercentual(data.forma_pagamento, data.bandeira_1)
         const taxa1 = (bruto1 * pctTaxa1) / 100
@@ -360,7 +361,13 @@ export function DarBaixaDialog({ open, onOpenChange, agendamento, agendamentos }
       })
 
       // Lançar as transações proporcionalmente no split
-      for (const item of itensReceita) {
+      // IMPORTANTE: cada transação recebe APENAS o seu próprio breakdown (1 item),
+      // evitando duplicação no relatório de comissões
+      for (let idx = 0; idx < itensReceita.length; idx++) {
+        const item = itensReceita[idx]
+        // Breakdown exclusivo deste item/profissional
+        const breakdownDoItem = [comissoesBreakdownPorItem[idx]]
+
         // Lançar Parte 1 (Forma 1)
         const bruto1 = item.valorBase * prop1
         if (bruto1 > 0.005) {
@@ -380,7 +387,7 @@ export function DarBaixaDialog({ open, onOpenChange, agendamento, agendamentos }
               base_comissao: liquido1
             },
             profissional_id: item.profissionalId,
-            comissoes_breakdown: comissoesBreakdown
+            comissoes_breakdown: breakdownDoItem
           }
 
           await createTransacao.mutateAsync({
@@ -418,7 +425,7 @@ export function DarBaixaDialog({ open, onOpenChange, agendamento, agendamentos }
                 base_comissao: liquido2
               },
               profissional_id: item.profissionalId,
-              comissoes_breakdown: comissoesBreakdown
+              comissoes_breakdown: breakdownDoItem
             }
 
             await createTransacao.mutateAsync({
