@@ -61,12 +61,9 @@ export function Header({ onMenuClick }: HeaderProps) {
 
           <div className="flex items-center gap-2.5 min-w-0">
             <img src="/logo-icon-munix.png" alt="Munix" className="h-6 w-auto object-contain bg-transparent shrink-0" />
-            <div className="flex items-center gap-1.5 min-w-0">
-              <span className="text-sm font-bold tracking-tight text-foreground shrink-0">Munix</span>
-              <span className="text-xs text-muted-foreground font-semibold truncate max-w-[120px] sm:max-w-[180px]">
-                {salao?.nome || localStorage.getItem('salao_nome') || ''}
-              </span>
-            </div>
+            <span className="text-xs text-muted-foreground font-semibold truncate max-w-[150px] sm:max-w-[220px]">
+              {salao?.nome || localStorage.getItem('salao_nome') || 'Salão'}
+            </span>
           </div>
         </div>
 
