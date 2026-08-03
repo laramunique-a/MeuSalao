@@ -13,6 +13,7 @@ async function getProfissionais(): Promise<Usuario[]> {
     .eq('salao_id', usuario.salao_id)
     .eq('ativo', true)
     .eq('pode_atender', true)
+    .neq('perfil', 'super_admin')
     .order('nome', { ascending: true })
 
   if (error) throw error

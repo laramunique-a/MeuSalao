@@ -179,11 +179,13 @@ export const relatoriosService = {
 
     if (errPagas) throw errPagas
 
-    // 3. Buscar profissionais (todos os usuários do salão)
+    // 3. Buscar profissionais ativos que podem atender (excluir super_admin)
     const { data: profissionais, error: errProfs } = await supabase
       .from('usuario')
       .select('id, nome, perfil')
       .eq('salao_id', usuario.salao_id)
+      .neq('perfil', 'super_admin')
+      .eq('pode_atender', true)
 
     if (errProfs) throw errProfs
 
