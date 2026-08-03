@@ -222,12 +222,21 @@ export const relatoriosService = {
     })
 
     // Agrupar comissões geradas
-    // Com o novo modelo, cada transação carrega apenas o breakdown do seu próprio item/profissional.
-    // Não há mais necessidade de deduplicação por agendamento_id — cada transação contribui individualmente.
+    // Os TOTAIS (gerado_historico, gerado_periodo) acumulam corretamente todas as transações.
+    // Os DETALHES são agrupados por chave (agendamento_id + profissional_id + servico_nome)
+    // para que pagamentos split ([1/2] + [2/2]) apareçam como UMA única linha no relatório.
+    const detalhesMapPorProf: Record<string, Map<string, {
+      data_hora: string
+      cliente: string
+      descricao: string
+      valor_bruto: number
+      comissao_valor: number
+    }>> = {}
+    profissionais?.forEach((p: any) => { detalhesMapPorProf[p.id] = new Map() })
+
     geradasData?.forEach((t: any) => {
       const breakdown = t.metadata?.comissoes_breakdown
       if (Array.isArray(breakdown) && breakdown.length > 0) {
-        // Processar cada item do breakdown desta transação
         breakdown.forEach((item: any) => {
           const profId = item.profissional_id
           if (!profId || !saldosMap[profId]) return
@@ -240,16 +249,25 @@ export const relatoriosService = {
           if (insidePeriod) {
             saldosMap[profId].gerado_periodo += valorComissao
 
+            // Chave de agrupamento: une partes de split do mesmo serviço/agendamento
+            const detalheKey = `${t.agendamento_id || t.id}-${profId}-${item.servico_nome || ''}`
             const clienteNome = (t.agendamento as any)?.cliente?.nome || 'Cliente'
             const valorBruto = Number(item.valor_servico) || 0
 
-            saldosMap[profId].detalhes.push({
-              data_hora: t.data_hora,
-              cliente: clienteNome,
-              descricao: item.servico_nome || 'Serviço',
-              valor_bruto: valorBruto,
-              comissao_valor: valorComissao
-            })
+            const existing = detalhesMapPorProf[profId]?.get(detalheKey)
+            if (existing) {
+              // Acumular split — somar valores na mesma linha
+              existing.valor_bruto += valorBruto
+              existing.comissao_valor += valorComissao
+            } else {
+              detalhesMapPorProf[profId]?.set(detalheKey, {
+                data_hora: t.data_hora,
+                cliente: clienteNome,
+                descricao: item.servico_nome || 'Serviço',
+                valor_bruto: valorBruto,
+                comissao_valor: valorComissao
+              })
+            }
           }
         })
       } else {
@@ -265,18 +283,30 @@ export const relatoriosService = {
         if (insidePeriod) {
           saldosMap[profId].gerado_periodo += valor
 
+          const detalheKey = `${t.agendamento_id || t.id}-${profId}-${t.descricao || ''}`
           const clienteNome = (t.agendamento as any)?.cliente?.nome || 'Cliente'
           const valorBruto = Number((t.metadata as any)?.pagamento?.valor_bruto) || Number(t.valor) || 0
 
-          saldosMap[profId].detalhes.push({
-            data_hora: t.data_hora,
-            cliente: clienteNome,
-            descricao: t.descricao,
-            valor_bruto: valorBruto,
-            comissao_valor: valor
-          })
+          const existing = detalhesMapPorProf[profId]?.get(detalheKey)
+          if (existing) {
+            existing.valor_bruto += valorBruto
+            existing.comissao_valor += valor
+          } else {
+            detalhesMapPorProf[profId]?.set(detalheKey, {
+              data_hora: t.data_hora,
+              cliente: clienteNome,
+              descricao: t.descricao,
+              valor_bruto: valorBruto,
+              comissao_valor: valor
+            })
+          }
         }
       }
+    })
+
+    // Transferir os detalhes agrupados para o saldosMap
+    Object.keys(saldosMap).forEach((profId) => {
+      saldosMap[profId].detalhes = Array.from(detalhesMapPorProf[profId]?.values() || [])
     })
 
     // Agrupar comissões pagas
