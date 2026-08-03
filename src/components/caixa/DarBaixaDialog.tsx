@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -61,7 +61,8 @@ type DarBaixaFormData = z.infer<typeof darBaixaSchema>
 interface DarBaixaDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
-  agendamento: Agendamento | null
+  agendamento?: Agendamento | null
+  agendamentos?: Agendamento[]
 }
 
 const FORMAS_PAGAMENTO = [
@@ -84,11 +85,18 @@ const formatarMoeda = (val: string): string => {
   })
 }
 
-export function DarBaixaDialog({ open, onOpenChange, agendamento }: DarBaixaDialogProps) {
+export function DarBaixaDialog({ open, onOpenChange, agendamento, agendamentos }: DarBaixaDialogProps) {
   const { toast } = useToast()
   const createTransacao = useCreateTransacao()
   const updateStatus = useUpdateAgendamentoStatus()
   const { data: salao } = useSalao()
+
+  // Unificar agendamento único ou múltiplos agendamentos
+  const listAgendamentos = useMemo(() => {
+    if (agendamentos && agendamentos.length > 0) return agendamentos
+    if (agendamento) return [agendamento]
+    return []
+  }, [agendamento, agendamentos])
 
   // Hooks de Dados
   const { data: todosServicos = [] } = useServicos()
@@ -113,6 +121,11 @@ export function DarBaixaDialog({ open, onOpenChange, agendamento }: DarBaixaDial
   // Estados de expansão dos painéis
   const [isServicosAdicionaisExpanded, setIsServicosAdicionaisExpanded] = useState(false)
   const [isDescontoExpanded, setIsDescontoExpanded] = useState(false)
+
+  // Valor total das comandas selecionadas
+  const agValor = useMemo(() => {
+    return listAgendamentos.reduce((acc, ag) => acc + (Number(ag.valor) || 0), 0)
+  }, [listAgendamentos])
 
   const form = useForm<DarBaixaFormData>({
     resolver: zodResolver(darBaixaSchema),
@@ -143,18 +156,17 @@ export function DarBaixaDialog({ open, onOpenChange, agendamento }: DarBaixaDial
         forma_pagamento: 'pix',
         bandeira_1: '',
         is_split: false,
-        valor_pagamento_1: agendamento?.valor.toFixed(2).replace('.', ',') || '',
+        valor_pagamento_1: agValor.toFixed(2).replace('.', ','),
         forma_pagamento_2: 'cartao_credito',
         bandeira_2: '',
         valor_pagamento_2: '',
       })
       resetStates()
     }
-  }, [open, agendamento, form])
+  }, [open, agValor, form])
 
   const { isAdmin, usuario: currentUser } = useAuthStore()
-  const isOwnAppointment = agendamento?.profissional_id === currentUser?.id
-  const canConfirm = isAdmin || isOwnAppointment
+  const canConfirm = isAdmin || listAgendamentos.some(ag => ag.profissional_id === currentUser?.id)
 
   const isSplit = form.watch('is_split')
   const form1 = form.watch('forma_pagamento')
@@ -166,8 +178,6 @@ export function DarBaixaDialog({ open, onOpenChange, agendamento }: DarBaixaDial
   const b2 = form.watch('bandeira_2')
 
   // Cálculos dinâmicos
-  const agValor = agendamento?.valor || 0
-  
   const totalServicosAdicionais = servicosAdicionais.reduce((acc, s) => acc + s.valor, 0)
   const descontoVal = parseFloat(valorDesconto.replace(/\./g, '').replace(',', '.')) || 0
   
@@ -215,11 +225,9 @@ export function DarBaixaDialog({ open, onOpenChange, agendamento }: DarBaixaDial
   const totalLiquido = net1 + net2
 
   async function onSubmit(data: DarBaixaFormData) {
-    if (!agendamento) return
+    if (listAgendamentos.length === 0) return
 
     try {
-      const servico = agendamento.servico
-
       if (data.is_split && data.valor_pagamento_1 && data.valor_pagamento_2 && data.forma_pagamento_2) {
         if (Math.abs(totalBruto - totalBrutoCalculado) > 0.01) {
           toast({
@@ -242,6 +250,7 @@ export function DarBaixaDialog({ open, onOpenChange, agendamento }: DarBaixaDial
         valorBase: number
         comissaoPercentual: number
         profissionalId: string | null
+        agendamentoId: string
       }[] = []
 
       const getEffectivePct = (itPct: any, profPct: any) => {
@@ -250,44 +259,58 @@ export function DarBaixaDialog({ open, onOpenChange, agendamento }: DarBaixaDial
         return 0
       }
 
-      // 1. Serviços do Agendamento (suporta múltiplos serviços e profissionais)
-      if (agendamento.itens && agendamento.itens.length > 0) {
-        const totalBrutoItens = agendamento.itens.reduce((acc: number, it: any) => acc + (Number(it.valor) || 0), 0)
-        const proporcaoDesconto = agValor > 0 && descontoVal > 0 && totalBrutoItens > 0
-          ? Math.max(0, agValor - descontoVal) / totalBrutoItens
-          : 1
+      // 1. Processar itens de cada agendamento selecionado
+      for (const ag of listAgendamentos) {
+        const servico = ag.servico
+        const agValorIndividual = Number(ag.valor) || 0
+        
+        // Proporção do desconto global aplicada a este agendamento
+        const agProporcao = agValor > 0 ? (agValorIndividual / agValor) : (1 / listAgendamentos.length)
+        const agDesconto = descontoVal * agProporcao
 
-        agendamento.itens.forEach((it: any) => {
-          const servObj = todosServicos.find((s) => s.id === it.servico_id) || it.servico
-          const profObj = todosProfissionais.find((p) => p.id === it.profissional_id) || it.profissional
-          const pctComissao = getEffectivePct(it.comissao_percentual, profObj?.comissao_percentual)
-          const valorBaseItem = (Number(it.valor) || 0) * proporcaoDesconto
+        if (ag.itens && ag.itens.length > 0) {
+          const totalBrutoItens = ag.itens.reduce((acc: number, it: any) => acc + (Number(it.valor) || 0), 0)
+          const proporcaoDesconto = agValorIndividual > 0 && agDesconto > 0 && totalBrutoItens > 0
+            ? Math.max(0, agValorIndividual - agDesconto) / totalBrutoItens
+            : 1
+
+          ag.itens.forEach((it: any) => {
+            const servObj = todosServicos.find((s) => s.id === it.servico_id) || it.servico
+            const profObj = todosProfissionais.find((p) => p.id === it.profissional_id) || it.profissional
+            const pctComissao = getEffectivePct(it.comissao_percentual, profObj?.comissao_percentual)
+            const valorBaseItem = (Number(it.valor) || 0) * proporcaoDesconto
+
+            itensReceita.push({
+              tipo: 'principal',
+              descricao: `${servObj?.nome || 'Serviço'} - ${ag.cliente?.nome}`,
+              categoria: 'Serviço',
+              valorBase: valorBaseItem,
+              comissaoPercentual: pctComissao,
+              profissionalId: it.profissional_id || ag.profissional_id,
+              agendamentoId: ag.id,
+            })
+          })
+        } else {
+          const valorPrincipalComDesconto = Math.max(0, agValorIndividual - agDesconto)
+          const profObj = todosProfissionais.find((p) => p.id === ag.profissional_id) || ag.profissional
+          const pctComissao = getEffectivePct(null, (profObj as any)?.comissao_percentual)
 
           itensReceita.push({
             tipo: 'principal',
-            descricao: `${servObj?.nome || 'Serviço'} - ${agendamento.cliente?.nome}`,
+            descricao: `${servico?.nome || 'Serviço'} - ${ag.cliente?.nome}`,
             categoria: 'Serviço',
-            valorBase: valorBaseItem,
+            valorBase: valorPrincipalComDesconto,
             comissaoPercentual: pctComissao,
-            profissionalId: it.profissional_id || agendamento.profissional_id,
+            profissionalId: ag.profissional_id,
+            agendamentoId: ag.id,
           })
-        })
-      } else {
-        const valorPrincipalComDesconto = Math.max(0, agValor - descontoVal)
-        const profObj = todosProfissionais.find((p) => p.id === agendamento.profissional_id) || agendamento.profissional
-        const pctComissao = getEffectivePct(null, (profObj as any)?.comissao_percentual)
-
-        itensReceita.push({
-          tipo: 'principal',
-          descricao: `${servico?.nome || 'Serviço'} - ${agendamento.cliente?.nome}`,
-          categoria: 'Serviço',
-          valorBase: valorPrincipalComDesconto,
-          comissaoPercentual: pctComissao,
-          profissionalId: agendamento.profissional_id,
-        })
+        }
       }
 
-      // 2. Serviços Adicionais
+      // 2. Serviços Adicionais (atribui ao primeiro agendamento da lista)
+      const primaryAgendamentoId = listAgendamentos[0].id
+      const primaryClienteNome = listAgendamentos[0].cliente?.nome || 'Cliente'
+
       servicosAdicionais.forEach(sa => {
         const servObj = todosServicos.find(s => s.id === sa.servicoId)
         const profObj = todosProfissionais.find(p => p.id === sa.profissionalId)
@@ -295,11 +318,12 @@ export function DarBaixaDialog({ open, onOpenChange, agendamento }: DarBaixaDial
         
         itensReceita.push({
           tipo: 'adicional',
-          descricao: `[Adicional] ${servObj?.nome || 'Serviço'} - ${agendamento.cliente?.nome}`,
+          descricao: `[Adicional] ${servObj?.nome || 'Serviço'} - ${primaryClienteNome}`,
           categoria: 'Serviço',
           valorBase: sa.valor,
           comissaoPercentual: pctComissao,
-          profissionalId: sa.profissionalId
+          profissionalId: sa.profissionalId,
+          agendamentoId: primaryAgendamentoId,
         })
       })
 
@@ -360,7 +384,7 @@ export function DarBaixaDialog({ open, onOpenChange, agendamento }: DarBaixaDial
           }
 
           await createTransacao.mutateAsync({
-            agendamento_id: agendamento.id,
+            agendamento_id: item.agendamentoId,
             tipo: 'entrada',
             valor: liquido1,
             forma_pagamento: data.forma_pagamento,
@@ -398,7 +422,7 @@ export function DarBaixaDialog({ open, onOpenChange, agendamento }: DarBaixaDial
             }
 
             await createTransacao.mutateAsync({
-              agendamento_id: agendamento.id,
+              agendamento_id: item.agendamentoId,
               tipo: 'entrada',
               valor: liquido2,
               forma_pagamento: data.forma_pagamento_2!,
@@ -415,9 +439,18 @@ export function DarBaixaDialog({ open, onOpenChange, agendamento }: DarBaixaDial
         }
       }
 
+      // Atualizar status de todos os agendamentos selecionados para concluído
+      for (const ag of listAgendamentos) {
+        try {
+          await updateStatus.mutateAsync({ id: ag.id, status: 'concluido' })
+        } catch (err) {
+          console.error('Erro ao atualizar agendamento:', err)
+        }
+      }
+
       toast({
         title: 'Baixa realizada!',
-        description: `O valor líquido de R$ ${totalLiquido.toFixed(2).replace('.', ',')} entrou no caixa.`,
+        description: `${listAgendamentos.length > 1 ? `${listAgendamentos.length} comandas baixadas` : 'Baixa concluída'}. O valor líquido de R$ ${totalLiquido.toFixed(2).replace('.', ',')} entrou no caixa.`,
       })
 
       onOpenChange(false)
@@ -432,7 +465,7 @@ export function DarBaixaDialog({ open, onOpenChange, agendamento }: DarBaixaDial
     }
   }
 
-  if (!agendamento) return null
+  if (listAgendamentos.length === 0) return null
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -445,7 +478,7 @@ export function DarBaixaDialog({ open, onOpenChange, agendamento }: DarBaixaDial
             Registro de Pagamento
           </DialogTitle>
           <DialogDescription className="text-xs text-muted-foreground mt-1">
-            Conclua o atendimento e registre a transação no caixa.
+            Conclua {listAgendamentos.length > 1 ? `as ${listAgendamentos.length} comandas selecionadas` : 'o atendimento'} e registre a transação no caixa.
           </DialogDescription>
         </DialogHeader>
 
@@ -455,47 +488,62 @@ export function DarBaixaDialog({ open, onOpenChange, agendamento }: DarBaixaDial
             {/* Conteúdo Rolável */}
             <div className="flex-1 overflow-y-auto p-6 space-y-5">
               
-              {/* PARTE 2: Resumo do Atendimento */}
-              <div className="bg-background rounded-xl border border-border shadow-sm p-4 relative overflow-hidden transition-all hover:border-primary/20">
-                <div className="absolute top-0 right-0 w-24 h-24 bg-primary/5 rounded-bl-[100px] pointer-events-none" />
-                
-                <div className="flex justify-between items-start">
-                  <div className="space-y-2.5 w-full">
-                    <div className="flex items-center gap-2">
-                      <UserCircle className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-sm font-bold text-foreground">{agendamento.cliente?.nome}</span>
-                    </div>
+              {/* PARTE 2: Resumo do Atendimento / Comandas Selecionadas */}
+              <div className="bg-background rounded-xl border border-border shadow-sm p-4 relative overflow-hidden transition-all hover:border-primary/20 space-y-3">
+                <div className="flex items-center justify-between border-b border-border/50 pb-2">
+                  <span className="text-xs font-bold text-foreground uppercase tracking-wider flex items-center gap-1.5">
+                    <Receipt className="h-4 w-4 text-primary" />
+                    {listAgendamentos.length > 1 ? `${listAgendamentos.length} Comandas Selecionadas` : 'Resumo do Atendimento'}
+                  </span>
+                  {listAgendamentos.length > 1 && (
+                    <span className="text-[10px] font-extrabold text-primary bg-primary/10 px-2.5 py-0.5 rounded-full border border-primary/20">
+                      Subtotal: R$ {agValor.toFixed(2).replace('.', ',')}
+                    </span>
+                  )}
+                </div>
 
-                    {agendamento.itens && agendamento.itens.length > 0 ? (
-                      <div className="space-y-1.5 pt-1">
-                        {agendamento.itens.map((it: any, idx: number) => (
-                          <div key={idx} className="flex items-center justify-between text-xs bg-slate-100 dark:bg-slate-800/50 p-1.5 rounded-md">
-                            <span className="font-semibold text-foreground flex items-center gap-1.5">
-                              <Scissors className="h-3.5 w-3.5 text-purple-600" />
-                              {it.servico?.nome || 'Serviço'}
-                              <span className="text-[10px] text-muted-foreground">com {it.profissional?.nome || agendamento.profissional?.nome}</span>
-                            </span>
-                            <span className="font-bold text-purple-700 dark:text-purple-300">
-                              R$ {Number(it.valor).toFixed(2).replace('.', ',')}
-                            </span>
-                          </div>
-                        ))}
+                <div className="space-y-2.5 max-h-48 overflow-y-auto pr-1">
+                  {listAgendamentos.map((ag) => (
+                    <div key={ag.id} className="bg-slate-50 dark:bg-slate-800/40 p-3 rounded-lg border border-border/40 text-xs space-y-1.5">
+                      <div className="flex justify-between items-center font-bold text-foreground">
+                        <span className="flex items-center gap-1.5">
+                          <UserCircle className="h-4 w-4 text-muted-foreground" />
+                          {ag.cliente?.nome}
+                        </span>
+                        <span className="text-purple-700 dark:text-purple-300 font-extrabold">
+                          R$ {ag.valor.toFixed(2).replace('.', ',')}
+                        </span>
                       </div>
-                    ) : (
-                      <div className="flex items-center gap-2">
-                        <Scissors className="h-4 w-4 text-muted-foreground" />
-                        <span className="text-sm font-medium text-muted-foreground">{agendamento.servico?.nome}</span>
-                      </div>
-                    )}
 
-                    <div className="flex items-center gap-2">
-                      <Clock className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-xs text-muted-foreground">
-                        {format(new Date(agendamento.data_hora), "dd/MM/yyyy 'às' HH:mm")}
-                        {!agendamento.itens && ` • com ${agendamento.profissional?.nome}`}
-                      </span>
+                      {ag.itens && ag.itens.length > 0 ? (
+                        <div className="space-y-1 pl-5">
+                          {ag.itens.map((it: any, idx: number) => (
+                            <div key={idx} className="flex justify-between text-[11px] text-muted-foreground">
+                              <span className="flex items-center gap-1">
+                                <Scissors className="h-3 w-3 text-purple-600" />
+                                {it.servico?.nome || 'Serviço'}
+                                <span className="text-[10px]">({it.profissional?.nome || ag.profissional?.nome})</span>
+                              </span>
+                              <span className="font-semibold text-foreground">R$ {Number(it.valor).toFixed(2).replace('.', ',')}</span>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="flex justify-between text-[11px] text-muted-foreground pl-5">
+                          <span className="flex items-center gap-1">
+                            <Scissors className="h-3 w-3 text-purple-600" />
+                            {ag.servico?.nome}
+                            <span className="text-[10px]">({ag.profissional?.nome})</span>
+                          </span>
+                        </div>
+                      )}
+
+                      <div className="flex items-center gap-1 pl-5 text-[10px] text-muted-foreground">
+                        <Clock className="h-3 w-3" />
+                        {format(new Date(ag.data_hora), "dd/MM/yyyy 'às' HH:mm")}
+                      </div>
                     </div>
-                  </div>
+                  ))}
                 </div>
               </div>
 

@@ -52,7 +52,7 @@ export default function Caixa() {
   const [isFecharOpen, setIsFecharOpen] = useState(false)
   const [isMovimentacaoOpen, setIsMovimentacaoOpen] = useState(false)
   const [isDarBaixaOpen, setIsDarBaixaOpen] = useState(false)
-  const [selectedAgendamento, setSelectedAgendamento] = useState<Agendamento | null>(null)
+  const [selectedAgendamentos, setSelectedAgendamentos] = useState<Agendamento[]>([])
   const [activeTab, setActiveTab] = useState<'hoje' | 'historico'>('hoje')
   const [isEditarAberturaOpen, setIsEditarAberturaOpen] = useState(false)
   const [selectedAberturaId, setSelectedAberturaId] = useState<string | null>(null)
@@ -97,6 +97,37 @@ export default function Caixa() {
   const { data: todosProfissionais = [] } = useProfissionais()
 
   const { data: pendenciasGlobais = [] } = usePendenciasGlobais()
+
+  // Seleção de Comandas Pendentes
+  const pendenciasFiltradas = useMemo(() => {
+    if (!pendencias) return []
+    return pendencias.filter(ag => isAdmin || ag.profissional_id === usuario?.id)
+  }, [pendencias, isAdmin, usuario?.id])
+
+  const isAllSelected = pendenciasFiltradas.length > 0 && selectedAgendamentos.length === pendenciasFiltradas.length
+
+  const totalSelecionado = useMemo(() => {
+    return selectedAgendamentos.reduce((acc, ag) => acc + (ag.valor || 0), 0)
+  }, [selectedAgendamentos])
+
+  const toggleSelectAgendamento = (ag: Agendamento) => {
+    setSelectedAgendamentos(prev => {
+      const exists = prev.some(item => item.id === ag.id)
+      if (exists) {
+        return prev.filter(item => item.id !== ag.id)
+      } else {
+        return [...prev, ag]
+      }
+    })
+  }
+
+  const handleSelectAll = () => {
+    if (isAllSelected) {
+      setSelectedAgendamentos([])
+    } else {
+      setSelectedAgendamentos(pendenciasFiltradas)
+    }
+  }
 
   const pendenciasPassadas = pendenciasGlobais.filter((p: any) => {
     if (!caixaAberto) return false
@@ -377,52 +408,105 @@ export default function Caixa() {
       ) : (
         <div className="space-y-8">
           {/* Seção de Pendências de Pagamento - Sempre visível se houver algo a receber */}
-          {pendencias && pendencias.length > 0 && (
-            <div>
-              <div className="flex items-center gap-2 mb-4">
-                <div className="p-1 bg-accent rounded-lg border border-border">
-                  <AlertCircle className="h-4 w-4 text-muted-foreground" />
+          {pendenciasFiltradas && pendenciasFiltradas.length > 0 && (
+            <div className="space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-card p-4 rounded-xl border border-border">
+                <div className="flex items-center gap-2">
+                  <div className="p-1 bg-accent rounded-lg border border-border">
+                    <AlertCircle className="h-4 w-4 text-muted-foreground" />
+                  </div>
+                  <div>
+                    <h3 className="text-xs font-bold text-foreground uppercase tracking-widest flex items-center gap-2">
+                      Pendente de Pagamento
+                      <Badge variant="outline" className="bg-accent/50 text-foreground border-border text-[10px] font-bold">
+                        {pendenciasFiltradas.length}
+                      </Badge>
+                    </h3>
+                    {selectedAgendamentos.length > 0 && (
+                      <p className="text-[11px] text-muted-foreground font-semibold mt-0.5">
+                        {selectedAgendamentos.length} comanda(s) selecionada(s) • Total: R$ {totalSelecionado.toFixed(2).replace('.', ',')}
+                      </p>
+                    )}
+                  </div>
                 </div>
-                <h3 className="text-xs font-bold text-foreground uppercase tracking-widest">Pendente de Pagamento</h3>
-                <Badge variant="outline" className="bg-accent/50 text-foreground border-border text-[10px] font-bold">
-                  {pendencias.length}
-                </Badge>
+
+                <div className="flex items-center gap-2 flex-wrap">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-8 text-[11px] font-semibold rounded-lg"
+                    onClick={handleSelectAll}
+                  >
+                    {isAllSelected ? 'Desmarcar Todos' : 'Selecionar Todos'}
+                  </Button>
+
+                  {selectedAgendamentos.length > 0 && (
+                    <Button
+                      size="sm"
+                      className="h-8 px-4 text-[11px] font-bold uppercase tracking-wider rounded-lg bg-primary text-primary-foreground shadow-sm"
+                      disabled={!caixaAberto}
+                      onClick={() => {
+                        setIsDarBaixaOpen(true)
+                      }}
+                    >
+                      <DollarSign className="h-3.5 w-3.5 mr-1" />
+                      {caixaAberto ? `Dar Baixa nas ${selectedAgendamentos.length} Selecionadas` : 'Caixa Fechado'}
+                    </Button>
+                  )}
+                </div>
               </div>
               
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {pendencias
-                  .filter(ag => isAdmin || ag.profissional_id === useAuthStore.getState().usuario?.id)
-                  .map((ag) => (
-                  <Card key={ag.id} className="border-border bg-card shadow-none">
-                    <CardContent className="p-4 flex flex-col justify-between h-full">
-                      <div className="flex justify-between items-start mb-3">
-                        <div>
-                          <p className="font-semibold text-xs text-foreground uppercase tracking-wider">{ag.cliente?.nome}</p>
-                          <p className="text-xs text-muted-foreground mt-0.5">{ag.servico?.nome}</p>
+                {pendenciasFiltradas.map((ag) => {
+                  const isSelected = selectedAgendamentos.some(item => item.id === ag.id)
+                  return (
+                    <Card 
+                      key={ag.id} 
+                      className={cn(
+                        "border-border bg-card shadow-none transition-all cursor-pointer relative",
+                        isSelected && "border-primary ring-2 ring-primary/20 bg-primary/5"
+                      )}
+                      onClick={() => toggleSelectAgendamento(ag)}
+                    >
+                      <CardContent className="p-4 flex flex-col justify-between h-full">
+                        <div className="flex justify-between items-start mb-3 gap-2">
+                          <div className="flex items-start gap-2.5">
+                            <input
+                              type="checkbox"
+                              checked={isSelected}
+                              onChange={() => {}}
+                              className="mt-0.5 h-4 w-4 rounded border-border text-primary focus:ring-primary cursor-pointer accent-primary"
+                            />
+                            <div>
+                              <p className="font-semibold text-xs text-foreground uppercase tracking-wider">{ag.cliente?.nome}</p>
+                              <p className="text-xs text-muted-foreground mt-0.5">{ag.servico?.nome}</p>
+                            </div>
+                          </div>
+                          <p className="font-bold text-sm text-foreground whitespace-nowrap">R$ {ag.valor.toFixed(2).replace('.', ',')}</p>
                         </div>
-                        <p className="font-bold text-sm text-foreground">R$ {ag.valor.toFixed(2).replace('.', ',')}</p>
-                      </div>
-                      <div className="flex items-center justify-between mt-4">
-                        <div className="flex items-center gap-1.5 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
-                          <User className="h-3.5 w-3.5" />
-                          {ag.profissional?.nome}
+                        <div className="flex items-center justify-between mt-4">
+                          <div className="flex items-center gap-1.5 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
+                            <User className="h-3.5 w-3.5" />
+                            {ag.profissional?.nome}
+                          </div>
+                          <Button 
+                            size="sm" 
+                            className="h-8 px-3 text-[10px] font-semibold uppercase tracking-wider rounded-lg"
+                            disabled={!caixaAberto}
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              setSelectedAgendamentos([ag])
+                              setIsDarBaixaOpen(true)
+                            }}
+                          >
+                            <DollarSign className="h-3.5 w-3.5 mr-1" />
+                            {caixaAberto ? 'Receber' : 'Caixa Fechado'}
+                          </Button>
                         </div>
-                        <Button 
-                          size="sm" 
-                          className="h-8 px-4 text-[10px] font-semibold uppercase tracking-wider rounded-lg"
-                          disabled={!caixaAberto}
-                          onClick={() => {
-                            setSelectedAgendamento(ag)
-                            setIsDarBaixaOpen(true)
-                          }}
-                        >
-                          <DollarSign className="h-3.5 w-3.5 mr-1" />
-                          {caixaAberto ? 'Receber' : 'Caixa Fechado'}
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
+                      </CardContent>
+                    </Card>
+                  )
+                })}
               </div>
             </div>
           )}
@@ -604,8 +688,13 @@ export default function Caixa() {
       />
       <DarBaixaDialog
         open={isDarBaixaOpen}
-        onOpenChange={setIsDarBaixaOpen}
-        agendamento={selectedAgendamento}
+        onOpenChange={(open) => {
+          setIsDarBaixaOpen(open)
+          if (!open) {
+            setSelectedAgendamentos([])
+          }
+        }}
+        agendamentos={selectedAgendamentos}
       />
       <EditarAberturaDialog
         open={isEditarAberturaOpen}
@@ -618,7 +707,7 @@ export default function Caixa() {
         onOpenChange={setIsDebitosPassadosOpen}
         pendencias={pendenciasPassadas}
         onReceber={(ag) => {
-          setSelectedAgendamento(ag)
+          setSelectedAgendamentos([ag])
           setIsDarBaixaOpen(true)
         }}
       />
