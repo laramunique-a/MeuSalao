@@ -241,7 +241,15 @@ export const relatoriosService = {
           const profId = item.profissional_id
           if (!profId || !saldosMap[profId]) return
 
-          const valorComissao = Number(item.comissao_valor) || 0
+          const rawComissao = Number(item.comissao_valor) || 0
+          const tComissao = Number(t.comissao_valor)
+          // Se o comissao_valor do item exceder a comissão da transação individual (como ocorria em transações antigas), limita a t.comissao_valor
+          const valorComissao = (tComissao > 0 && rawComissao > tComissao) ? tComissao : rawComissao
+
+          const rawBruto = Number(item.valor_servico) || 0
+          const tValor = Number(t.valor)
+          const valorBruto = (tValor > 0 && rawBruto > tValor) ? tValor : rawBruto
+
           saldosMap[profId].gerado_historico += valorComissao
 
           const tDate = new Date(t.data_hora)
@@ -252,7 +260,6 @@ export const relatoriosService = {
             // Chave de agrupamento: une partes de split do mesmo serviço/agendamento
             const detalheKey = `${t.agendamento_id || t.id}-${profId}-${item.servico_nome || ''}`
             const clienteNome = (t.agendamento as any)?.cliente?.nome || 'Cliente'
-            const valorBruto = Number(item.valor_servico) || 0
 
             const existing = detalhesMapPorProf[profId]?.get(detalheKey)
             if (existing) {

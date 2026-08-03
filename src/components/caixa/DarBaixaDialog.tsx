@@ -327,46 +327,12 @@ export function DarBaixaDialog({ open, onOpenChange, agendamento, agendamentos }
         })
       })
 
-      // Montar breakdown de comissões por item (indexado, 1:1 com itensReceita)
-      // Cada entrada representa apenas o item correspondente — não o total de todos os profissionais
-      const comissoesBreakdownPorItem = itensReceita.map((item) => {
-        const bruto1 = item.valorBase * prop1
-        const pctTaxa1 = getTaxaPercentual(data.forma_pagamento, data.bandeira_1)
-        const taxa1 = (bruto1 * pctTaxa1) / 100
-        const liquido1 = bruto1 - taxa1
-        const comissao1 = (liquido1 * item.comissaoPercentual) / 100
-
-        let bruto2 = 0, taxa2 = 0, liquido2 = 0, comissao2 = 0
-        if (data.is_split && prop2 > 0) {
-          bruto2 = item.valorBase * prop2
-          const pctTaxa2 = getTaxaPercentual(data.forma_pagamento_2 || '', data.bandeira_2)
-          taxa2 = (bruto2 * pctTaxa2) / 100
-          liquido2 = bruto2 - taxa2
-          comissao2 = (liquido2 * item.comissaoPercentual) / 100
-        }
-
-        const netTotalItem = liquido1 + liquido2
-        const comissaoTotalItem = comissao1 + comissao2
-
-        const profObj = todosProfissionais.find((p) => p.id === item.profissionalId)
-
-        return {
-          profissional_id: item.profissionalId,
-          profissional_nome: profObj?.nome || 'Profissional',
-          servico_nome: item.descricao.replace(/ - .*$/, '').replace(/^\[Adicional\] /, ''),
-          valor_servico: Math.round(netTotalItem * 100) / 100,
-          comissao_percentual: item.comissaoPercentual,
-          comissao_valor: Math.round(comissaoTotalItem * 100) / 100,
-        }
-      })
-
       // Lançar as transações proporcionalmente no split
-      // IMPORTANTE: cada transação recebe APENAS o seu próprio breakdown (1 item),
-      // evitando duplicação no relatório de comissões
+      // IMPORTANTE: cada transação de split recebe o seu próprio valor e comissão específicos daquela fatia de pagamento
       for (let idx = 0; idx < itensReceita.length; idx++) {
         const item = itensReceita[idx]
-        // Breakdown exclusivo deste item/profissional
-        const breakdownDoItem = [comissoesBreakdownPorItem[idx]]
+        const profObj = todosProfissionais.find((p) => p.id === item.profissionalId)
+        const servicoNome = item.descricao.replace(/ - .*$/, '').replace(/^\[Adicional\] /, '')
 
         // Lançar Parte 1 (Forma 1)
         const bruto1 = item.valorBase * prop1
@@ -375,6 +341,15 @@ export function DarBaixaDialog({ open, onOpenChange, agendamento, agendamentos }
           const taxa1 = (bruto1 * pctTaxa1) / 100
           const liquido1 = bruto1 - taxa1
           const comissao1 = (liquido1 * item.comissaoPercentual) / 100
+
+          const breakdownParte1 = [{
+            profissional_id: item.profissionalId,
+            profissional_nome: profObj?.nome || 'Profissional',
+            servico_nome: servicoNome,
+            valor_servico: Math.round(liquido1 * 100) / 100,
+            comissao_percentual: item.comissaoPercentual,
+            comissao_valor: Math.round(comissao1 * 100) / 100,
+          }]
 
           const prefix = data.is_split ? '[1/2] ' : ''
           const metadata = {
@@ -387,7 +362,7 @@ export function DarBaixaDialog({ open, onOpenChange, agendamento, agendamentos }
               base_comissao: liquido1
             },
             profissional_id: item.profissionalId,
-            comissoes_breakdown: breakdownDoItem
+            comissoes_breakdown: breakdownParte1
           }
 
           await createTransacao.mutateAsync({
@@ -415,6 +390,15 @@ export function DarBaixaDialog({ open, onOpenChange, agendamento, agendamentos }
             const liquido2 = bruto2 - taxa2
             const comissao2 = (liquido2 * item.comissaoPercentual) / 100
 
+            const breakdownParte2 = [{
+              profissional_id: item.profissionalId,
+              profissional_nome: profObj?.nome || 'Profissional',
+              servico_nome: servicoNome,
+              valor_servico: Math.round(liquido2 * 100) / 100,
+              comissao_percentual: item.comissaoPercentual,
+              comissao_valor: Math.round(comissao2 * 100) / 100,
+            }]
+
             const metadata = {
               pagamento: {
                 valor_bruto: bruto2,
@@ -425,7 +409,7 @@ export function DarBaixaDialog({ open, onOpenChange, agendamento, agendamentos }
                 base_comissao: liquido2
               },
               profissional_id: item.profissionalId,
-              comissoes_breakdown: breakdownDoItem
+              comissoes_breakdown: breakdownParte2
             }
 
             await createTransacao.mutateAsync({
