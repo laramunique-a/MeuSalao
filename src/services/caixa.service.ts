@@ -194,57 +194,58 @@ export const caixaService = {
   },
 
   async delete(id: string) {
-    const { data: transacao } = await (supabase
+    const { data: transacao, error: errFetch } = await (supabase
       .from('transacao_caixa') as any)
       .select('agendamento_id')
       .eq('id', id)
       .single()
 
-    // Regra obrigatória: não excluir fisicamente. Usar status 'cancelado'.
-    const { error } = await (supabase
-      .from('transacao_caixa') as any)
-      .update({ status: 'cancelado' })
-      .eq('id', id)
-
-    if (error) throw error
+    if (errFetch) throw errFetch
 
     if (transacao?.agendamento_id) {
-      const { data: transAtivas } = await (supabase
+      const { error: errCancelAg } = await (supabase
         .from('transacao_caixa') as any)
-        .select('id')
+        .update({ status: 'cancelado' })
         .eq('agendamento_id', transacao.agendamento_id)
-        .eq('status', 'ativo')
 
-      if (!transAtivas || transAtivas.length === 0) {
-        await agendamentoService.updateStatus(transacao.agendamento_id, 'pendente_caixa')
-      }
+      if (errCancelAg) throw errCancelAg
+
+      await agendamentoService.updateStatus(transacao.agendamento_id, 'pendente_caixa')
+    } else {
+      const { error } = await (supabase
+        .from('transacao_caixa') as any)
+        .update({ status: 'cancelado' })
+        .eq('id', id)
+
+      if (error) throw error
     }
   },
 
   async estornar(id: string) {
-    const { data: transacao } = await (supabase
+    const { data: transacao, error: errFetch } = await (supabase
       .from('transacao_caixa') as any)
       .select('agendamento_id')
       .eq('id', id)
       .single()
 
-    const { error } = await (supabase
-      .from('transacao_caixa') as any)
-      .update({ status: 'estornado' })
-      .eq('id', id)
-
-    if (error) throw error
+    if (errFetch) throw errFetch
 
     if (transacao?.agendamento_id) {
-      const { data: transAtivas } = await (supabase
+      const { error: errEstornoAg } = await (supabase
         .from('transacao_caixa') as any)
-        .select('id')
+        .update({ status: 'estornado' })
         .eq('agendamento_id', transacao.agendamento_id)
-        .eq('status', 'ativo')
 
-      if (!transAtivas || transAtivas.length === 0) {
-        await agendamentoService.updateStatus(transacao.agendamento_id, 'pendente_caixa')
-      }
+      if (errEstornoAg) throw errEstornoAg
+
+      await agendamentoService.updateStatus(transacao.agendamento_id, 'pendente_caixa')
+    } else {
+      const { error } = await (supabase
+        .from('transacao_caixa') as any)
+        .update({ status: 'estornado' })
+        .eq('id', id)
+
+      if (error) throw error
     }
   },
 

@@ -58,6 +58,9 @@ export function useDeleteTransacao() {
       queryClient.invalidateQueries({ queryKey: ['transacoes-caixa'] })
       queryClient.invalidateQueries({ queryKey: ['saldos-comissoes-report'] })
       queryClient.invalidateQueries({ queryKey: ['folha-pagamento-report'] })
+      queryClient.invalidateQueries({ queryKey: ['agendamentos-sem-baixa'] })
+      queryClient.invalidateQueries({ queryKey: ['caixa-pendencias-report'] })
+      queryClient.invalidateQueries({ queryKey: ['cliente-report'] })
     },
   })
 }
@@ -163,6 +166,9 @@ export function useEstornarTransacao() {
       queryClient.invalidateQueries({ queryKey: ['transacoes-caixa'] })
       queryClient.invalidateQueries({ queryKey: ['saldos-comissoes-report'] })
       queryClient.invalidateQueries({ queryKey: ['folha-pagamento-report'] })
+      queryClient.invalidateQueries({ queryKey: ['agendamentos-sem-baixa'] })
+      queryClient.invalidateQueries({ queryKey: ['caixa-pendencias-report'] })
+      queryClient.invalidateQueries({ queryKey: ['cliente-report'] })
     },
   })
 }

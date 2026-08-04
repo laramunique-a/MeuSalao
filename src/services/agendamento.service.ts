@@ -157,25 +157,33 @@ export const agendamentoService = {
       .map((t: any) => t.agendamento_id)
       .filter(Boolean)
 
-    // 2. Auto-recuperação: Se existirem agendamentos com status 'concluido' que NÃO possuem nenhuma transação ativa (devido a estornos), atualizar status para 'pendente_caixa'
+    // 2. Auto-recuperação: Se existirem agendamentos com transações estornadas/canceladas, restaurar para 'pendente_caixa' e limpar lançamentos remanescentes
     try {
-      let queryOrfaos = supabase
-        .from('agendamento')
-        .select('id')
+      const { data: transEstornadas } = await supabase
+        .from('transacao_caixa')
+        .select('agendamento_id')
         .eq('salao_id', usuario.salao_id)
-        .eq('status', 'concluido')
+        .not('agendamento_id', 'is', null)
+        .in('status', ['estornado', 'cancelado'])
 
-      if (idsComTransacaoAtiva.length > 0) {
-        queryOrfaos = queryOrfaos.not('id', 'in', `(${idsComTransacaoAtiva.join(',')})`)
-      }
+      const agIdsEstornados = (transEstornadas || [])
+        .map((t: any) => t.agendamento_id)
+        .filter(Boolean)
 
-      const { data: agendamentosOrfaos } = await queryOrfaos
-
-      if (agendamentosOrfaos && agendamentosOrfaos.length > 0) {
-        const idsToFix = agendamentosOrfaos.map((a: any) => a.id)
+      if (agIdsEstornados.length > 0) {
+        // Voltar o status dos agendamentos afetados para 'pendente_caixa'
         await (supabase.from('agendamento') as any)
           .update({ status: 'pendente_caixa' })
-          .in('id', idsToFix)
+          .eq('salao_id', usuario.salao_id)
+          .in('id', agIdsEstornados)
+          .neq('status', 'pendente_caixa')
+
+        // Marcar como estornado qualquer transação ativa remanescente do mesmo agendamento
+        await (supabase.from('transacao_caixa') as any)
+          .update({ status: 'estornado' })
+          .eq('salao_id', usuario.salao_id)
+          .in('agendamento_id', agIdsEstornados)
+          .eq('status', 'ativo')
       }
     } catch (err) {
       console.error('Erro na auto-recuperação de agendamentos estornados:', err)
