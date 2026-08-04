@@ -605,11 +605,14 @@ export default function Relatorios() {
                                 </td>
                                 <td className="px-4 py-3 font-semibold text-foreground uppercase tracking-wider">
                                   <span className="block">{t.descricao}</span>
-                                  {t.agendamento?.servico?.nome && (
-                                    <span className="block text-[8px] text-muted-foreground font-bold uppercase mt-0.5">
-                                      Serviço: {t.agendamento.servico.nome}
-                                    </span>
-                                  )}
+                                  {(() => {
+                                      const servicoNome = (t.metadata as any)?.comissoes_breakdown?.[0]?.servico_nome || t.agendamento?.servico?.nome
+                                      return servicoNome ? (
+                                        <span className="block text-[8px] text-muted-foreground font-bold uppercase mt-0.5">
+                                          Serviço: {servicoNome}
+                                        </span>
+                                      ) : null
+                                    })()}
                                 </td>
                                 <td className="px-4 py-3 text-muted-foreground capitalize font-semibold uppercase tracking-wider">
                                   {t.forma_pagamento.replace('_', ' ')}
