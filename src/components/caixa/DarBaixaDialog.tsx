@@ -14,6 +14,16 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
+import {
   Form,
   FormControl,
   FormField,
@@ -36,7 +46,7 @@ import { useServicos } from '@/hooks/useServicos'
 import { useProfissionais } from '@/hooks/useProfissionais'
 import type { Agendamento } from '@/types/models'
 import { format } from 'date-fns'
-import { Receipt, UserCircle, Scissors, Clock, CheckCircle2, Plus, Trash2, Tag, DollarSign, ChevronDown, ChevronUp } from 'lucide-react'
+import { Receipt, UserCircle, Scissors, Clock, CheckCircle2, Plus, Trash2, Tag, DollarSign, ChevronDown, ChevronUp, AlertTriangle } from 'lucide-react'
 
 const darBaixaSchema = z.object({
   forma_pagamento: z.enum(['dinheiro', 'cartao_debito', 'cartao_credito', 'pix', 'outros']),
@@ -148,6 +158,8 @@ export function DarBaixaDialog({ open, onOpenChange, agendamento, agendamentos }
     setValorDesconto('')
     setIsServicosAdicionaisExpanded(false)
     setIsDescontoExpanded(false)
+    setShowConfirmDivergencia(false)
+    setPendingFormData(null)
   }
 
   useEffect(() => {
@@ -224,9 +236,26 @@ export function DarBaixaDialog({ open, onOpenChange, agendamento, agendamentos }
   const totalTaxas = taxaVal1 + taxaVal2
   const totalLiquido = net1 + net2
 
+  const [showConfirmDivergencia, setShowConfirmDivergencia] = useState(false)
+  const [pendingFormData, setPendingFormData] = useState<DarBaixaFormData | null>(null)
+
+  const valorOriginalTotal = agValor + totalServicosAdicionais
+  const diferencaValor = valorOriginalTotal - totalBrutoCalculado
+  const temDivergenciaValor = Math.abs(diferencaValor) > 0.01 || descontoVal > 0
+
   async function onSubmit(data: DarBaixaFormData) {
     if (listAgendamentos.length === 0) return
 
+    if (temDivergenciaValor && !pendingFormData) {
+      setPendingFormData(data)
+      setShowConfirmDivergencia(true)
+      return
+    }
+
+    await executeBaixa(data || pendingFormData)
+  }
+
+  async function executeBaixa(data: DarBaixaFormData) {
     try {
       if (data.is_split && data.valor_pagamento_1 && data.valor_pagamento_2 && data.forma_pagamento_2) {
         if (Math.abs(totalBruto - totalBrutoCalculado) > 0.01) {
@@ -949,7 +978,22 @@ export function DarBaixaDialog({ open, onOpenChange, agendamento, agendamentos }
                 )}
               </div>
 
-              {/* PARTE 4: Resumo Financeiro (Aparece se houver taxas) */}
+              {/* PARTE 4: Alerta de Divergência de Valor / Desconto */}
+              {temDivergenciaValor && (
+                <div className="bg-amber-500/10 border border-amber-500/30 p-3.5 rounded-xl space-y-1 text-xs text-amber-800 dark:text-amber-300 animate-in fade-in duration-300">
+                  <div className="flex items-center gap-1.5 font-bold">
+                    <AlertTriangle className="h-4 w-4 shrink-0 text-amber-500" />
+                    <span>Atenção: Valor a receber difere do total dos serviços</span>
+                  </div>
+                  <p className="text-[11px] opacity-90 leading-tight">
+                    Total dos Serviços: <strong>R$ {valorOriginalTotal.toFixed(2).replace('.', ',')}</strong> | 
+                    Valor a Receber: <strong>R$ {totalBrutoCalculado.toFixed(2).replace('.', ',')}</strong>
+                    {descontoVal > 0 && ` (Desconto: R$ ${descontoVal.toFixed(2).replace('.', ',')})`}
+                  </p>
+                </div>
+              )}
+
+              {/* PARTE 5: Resumo Financeiro (Aparece se houver taxas) */}
               {(hasTaxas && (form1 === 'cartao_credito' || (isSplit && form2 === 'cartao_credito'))) && (
                 <div className="bg-emerald-500/10 p-4 rounded-xl border border-emerald-500/20 space-y-2 animate-in fade-in duration-500">
                   <h4 className="text-[10px] font-bold uppercase text-emerald-600 dark:text-emerald-400 tracking-widest mb-2 flex items-center gap-1.5">
@@ -976,7 +1020,7 @@ export function DarBaixaDialog({ open, onOpenChange, agendamento, agendamentos }
 
             </div>
 
-            {/* PARTE 5: Rodapé Fixo */}
+            {/* PARTE 6: Rodapé Fixo */}
             <div className="px-6 py-4 border-t border-border bg-background flex flex-col sm:flex-row justify-end gap-3 shrink-0">
               <Button 
                 type="button" 
@@ -1001,6 +1045,61 @@ export function DarBaixaDialog({ open, onOpenChange, agendamento, agendamentos }
             
           </form>
         </Form>
+
+        {/* DIÁLOGO DE CONFIRMAÇÃO DE DIVERGÊNCIA DE VALOR */}
+        <AlertDialog open={showConfirmDivergencia} onOpenChange={setShowConfirmDivergencia}>
+          <AlertDialogContent className="sm:max-w-[440px] border-amber-500/30 bg-background rounded-2xl p-6 shadow-2xl">
+            <AlertDialogHeader>
+              <AlertDialogTitle className="text-base font-bold text-foreground flex items-center gap-2">
+                <AlertTriangle className="h-5 w-5 text-amber-500" />
+                Confirmar Lançamento com Diferença de Valor
+              </AlertDialogTitle>
+              <AlertDialogDescription className="text-xs text-muted-foreground mt-2 space-y-3">
+                <p>
+                  O valor total a ser baixado no caixa (<strong>R$ {totalBrutoCalculado.toFixed(2).replace('.', ',')}</strong>) é{' '}
+                  {totalBrutoCalculado < valorOriginalTotal ? 'menor do que' : 'diferente do'} valor total dos serviços selecionados (<strong>R$ {valorOriginalTotal.toFixed(2).replace('.', ',')}</strong>).
+                </p>
+                
+                <div className="bg-amber-500/10 border border-amber-500/20 p-3 rounded-xl space-y-1.5 text-xs text-foreground">
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Valor dos Serviços:</span>
+                    <span className="font-semibold">R$ {valorOriginalTotal.toFixed(2).replace('.', ',')}</span>
+                  </div>
+                  {descontoVal > 0 && (
+                    <div className="flex justify-between text-amber-600 dark:text-amber-400 font-medium">
+                      <span>Desconto Informado:</span>
+                      <span>- R$ {descontoVal.toFixed(2).replace('.', ',')}</span>
+                    </div>
+                  )}
+                  <div className="flex justify-between font-bold pt-1.5 border-t border-border/50">
+                    <span>Valor Final a Entrar no Caixa:</span>
+                    <span className="text-emerald-600 dark:text-emerald-400 text-sm">R$ {totalBrutoCalculado.toFixed(2).replace('.', ',')}</span>
+                  </div>
+                </div>
+
+                <p className="text-[11px] font-medium text-foreground">
+                  Por favor, verifique se houve algum erro de digitação antes de continuar. Deseja realmente lançar este recebimento?
+                </p>
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter className="mt-4 gap-2">
+              <AlertDialogCancel onClick={() => setShowConfirmDivergencia(false)} className="text-xs h-9">
+                Revisar Valores
+              </AlertDialogCancel>
+              <AlertDialogAction
+                onClick={() => {
+                  setShowConfirmDivergencia(false)
+                  if (pendingFormData) {
+                    executeBaixa(pendingFormData)
+                  }
+                }}
+                className="text-xs h-9 bg-amber-600 hover:bg-amber-700 text-white font-bold"
+              >
+                Sim, Lançar Recebimento
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
 
       </DialogContent>
     </Dialog>
