@@ -146,17 +146,42 @@ export const agendamentoService = {
     const usuario = useAuthStore.getState().usuario
     if (!usuario || !usuario.salao_id) throw new Error('Usuário não autenticado')
 
-    // Buscar IDs de agendamentos que já têm transação vinculada
+    // 1. Buscar IDs de agendamentos que já têm transação ATIVA vinculada
     const { data: transacoes } = await supabase
       .from('transacao_caixa')
       .select('agendamento_id')
       .not('agendamento_id', 'is', null)
+      .eq('status', 'ativo')
 
-    const idsComTransacao = (transacoes || [])
+    const idsComTransacaoAtiva = (transacoes || [])
       .map((t: any) => t.agendamento_id)
       .filter(Boolean)
 
-    // Buscar agendamentos em_atendimento ou concluido sem transação
+    // 2. Auto-recuperação: Se existirem agendamentos com status 'concluido' que NÃO possuem nenhuma transação ativa (devido a estornos), atualizar status para 'pendente_caixa'
+    try {
+      let queryOrfaos = supabase
+        .from('agendamento')
+        .select('id')
+        .eq('salao_id', usuario.salao_id)
+        .eq('status', 'concluido')
+
+      if (idsComTransacaoAtiva.length > 0) {
+        queryOrfaos = queryOrfaos.not('id', 'in', `(${idsComTransacaoAtiva.join(',')})`)
+      }
+
+      const { data: agendamentosOrfaos } = await queryOrfaos
+
+      if (agendamentosOrfaos && agendamentosOrfaos.length > 0) {
+        const idsToFix = agendamentosOrfaos.map((a: any) => a.id)
+        await (supabase.from('agendamento') as any)
+          .update({ status: 'pendente_caixa' })
+          .in('id', idsToFix)
+      }
+    } catch (err) {
+      console.error('Erro na auto-recuperação de agendamentos estornados:', err)
+    }
+
+    // 3. Buscar agendamentos em_atendimento, pendente_caixa ou concluido sem transação ativa
     let query = supabase
       .from('agendamento')
       .select(AGENDAMENTO_SELECT)
@@ -171,8 +196,8 @@ export const agendamentoService = {
 
     query = query.order('data_hora', { ascending: true })
 
-    if (idsComTransacao.length > 0) {
-      query = query.not('id', 'in', `(${idsComTransacao.join(',')})`)
+    if (idsComTransacaoAtiva.length > 0) {
+      query = query.not('id', 'in', `(${idsComTransacaoAtiva.join(',')})`)
     }
 
     const { data, error } = await query
@@ -184,17 +209,18 @@ export const agendamentoService = {
     const usuario = useAuthStore.getState().usuario
     if (!usuario || !usuario.salao_id) throw new Error('Usuário não autenticado')
 
-    // Buscar IDs de agendamentos que já têm transação vinculada
+    // Buscar IDs de agendamentos que já têm transação ATIVA vinculada
     const { data: transacoes } = await supabase
       .from('transacao_caixa')
       .select('agendamento_id')
       .not('agendamento_id', 'is', null)
+      .eq('status', 'ativo')
 
-    const idsComTransacao = (transacoes || [])
+    const idsComTransacaoAtiva = (transacoes || [])
       .map((t: any) => t.agendamento_id)
       .filter(Boolean)
 
-    // Buscar se existe algum agendamento em_atendimento ou concluido sem transação
+    // Buscar se existe algum agendamento em_atendimento ou concluido sem transação ativa
     let query = supabase
       .from('agendamento')
       .select('id', { count: 'exact', head: true })
@@ -205,8 +231,8 @@ export const agendamentoService = {
       query = query.eq('profissional_id', profissionalId)
     }
 
-    if (idsComTransacao.length > 0) {
-      query = query.not('id', 'in', `(${idsComTransacao.join(',')})`)
+    if (idsComTransacaoAtiva.length > 0) {
+      query = query.not('id', 'in', `(${idsComTransacaoAtiva.join(',')})`)
     }
 
     const { count, error } = await query

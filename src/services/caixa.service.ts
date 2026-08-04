@@ -194,6 +194,12 @@ export const caixaService = {
   },
 
   async delete(id: string) {
+    const { data: transacao } = await (supabase
+      .from('transacao_caixa') as any)
+      .select('agendamento_id')
+      .eq('id', id)
+      .single()
+
     // Regra obrigatória: não excluir fisicamente. Usar status 'cancelado'.
     const { error } = await (supabase
       .from('transacao_caixa') as any)
@@ -201,15 +207,45 @@ export const caixaService = {
       .eq('id', id)
 
     if (error) throw error
+
+    if (transacao?.agendamento_id) {
+      const { data: transAtivas } = await (supabase
+        .from('transacao_caixa') as any)
+        .select('id')
+        .eq('agendamento_id', transacao.agendamento_id)
+        .eq('status', 'ativo')
+
+      if (!transAtivas || transAtivas.length === 0) {
+        await agendamentoService.updateStatus(transacao.agendamento_id, 'pendente_caixa')
+      }
+    }
   },
 
   async estornar(id: string) {
+    const { data: transacao } = await (supabase
+      .from('transacao_caixa') as any)
+      .select('agendamento_id')
+      .eq('id', id)
+      .single()
+
     const { error } = await (supabase
       .from('transacao_caixa') as any)
       .update({ status: 'estornado' })
       .eq('id', id)
 
     if (error) throw error
+
+    if (transacao?.agendamento_id) {
+      const { data: transAtivas } = await (supabase
+        .from('transacao_caixa') as any)
+        .select('id')
+        .eq('agendamento_id', transacao.agendamento_id)
+        .eq('status', 'ativo')
+
+      if (!transAtivas || transAtivas.length === 0) {
+        await agendamentoService.updateStatus(transacao.agendamento_id, 'pendente_caixa')
+      }
+    }
   },
 
   // --- Novos Métodos de Controle de Caixa ---
