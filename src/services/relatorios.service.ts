@@ -6,6 +6,8 @@ import { mapAgendamentoRealTimeStatus } from '@/services/agendamento.service'
 export const relatoriosService = {
   async getClienteReport(clienteId: string) {
     if (!clienteId) throw new Error('Cliente não selecionado')
+    const usuario = useAuthStore.getState().usuario
+    if (!usuario || !usuario.salao_id) throw new Error('Usuário não autenticado')
 
     // 1. Buscar todos os agendamentos do cliente
     const { data: agendamentos, error: errorAg } = await supabase
@@ -22,6 +24,7 @@ export const relatoriosService = {
           profissional:profissional_id (id, nome)
         )
       `)
+      .eq('salao_id', usuario.salao_id)
       .eq('cliente_id', clienteId)
       .order('data_hora', { ascending: false })
 
@@ -56,10 +59,14 @@ export const relatoriosService = {
   },
 
   async getCaixaPendenciasReport() {
+    const usuario = useAuthStore.getState().usuario
+    if (!usuario || !usuario.salao_id) throw new Error('Usuário não autenticado')
+
     // 1. Buscar todas as sessões de caixa
     const { data: caixas, error: errorCaixas } = await supabase
       .from('caixa_diario')
       .select('*, usuario_abertura:usuario_abertura_id(nome), usuario_fechamento:usuario_fechamento_id(nome)')
+      .eq('salao_id', usuario.salao_id)
       .order('data_abertura', { ascending: false })
 
     if (errorCaixas) throw errorCaixas
@@ -74,6 +81,7 @@ export const relatoriosService = {
         profissional:profissional_id (id, nome),
         servico:servico_id (id, nome)
       `)
+      .eq('salao_id', usuario.salao_id)
       .in('status', ['em_atendimento', 'pendente_caixa'])
       .order('data_hora', { ascending: false })
 
@@ -116,11 +124,12 @@ export const relatoriosService = {
 
   async getFolhaPagamentoReport(startDate?: string, endDate?: string) {
     const usuario = useAuthStore.getState().usuario
-    if (!usuario) throw new Error('Usuário não autenticado')
+    if (!usuario || !usuario.salao_id) throw new Error('Usuário não autenticado')
 
     let query = supabase
       .from('transacao_caixa')
       .select('*, usuario:usuario_id(nome)')
+      .eq('salao_id', usuario.salao_id)
       .eq('categoria', 'Pagamento de Comissão')
 
     // Se for profissional comum, ver apenas as próprias comissões pagas
