@@ -36,8 +36,10 @@ export function FecharCaixaDialog({
 }: FecharCaixaDialogProps) {
   const { toast } = useToast()
   const fecharCaixa = useFecharCaixa()
+  const todayStr = format(new Date(), 'yyyy-MM-dd')
   const [valorInformado, setValorInformado] = useState('')
   const [observacoes, setObservacoes] = useState('')
+  const [dataFimFechamento, setDataFimFechamento] = useState(todayStr)
   const [confirmarSemBaixa, setConfirmarSemBaixa] = useState(false)
 
   const valorNum = Number(valorInformado.replace(',', '.'))
@@ -49,6 +51,7 @@ export function FecharCaixaDialog({
       setConfirmarSemBaixa(false)
       setValorInformado('')
       setObservacoes('')
+      setDataFimFechamento(format(new Date(), 'yyyy-MM-dd'))
     }
   }, [open])
 
@@ -78,10 +81,13 @@ export function FecharCaixaDialog({
         caixaId,
         valorInformado: valorNum,
         observacoes,
+        dataFimFechamento: dataFimFechamento !== todayStr ? dataFimFechamento : undefined,
       })
       toast({
         title: 'Caixa fechado!',
-        description: 'O caixa foi encerrado com sucesso.',
+        description: dataFimFechamento !== todayStr 
+          ? `O caixa foi encerrado até o dia ${format(parseISO(dataFimFechamento), 'dd/MM/yyyy')}. Um novo caixa foi mantido aberto para as datas posteriores.`
+          : 'O caixa foi encerrado com sucesso.',
       })
       onOpenChange(false)
     } catch (error: any) {
@@ -105,10 +111,27 @@ export function FecharCaixaDialog({
         {dataAbertura && (
           <div className="flex items-center gap-2 px-1 text-[10px] text-muted-foreground font-medium uppercase tracking-wider">
             <Calendar className="h-3 w-3" />
-            Caixa aberto em: {format(parseISO(dataAbertura), "dd/MM 'às' HH:mm", { locale: ptBR })}
+            Caixa aberto em: {format(parseISO(dataAbertura), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
           </div>
         )}
         <form onSubmit={handleSubmit} className="space-y-4 py-4 text-xs">
+          <div className="space-y-2">
+            <Label htmlFor="data_fim_fechamento" className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
+              Fechar Caixa Até Qual Data?
+            </Label>
+            <Input
+              id="data_fim_fechamento"
+              type="date"
+              value={dataFimFechamento}
+              max={todayStr}
+              onChange={(e) => setDataFimFechamento(e.target.value)}
+              className="h-10 rounded-lg border-border text-xs"
+            />
+            <p className="text-[10px] text-muted-foreground">
+              Selecione a data limite (ex: 05/08). As movimentações dos dias posteriores permanecerão em um caixa aberto.
+            </p>
+          </div>
+
           <div className="bg-muted/50 p-4 rounded-lg space-y-2 border">
             <div className="flex justify-between text-xs">
               <span className="text-muted-foreground">Saldo do Sistema:</span>

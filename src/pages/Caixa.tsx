@@ -564,7 +564,7 @@ export default function Caixa() {
                     <table className="w-full text-xs text-left">
                       <thead>
                         <tr className="text-muted-foreground font-bold text-[9px] uppercase bg-accent/20 border-b border-border">
-                          <th className="px-4 py-3">Horário</th>
+                          <th className="px-4 py-3">Data / Hora</th>
                           <th className="px-4 py-3">Descrição</th>
                           <th className="px-4 py-3 text-center">Operador</th>
                           <th className="px-4 py-3">Categoria</th>
@@ -583,7 +583,7 @@ export default function Caixa() {
                           filteredTransacoes?.map((t) => (
                             <tr key={t.id} className={`hover:bg-accent/10 transition-colors ${t.status !== 'ativo' ? 'opacity-40 grayscale' : ''}`}>
                               <td className="px-4 py-3.5 whitespace-nowrap text-[10px] font-semibold text-muted-foreground">
-                                {format(new Date(t.data_hora), 'HH:mm')}
+                                {format(new Date(t.data_hora), 'dd/MM/yyyy HH:mm')}
                               </td>
                               <td className="px-4 py-3.5 font-medium text-xs">
                                 <span className="line-clamp-2 text-foreground font-semibold uppercase tracking-wider">{t.descricao}</span>

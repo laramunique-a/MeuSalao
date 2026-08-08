@@ -86,7 +86,7 @@ function SessionRow({ caixa }: { caixa: CaixaDiario }) {
                 <table className="w-full text-xs">
                   <thead>
                     <tr className="bg-card border-b border-border text-muted-foreground font-bold uppercase text-[10px]">
-                      <th className="px-3 py-2 text-left">Horário</th>
+                      <th className="px-3 py-2 text-left">Data / Hora</th>
                       <th className="px-3 py-2 text-left">Descrição</th>
                       <th className="px-3 py-2 text-left">Operador</th>
                       <th className="px-3 py-2 text-left">Categoria</th>
@@ -99,7 +99,7 @@ function SessionRow({ caixa }: { caixa: CaixaDiario }) {
                     {transacoes?.map((t) => (
                       <tr key={t.id} className={t.status !== 'ativo' ? 'opacity-40 grayscale' : ''}>
                         <td className="px-3 py-2 whitespace-nowrap text-muted-foreground">
-                          {format(new Date(t.data_hora), 'HH:mm')}
+                          {format(new Date(t.data_hora), 'dd/MM/yyyy HH:mm')}
                         </td>
                         <td className="px-3 py-2 font-medium min-w-[150px] text-foreground">{t.descricao}</td>
                         <td className="px-3 py-2 text-muted-foreground whitespace-nowrap">{t.usuario?.nome || '—'}</td>
