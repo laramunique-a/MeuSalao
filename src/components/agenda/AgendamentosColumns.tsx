@@ -18,9 +18,9 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
-import { MoreVertical, Pencil, Ban, UserCheck, UserX, Plus, Clock, Target } from 'lucide-react'
+import { MoreVertical, Pencil, Ban, UserCheck, UserX, Plus, Clock } from 'lucide-react'
 import type { Agendamento } from '@/types/models'
-import { isAfter, addMinutes, setHours, setMinutes, isSameDay, format } from 'date-fns'
+import { isAfter, addMinutes, setHours, setMinutes, isSameDay } from 'date-fns'
 import { useState, useMemo, useEffect, useRef } from 'react'
 
 interface AgendamentosColumnsProps {
@@ -108,14 +108,6 @@ export function AgendamentosColumns({
 
   const isToday = isSameDay(selectedDate, now)
 
-  // Atualizar o horário a cada 15 segundos
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setNow(new Date())
-    }, 15000)
-    return () => clearInterval(timer)
-  }, [])
-
   // Gerar slots de 30 em 30 minutos das 8h às 20h (estilo agenda de papel)
   const timeSlots = useMemo<TimeSlot[]>(() => {
     const slots: TimeSlot[] = []
@@ -145,7 +137,7 @@ export function AgendamentosColumns({
     return `${hourStr}:${roundedMin}`
   }, [isToday, now])
 
-  // Função robusta para rolar o container exatamente para a célula do horário atual
+  // Função para rolar automaticamente para o horário atual
   const scrollToCurrentTime = (smooth = true) => {
     if (!currentSlotLabel || !containerRef.current) return
     const targetEl = slotRefs.current.get(currentSlotLabel)
@@ -161,13 +153,24 @@ export function AgendamentosColumns({
     }
   }
 
-  // Auto-scroll inicial e quando a data selecionada mudar para hoje
+  // Auto-scroll inicial e contínuo a cada 10 segundos
   useEffect(() => {
-    if (isToday) {
-      const timeout = setTimeout(() => {
-        scrollToCurrentTime(true)
-      }, 150)
-      return () => clearTimeout(timeout)
+    if (!isToday) return
+
+    // Scroll inicial
+    const timeout = setTimeout(() => {
+      scrollToCurrentTime(true)
+    }, 150)
+
+    // Intervalo de auto-rolagem contínua em tempo real
+    const timer = setInterval(() => {
+      setNow(new Date())
+      scrollToCurrentTime(true)
+    }, 10000)
+
+    return () => {
+      clearTimeout(timeout)
+      clearInterval(timer)
     }
   }, [selectedDate, isToday, currentSlotLabel])
 
@@ -246,19 +249,6 @@ export function AgendamentosColumns({
 
   return (
     <div className="relative">
-      {/* Botão flutuante para focar no horário atual */}
-      {isToday && (
-        <Button
-          onClick={() => scrollToCurrentTime(true)}
-          variant="default"
-          size="sm"
-          className="fixed bottom-6 right-6 z-40 shadow-lg rounded-full px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-bold text-xs uppercase tracking-wider flex items-center gap-2 border-2 border-white dark:border-gray-900 transition-all hover:scale-105"
-        >
-          <Target className="h-4 w-4 animate-pulse" />
-          <span>Ir para agora ({format(now, 'HH:mm')})</span>
-        </Button>
-      )}
-
       <div
         ref={containerRef}
         className="overflow-x-auto overflow-y-auto max-h-[78vh] rounded-2xl border border-border bg-card shadow-sm scroll-smooth relative"
@@ -311,28 +301,21 @@ export function AgendamentosColumns({
 
             {/* Linhas da Grade de Papel (30 em 30 min) */}
             {timeSlots.map((slot) => {
-              const isCurrentSlot = isToday && slot.label === currentSlotLabel
-
               return (
                 <div key={slot.label} className="contents relative">
-                  {/* Marcador de Horário na Régua Lateral (COM REF DIRETO PARA SCROLL ACCURATE) */}
+                  {/* Marcador de Horário na Régua Lateral */}
                   <div
                     ref={(el) => {
                       if (el) slotRefs.current.set(slot.label, el)
                       else slotRefs.current.delete(slot.label)
                     }}
                     className={`sticky left-0 z-10 border-r border-border px-3 py-2 text-[11px] font-mono font-bold flex items-center justify-between ${
-                      isCurrentSlot
-                        ? 'bg-red-600 text-white font-black border-b border-red-700 shadow-sm'
-                        : slot.isFullHour
+                      slot.isFullHour
                         ? 'bg-background/95 backdrop-blur-sm border-b border-border text-foreground'
                         : 'bg-background/80 backdrop-blur-sm border-b border-dashed border-border/40 text-muted-foreground/70'
                     }`}
                   >
                     <span>{slot.label}</span>
-                    {isCurrentSlot && (
-                      <span className="h-2 w-2 rounded-full bg-white animate-ping" />
-                    )}
                   </div>
 
                   {/* Células de cada profissional na linha do horário */}
@@ -346,20 +329,11 @@ export function AgendamentosColumns({
                         <div
                           key={`${prof.id}-${slot.label}`}
                           className={`p-1.5 min-h-[75px] border-r transition-all relative ${
-                            isCurrentSlot
-                              ? 'bg-red-500/10 border-b-2 border-red-500/40'
-                              : slot.isFullHour
+                            slot.isFullHour
                               ? 'border-b border-border'
                               : 'border-b border-dashed border-border/40'
                           }`}
                         >
-                          {/* Linha vermelha indicadora de tempo real */}
-                          {isCurrentSlot && (
-                            <div className="absolute top-0 left-0 right-0 z-10 flex items-center">
-                              <div className="h-0.5 w-full bg-red-500" />
-                            </div>
-                          )}
-
                           <Card className={`h-full border-2 rounded-xl transition-all ${theme.cardBg}`}>
                             <CardContent className="p-2.5 space-y-1.5">
                               <div className="flex items-start justify-between gap-1">
@@ -445,21 +419,12 @@ export function AgendamentosColumns({
                         key={`${prof.id}-${slot.label}`}
                         onClick={() => handleCellClick(prof.id, slot)}
                         className={`p-1 min-h-[55px] border-r transition-all group cursor-pointer relative ${
-                          isCurrentSlot
-                            ? 'bg-red-500/10 border-b-2 border-red-500/40'
-                            : slot.isFullHour
+                          slot.isFullHour
                             ? 'border-b border-border bg-background hover:bg-emerald-500/5'
                             : 'border-b border-dashed border-border/40 bg-background/50 hover:bg-emerald-500/5'
                         }`}
                         title={`Clique para agendar às ${slot.label} com ${prof.nome}`}
                       >
-                        {/* Linha vermelha de tempo real */}
-                        {isCurrentSlot && (
-                          <div className="absolute top-0 left-0 right-0 z-10 flex items-center">
-                            <div className="h-0.5 w-full bg-red-500" />
-                          </div>
-                        )}
-
                         <div className="h-full w-full rounded-lg border border-transparent group-hover:border-emerald-500/30 group-hover:bg-emerald-500/5 flex items-center justify-center gap-1 text-[10px] text-muted-foreground/40 group-hover:text-emerald-600 font-bold transition-all">
                           <Plus className="h-3 w-3 opacity-0 group-hover:opacity-100 transition-opacity" />
                           <span className="opacity-0 group-hover:opacity-100 transition-opacity uppercase tracking-wider">
