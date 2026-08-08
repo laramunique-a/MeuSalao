@@ -20,7 +20,7 @@ import {
 } from '@/components/ui/alert-dialog'
 import { MoreVertical, Pencil, Ban, UserCheck, UserX, Plus, Clock } from 'lucide-react'
 import type { Agendamento } from '@/types/models'
-import { isAfter, addMinutes, setHours, setMinutes, isSameDay, format } from 'date-fns'
+import { isAfter, addMinutes, setHours, setMinutes, isSameDay } from 'date-fns'
 import { useState, useMemo, useEffect, useRef } from 'react'
 
 interface AgendamentosColumnsProps {
@@ -341,20 +341,18 @@ export function AgendamentosColumns({
               )
             })}
 
-            {/* Linhas da Grade de Papel (24 Horas + Linhas Específicas) */}
+            {/* Linhas da Grade de Papel (24 Horas + Linhas Específicas Padronizadas) */}
             {timeSlots.map((slot) => {
               return (
                 <div key={slot.label} className="contents relative">
-                  {/* Marcador de Horário na Régua Lateral */}
+                  {/* Marcador de Horário na Régua Lateral (Estilo uniforme padrão para todas as horas) */}
                   <div
                     ref={(el) => {
                       if (el) slotRefs.current.set(slot.label, el)
                       else slotRefs.current.delete(slot.label)
                     }}
                     className={`sticky left-0 z-10 border-r border-border px-3 py-1.5 text-[11px] font-sans font-bold flex items-center justify-between ${
-                      slot.isCustom
-                        ? 'bg-amber-500/10 text-amber-700 dark:text-amber-300 border-b border-dotted border-amber-500/30'
-                        : slot.isFullHour
+                      slot.isFullHour
                         ? 'bg-background/95 backdrop-blur-sm border-b border-border text-foreground'
                         : 'bg-background/80 backdrop-blur-sm border-b border-dashed border-border/40 text-muted-foreground/70'
                     }`}
@@ -371,9 +369,7 @@ export function AgendamentosColumns({
                         <div
                           key={`${prof.id}-${slot.label}`}
                           className={`p-1 min-h-[50px] border-r transition-all bg-background/40 ${
-                            slot.isCustom
-                              ? 'border-b border-dotted border-amber-500/30 bg-amber-500/5'
-                              : slot.isFullHour
+                            slot.isFullHour
                               ? 'border-b border-border'
                               : 'border-b border-dashed border-border/40'
                           }`}
@@ -386,7 +382,6 @@ export function AgendamentosColumns({
                           >
                             {slotAgendamentos.map((agendamento) => {
                               const theme = getStatusTheme(agendamento.status)
-                              const agTimeStr = format(new Date(agendamento.data_hora), 'HH:mm')
 
                               return (
                                 <Card
@@ -395,14 +390,9 @@ export function AgendamentosColumns({
                                 >
                                   <CardContent className="p-1.5 space-y-1">
                                     <div className="flex items-center justify-between gap-1">
-                                      <div className="flex items-center gap-1 flex-wrap min-w-0">
-                                        <span className={theme.badgeBg}>
-                                          {theme.label}
-                                        </span>
-                                        <span className="text-[10px] font-bold opacity-80 font-mono">
-                                          {agTimeStr}
-                                        </span>
-                                      </div>
+                                      <span className={theme.badgeBg}>
+                                        {theme.label}
+                                      </span>
 
                                       {!['concluido', 'cancelado', 'pendente_caixa'].includes(agendamento.status) && (
                                         <DropdownMenu>
@@ -493,9 +483,7 @@ export function AgendamentosColumns({
                         key={`${prof.id}-${slot.label}`}
                         onClick={() => handleCellClick(prof.id, slot)}
                         className={`p-1 min-h-[45px] border-r transition-all group cursor-pointer relative bg-background/30 hover:bg-emerald-500/5 ${
-                          slot.isCustom
-                            ? 'border-b border-dotted border-amber-500/30'
-                            : slot.isFullHour
+                          slot.isFullHour
                             ? 'border-b border-border'
                             : 'border-b border-dashed border-border/40'
                         }`}
