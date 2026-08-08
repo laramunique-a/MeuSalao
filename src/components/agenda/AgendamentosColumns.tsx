@@ -145,14 +145,18 @@ export function AgendamentosColumns({
     return `${hourStr}:${roundedMin}`
   }, [isToday, now])
 
-  // Função para rolar automaticamente para o horário atual
+  // Função robusta para rolar o container exatamente para a célula do horário atual
   const scrollToCurrentTime = (smooth = true) => {
-    if (!currentSlotLabel) return
-    const el = slotRefs.current.get(currentSlotLabel)
-    if (el) {
-      el.scrollIntoView({
+    if (!currentSlotLabel || !containerRef.current) return
+    const targetEl = slotRefs.current.get(currentSlotLabel)
+    if (targetEl) {
+      const container = containerRef.current
+      const targetTop = targetEl.offsetTop
+      const scrollToY = targetTop - container.clientHeight / 2 + targetEl.clientHeight / 2
+
+      container.scrollTo({
+        top: Math.max(0, scrollToY),
         behavior: smooth ? 'smooth' : 'auto',
-        block: 'center',
       })
     }
   }
@@ -162,7 +166,7 @@ export function AgendamentosColumns({
     if (isToday) {
       const timeout = setTimeout(() => {
         scrollToCurrentTime(true)
-      }, 300)
+      }, 150)
       return () => clearTimeout(timeout)
     }
   }, [selectedDate, isToday, currentSlotLabel])
@@ -257,7 +261,7 @@ export function AgendamentosColumns({
 
       <div
         ref={containerRef}
-        className="overflow-x-auto overflow-y-auto max-h-[78vh] rounded-2xl border border-border bg-card shadow-sm scroll-smooth"
+        className="overflow-x-auto overflow-y-auto max-h-[78vh] rounded-2xl border border-border bg-card shadow-sm scroll-smooth relative"
       >
         <div className="inline-block min-w-full align-middle">
           {/* Grade de Agenda de Papel */}
@@ -310,16 +314,13 @@ export function AgendamentosColumns({
               const isCurrentSlot = isToday && slot.label === currentSlotLabel
 
               return (
-                <div
-                  key={slot.label}
-                  ref={(el) => {
-                    if (el) slotRefs.current.set(slot.label, el)
-                    else slotRefs.current.delete(slot.label)
-                  }}
-                  className="contents relative"
-                >
-                  {/* Marcador de Horário na Régua Lateral */}
+                <div key={slot.label} className="contents relative">
+                  {/* Marcador de Horário na Régua Lateral (COM REF DIRETO PARA SCROLL ACCURATE) */}
                   <div
+                    ref={(el) => {
+                      if (el) slotRefs.current.set(slot.label, el)
+                      else slotRefs.current.delete(slot.label)
+                    }}
                     className={`sticky left-0 z-10 border-r border-border px-3 py-2 text-[11px] font-mono font-bold flex items-center justify-between ${
                       isCurrentSlot
                         ? 'bg-red-600 text-white font-black border-b border-red-700 shadow-sm'
