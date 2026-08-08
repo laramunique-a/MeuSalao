@@ -162,11 +162,11 @@ export function AgendamentosColumns({
       scrollToCurrentTime(true)
     }, 150)
 
-    // Intervalo de auto-rolagem contínua em tempo real
+    // Intervalo de auto-rolagem contínua em tempo real a cada 30 segundos
     const timer = setInterval(() => {
       setNow(new Date())
       scrollToCurrentTime(true)
-    }, 10000)
+    }, 30000)
 
     return () => {
       clearTimeout(timeout)
@@ -309,7 +309,7 @@ export function AgendamentosColumns({
                       if (el) slotRefs.current.set(slot.label, el)
                       else slotRefs.current.delete(slot.label)
                     }}
-                    className={`sticky left-0 z-10 border-r border-border px-3 py-2 text-[11px] font-mono font-bold flex items-center justify-between ${
+                    className={`sticky left-0 z-10 border-r border-border px-3 py-2 text-[11px] font-sans font-bold flex items-center justify-between ${
                       slot.isFullHour
                         ? 'bg-background/95 backdrop-blur-sm border-b border-border text-foreground'
                         : 'bg-background/80 backdrop-blur-sm border-b border-dashed border-border/40 text-muted-foreground/70'
@@ -439,11 +439,11 @@ export function AgendamentosColumns({
             })}
 
             {/* Espaçador de rolagem inferior para garantir que os últimos horários do dia (23:00, 23:30) subam para o meio da tela */}
-            <div className="sticky left-0 border-r border-border p-3 bg-muted/20 text-[10px] font-mono text-muted-foreground/60 flex items-center">
+            <div className="sticky left-0 border-r border-border p-3 bg-muted/20 text-[10px] font-sans text-muted-foreground/60 flex items-center">
               ••:••
             </div>
             <div
-              className="border-b border-transparent h-[380px] bg-muted/5 flex items-center justify-center text-[10px] text-muted-foreground/40 font-mono uppercase tracking-widest"
+              className="border-b border-transparent h-[380px] bg-muted/5 flex items-center justify-center text-[10px] text-muted-foreground/40 font-sans uppercase tracking-widest"
               style={{ gridColumn: `span ${profissionais.length}` }}
             >
               — Fim das 24 Horas do Dia —
