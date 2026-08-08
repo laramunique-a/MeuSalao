@@ -18,7 +18,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
-import { MoreVertical, Pencil, Ban, UserCheck, UserX, Plus, Clock } from 'lucide-react'
+import { MoreVertical, Pencil, Ban, UserCheck, UserX, Plus, Clock, Scissors } from 'lucide-react'
 import type { Agendamento } from '@/types/models'
 import { isAfter, addMinutes, setHours, setMinutes, isSameDay } from 'date-fns'
 import { useState, useMemo, useEffect, useRef } from 'react'
@@ -435,15 +435,14 @@ export function AgendamentosColumns({
                                       )}
                                     </div>
 
-                                    <p className="font-black text-xs uppercase tracking-wider truncate">
-                                      {agendamento.cliente?.nome}
-                                    </p>
-
-                                    <div className="flex items-center justify-between text-[9px] opacity-90 font-semibold truncate">
-                                      <span className="truncate">{agendamento.servico?.nome}</span>
-                                      <span className="shrink-0 ml-1">
-                                        R$ {agendamento.valor.toFixed(2).replace('.', ',')}
-                                      </span>
+                                    <div className="space-y-0.5 pt-0.5">
+                                      <p className="font-black text-xs uppercase tracking-wider truncate leading-tight text-foreground">
+                                        {agendamento.cliente?.nome}
+                                      </p>
+                                      <p className="font-bold text-[11px] uppercase tracking-wide truncate leading-tight text-foreground/90 flex items-center gap-1">
+                                        <Scissors className="h-3 w-3 shrink-0 opacity-75" />
+                                        <span className="truncate">{agendamento.servico?.nome}</span>
+                                      </p>
                                     </div>
 
                                     {shouldShowClienteChegouPrompt(agendamento) && (
