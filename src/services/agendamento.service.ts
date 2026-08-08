@@ -190,10 +190,16 @@ export const agendamentoService = {
         continue
       }
 
-      // Caso 2: Vínculo por nome do cliente na descrição da transação
+      // Caso 2: Vínculo de segurança por nome do cliente na descrição (apenas no MESMO dia e não vinculado a outro agendamento)
       const clienteNome = ag.cliente?.nome?.trim().toLowerCase()
       if (clienteNome && clienteNome.length > 2) {
+        const agDateStr = new Date(ag.data_hora).toISOString().split('T')[0]
+
         const transCorrespondente = transList.find((t: any) => {
+          if (t.agendamento_id && t.agendamento_id !== ag.id) return false
+          const tDateStr = t.data_hora ? new Date(t.data_hora).toISOString().split('T')[0] : ''
+          if (tDateStr && tDateStr !== agDateStr) return false
+
           const desc = (t.descricao || '').toLowerCase()
           return desc.includes(clienteNome)
         })
@@ -235,7 +241,7 @@ export const agendamentoService = {
 
     const { data: transacoes } = await supabase
       .from('transacao_caixa')
-      .select('id, agendamento_id, descricao')
+      .select('id, agendamento_id, descricao, data_hora')
       .eq('salao_id', usuario.salao_id)
       .eq('status', 'ativo')
 
@@ -262,9 +268,19 @@ export const agendamentoService = {
     const pendentes = mapped.filter((ag: any) => {
       if (ag.status !== 'pendente_caixa') return false
       if (idsComTransacaoSet.has(ag.id)) return false
+
       const clienteNome = ag.cliente?.nome?.trim().toLowerCase()
       if (clienteNome && clienteNome.length > 2) {
-        const transCorrespondente = transList.find((t: any) => (t.descricao || '').toLowerCase().includes(clienteNome))
+        const agDateStr = new Date(ag.data_hora).toISOString().split('T')[0]
+
+        const transCorrespondente = transList.find((t: any) => {
+          if (t.agendamento_id && t.agendamento_id !== ag.id) return false
+          const tDateStr = t.data_hora ? new Date(t.data_hora).toISOString().split('T')[0] : ''
+          if (tDateStr && tDateStr !== agDateStr) return false
+
+          return (t.descricao || '').toLowerCase().includes(clienteNome)
+        })
+
         if (transCorrespondente) return false
       }
       return true
