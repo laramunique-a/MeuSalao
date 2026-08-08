@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import {
   Dialog,
   DialogContent,
@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
-import { useFecharCaixa } from '@/hooks/useCaixa'
+import { useFecharCaixa, useTransacoesByCaixa } from '@/hooks/useCaixa'
 import { useToast } from '@/hooks/use-toast'
 import { ClipboardCheck, AlertCircle, Calendar } from 'lucide-react'
 import { format, parseISO } from 'date-fns'
@@ -36,21 +36,67 @@ export function FecharCaixaDialog({
 }: FecharCaixaDialogProps) {
   const { toast } = useToast()
   const fecharCaixa = useFecharCaixa()
+  const { data: transacoes } = useTransacoesByCaixa(open ? caixaId : null)
+
+  const todayStr = format(new Date(), 'yyyy-MM-dd')
   const [valorInformado, setValorInformado] = useState('')
   const [observacoes, setObservacoes] = useState('')
+  const [dataFimFechamento, setDataFimFechamento] = useState(todayStr)
   const [confirmarSemBaixa, setConfirmarSemBaixa] = useState(false)
-
-  const valorNum = Number(valorInformado.replace(',', '.'))
-  const diferenca = !isNaN(valorNum) ? valorNum - saldoSistema : 0
-  const hasPendencias = pendencias.length > 0
 
   useEffect(() => {
     if (open) {
       setConfirmarSemBaixa(false)
       setValorInformado('')
       setObservacoes('')
+      setDataFimFechamento(format(new Date(), 'yyyy-MM-dd'))
     }
   }, [open])
+
+  // Recalcular dinamicamente o saldo do período selecionado
+  const { saldoPeriodo, saldoPosterior, totalTransPosterior } = useMemo(() => {
+    if (!transacoes || !dataFimFechamento) {
+      return {
+        saldoPeriodo: saldoSistema,
+        saldoPosterior: 0,
+        totalTransFechamento: transacoes?.length || 0,
+        totalTransPosterior: 0,
+      }
+    }
+
+    const [year, month, day] = dataFimFechamento.split('T')[0].split('-').map(Number)
+    const cutoffDate = new Date(year, month - 1, day, 23, 59, 59, 999)
+
+    let fechamentoSum = 0
+    let posteriorSum = 0
+    let fechamentoCount = 0
+    let posteriorCount = 0
+
+    for (const t of transacoes) {
+      if (t.status !== 'ativo') continue
+      const tDate = new Date(t.data_hora)
+      const val = t.tipo === 'entrada' ? Number(t.valor) : -Number(t.valor)
+
+      if (tDate <= cutoffDate) {
+        fechamentoSum += val
+        fechamentoCount++
+      } else {
+        posteriorSum += val
+        posteriorCount++
+      }
+    }
+
+    return {
+      saldoPeriodo: fechamentoSum,
+      saldoPosterior: posteriorSum,
+      totalTransFechamento: fechamentoCount,
+      totalTransPosterior: posteriorCount,
+    }
+  }, [transacoes, dataFimFechamento, saldoSistema])
+
+  const valorNum = Number(valorInformado.replace(',', '.'))
+  const diferenca = !isNaN(valorNum) ? valorNum - saldoPeriodo : 0
+  const hasPendencias = pendencias.length > 0
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -78,10 +124,13 @@ export function FecharCaixaDialog({
         caixaId,
         valorInformado: valorNum,
         observacoes,
+        dataFimFechamento: dataFimFechamento !== todayStr ? dataFimFechamento : undefined,
       })
       toast({
         title: 'Caixa fechado!',
-        description: 'O caixa foi encerrado com sucesso.',
+        description: dataFimFechamento !== todayStr 
+          ? `O caixa foi encerrado até o dia ${format(parseISO(dataFimFechamento), 'dd/MM/yyyy')}. Um novo caixa foi mantido aberto para as datas posteriores.`
+          : 'O caixa foi encerrado com sucesso.',
       })
       onOpenChange(false)
     } catch (error: any) {
@@ -95,31 +144,61 @@ export function FecharCaixaDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[450px] max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-[480px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider">
             <ClipboardCheck className="h-5 w-5 text-primary" />
             Fechar Caixa
           </DialogTitle>
         </DialogHeader>
+
         {dataAbertura && (
           <div className="flex items-center gap-2 px-1 text-[10px] text-muted-foreground font-medium uppercase tracking-wider">
             <Calendar className="h-3 w-3" />
-            Caixa aberto em: {format(parseISO(dataAbertura), "dd/MM 'às' HH:mm", { locale: ptBR })}
+            Caixa aberto em: {format(parseISO(dataAbertura), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
           </div>
         )}
+
         <form onSubmit={handleSubmit} className="space-y-4 py-4 text-xs">
-          <div className="bg-muted/50 p-4 rounded-lg space-y-2 border">
+          <div className="space-y-2">
+            <Label htmlFor="data_fim_fechamento" className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
+              Fechar Caixa Até Qual Data?
+            </Label>
+            <Input
+              id="data_fim_fechamento"
+              type="date"
+              value={dataFimFechamento}
+              max={todayStr}
+              onChange={(e) => setDataFimFechamento(e.target.value)}
+              className="h-10 rounded-lg border-border text-xs"
+            />
+            <p className="text-[10px] text-muted-foreground">
+              Ao selecionar uma data limite (ex: 05/08), o saldo do sistema é recalculado automaticamente apenas para as movimentações até aquele dia.
+            </p>
+          </div>
+
+          <div className="bg-muted/50 p-4 rounded-lg space-y-2.5 border">
             <div className="flex justify-between text-xs">
-              <span className="text-muted-foreground">Saldo do Sistema:</span>
-              <span className="font-bold text-foreground">R$ {saldoSistema.toFixed(2).replace('.', ',')}</span>
+              <span className="text-muted-foreground">
+                Saldo do Sistema ({dataFimFechamento ? `até ${format(parseISO(dataFimFechamento), 'dd/MM/yyyy')}` : 'Total'}):
+              </span>
+              <span className="font-bold text-foreground">R$ {saldoPeriodo.toFixed(2).replace('.', ',')}</span>
             </div>
             <div className="flex justify-between text-xs">
-              <span className="text-muted-foreground">Diferença:</span>
+              <span className="text-muted-foreground">Diferença do Período:</span>
               <span className={`font-bold ${diferenca === 0 ? 'text-green-600' : 'text-red-600'}`}>
                 R$ {diferenca.toFixed(2).replace('.', ',')}
               </span>
             </div>
+
+            {totalTransPosterior > 0 && (
+              <div className="pt-2 border-t border-border flex justify-between items-center text-[10px] text-muted-foreground">
+                <span className="flex items-center gap-1 font-medium">
+                  Movimentações após {format(parseISO(dataFimFechamento), 'dd/MM')}: ({totalTransPosterior})
+                </span>
+                <span className="font-bold text-primary">R$ {saldoPosterior.toFixed(2).replace('.', ',')} (mantidas em aberto)</span>
+              </div>
+            )}
           </div>
 
           {/* Listagem de pendências do dia, se houver */}

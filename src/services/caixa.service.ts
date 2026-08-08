@@ -332,28 +332,51 @@ export const caixaService = {
   },
 
 
-  async fecharCaixa(caixaId: string, valorInformado: number, observacoes?: string) {
+  async fecharCaixa(
+    caixaId: string,
+    valorInformado: number,
+    observacoes?: string,
+    dataFimFechamento?: string
+  ) {
     const usuario = useAuthStore.getState().usuario
     if (!usuario || !usuario.salao_id) throw new Error('Usuário não autenticado')
 
-    // Calcular saldo do sistema para este caixa
+    // 1. Buscar todas as transações ativas deste caixa
     const { data: transacoes, error: errorTrans } = await (supabase
       .from('transacao_caixa') as any)
-      .select('tipo, valor')
+      .select('id, tipo, valor, data_hora')
       .eq('caixa_id', caixaId)
       .eq('status', 'ativo')
 
     if (errorTrans) throw errorTrans
 
-    const saldoSistema = (transacoes as any[]).reduce((acc, t) => {
+    const transList = (transacoes as any[]) || []
+
+    // 2. Se dataFimFechamento for informada, calcular limite de fechamento
+    let dataFechamentoFinal = new Date().toISOString()
+    let transFechamento = transList
+    let transRemanescentes: any[] = []
+
+    if (dataFimFechamento) {
+      const [year, month, day] = dataFimFechamento.split('T')[0].split('-').map(Number)
+      const cutoffDate = new Date(year, month - 1, day, 23, 59, 59, 999)
+      dataFechamentoFinal = cutoffDate.toISOString()
+
+      transFechamento = transList.filter(t => new Date(t.data_hora) <= cutoffDate)
+      transRemanescentes = transList.filter(t => new Date(t.data_hora) > cutoffDate)
+    }
+
+    // 3. Calcular saldo do sistema para as transações pertencentes ao período fechado
+    const saldoSistema = transFechamento.reduce((acc, t) => {
       return t.tipo === 'entrada' ? acc + Number(t.valor) : acc - Number(t.valor)
     }, 0)
 
+    // 4. Encerrar caixa atual com a data limite e saldo do período
     const { data, error } = await (supabase
       .from('caixa_diario') as any)
       .update({
         usuario_fechamento_id: usuario.id,
-        data_fechamento: new Date().toISOString(),
+        data_fechamento: dataFechamentoFinal,
         valor_fechamento_informado: valorInformado,
         valor_fechamento_sistema: saldoSistema,
         status: 'fechado',
@@ -364,6 +387,36 @@ export const caixaService = {
       .single()
 
     if (error) throw error
+
+    // 5. Se houver movimentações após a data limite, criar novo caixa mantido aberto para as datas posteriores
+    if (transRemanescentes.length > 0 || (dataFimFechamento && new Date(dataFechamentoFinal) < new Date())) {
+      const dataAberturaNovoCaixa = new Date(new Date(dataFechamentoFinal).getTime() + 1000).toISOString()
+
+      const { data: novoCaixa, error: errNovoCaixa } = await (supabase
+        .from('caixa_diario') as any)
+        .insert({
+          salao_id: usuario.salao_id,
+          usuario_abertura_id: usuario.id,
+          data_abertura: dataAberturaNovoCaixa,
+          valor_inicial: 0,
+          status: 'aberto',
+          observacoes: 'Caixa mantido aberto automaticamente após fechamento por data limite.',
+        })
+        .select()
+        .single()
+
+      if (errNovoCaixa) throw errNovoCaixa
+
+      // Transferir transações remanescentes para o novo caixa aberto
+      if (transRemanescentes.length > 0 && novoCaixa) {
+        const remanescentesIds = transRemanescentes.map(t => t.id)
+        await (supabase
+          .from('transacao_caixa') as any)
+          .update({ caixa_id: (novoCaixa as any).id })
+          .in('id', remanescentesIds)
+      }
+    }
+
     return data as unknown as CaixaDiario
   },
 

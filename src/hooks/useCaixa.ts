@@ -123,8 +123,8 @@ export function useAbrirCaixa() {
 export function useFecharCaixa() {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: ({ caixaId, valorInformado, observacoes }: { caixaId: string; valorInformado: number; observacoes?: string }) =>
-      caixaService.fecharCaixa(caixaId, valorInformado, observacoes),
+    mutationFn: ({ caixaId, valorInformado, observacoes, dataFimFechamento }: { caixaId: string; valorInformado: number; observacoes?: string; dataFimFechamento?: string }) =>
+      caixaService.fecharCaixa(caixaId, valorInformado, observacoes, dataFimFechamento),
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['caixa-aberto'] })
       queryClient.invalidateQueries({ queryKey: ['transacoes'] })
