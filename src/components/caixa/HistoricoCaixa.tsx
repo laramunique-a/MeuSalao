@@ -1,6 +1,5 @@
 import { useState } from 'react'
 import { format, startOfMonth, endOfMonth, startOfDay, endOfDay, subMonths, addMonths, differenceInDays, subDays, addDays } from 'date-fns'
-import { ptBR } from 'date-fns/locale'
 import { useCaixasByPeriod, useTransacoesByCaixa, useCaixaSummary } from '@/hooks/useCaixa'
 import { useAuthStore } from '@/store/authStore'
 import { CaixaDiario } from '@/types/models'
@@ -30,6 +29,13 @@ function SessionRow({ caixa }: { caixa: CaixaDiario }) {
       ? Number(caixa.valor_fechamento_informado) - Number(caixa.valor_fechamento_sistema)
       : null
 
+  const dataAberturaStr = format(new Date(caixa.data_abertura), 'dd/MM/yyyy')
+  const dataFechamentoStr = caixa.data_fechamento ? format(new Date(caixa.data_fechamento), 'dd/MM/yyyy') : null
+
+  const dataExibicao = caixa.status === 'fechado' && dataFechamentoStr && dataFechamentoStr !== dataAberturaStr
+    ? `${dataAberturaStr} a ${dataFechamentoStr}`
+    : dataAberturaStr
+
   return (
     <>
       <tr
@@ -39,7 +45,7 @@ function SessionRow({ caixa }: { caixa: CaixaDiario }) {
         <td className="px-4 py-3 whitespace-nowrap text-xs font-medium text-muted-foreground">
           <div className="flex items-center gap-1.5">
             {expanded ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronRight className="h-3.5 w-3.5" />}
-            {format(new Date(caixa.data_abertura), "dd/MM/yyyy", { locale: ptBR })}
+            {dataExibicao}
             <span className="text-[10px] text-muted-foreground ml-1" title={caixa.id}>
               #{caixa.id.slice(0, 6).toUpperCase()}
             </span>
