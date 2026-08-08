@@ -157,39 +157,7 @@ export const agendamentoService = {
       .map((t: any) => t.agendamento_id)
       .filter(Boolean)
 
-    // 2. Auto-recuperação: Se existirem agendamentos com transações estornadas/canceladas, restaurar para 'pendente_caixa' e limpar lançamentos remanescentes
-    try {
-      const { data: transEstornadas } = await supabase
-        .from('transacao_caixa')
-        .select('agendamento_id')
-        .eq('salao_id', usuario.salao_id)
-        .not('agendamento_id', 'is', null)
-        .in('status', ['estornado', 'cancelado'])
-
-      const agIdsEstornados = (transEstornadas || [])
-        .map((t: any) => t.agendamento_id)
-        .filter(Boolean)
-
-      if (agIdsEstornados.length > 0) {
-        // Voltar o status dos agendamentos afetados para 'pendente_caixa'
-        await (supabase.from('agendamento') as any)
-          .update({ status: 'pendente_caixa' })
-          .eq('salao_id', usuario.salao_id)
-          .in('id', agIdsEstornados)
-          .neq('status', 'pendente_caixa')
-
-        // Marcar como estornado qualquer transação ativa remanescente do mesmo agendamento
-        await (supabase.from('transacao_caixa') as any)
-          .update({ status: 'estornado' })
-          .eq('salao_id', usuario.salao_id)
-          .in('agendamento_id', agIdsEstornados)
-          .eq('status', 'ativo')
-      }
-    } catch (err) {
-      console.error('Erro na auto-recuperação de agendamentos estornados:', err)
-    }
-
-    // 3. Buscar agendamentos em_atendimento, pendente_caixa ou concluido sem transação ativa
+    // 2. Buscar agendamentos em_atendimento, pendente_caixa ou concluido sem transação ativa
     let query = supabase
       .from('agendamento')
       .select(AGENDAMENTO_SELECT)
