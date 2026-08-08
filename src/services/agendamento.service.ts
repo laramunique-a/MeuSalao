@@ -157,12 +157,25 @@ export const agendamentoService = {
       .map((t: any) => t.agendamento_id)
       .filter(Boolean)
 
-    // 2. Buscar agendamentos em_atendimento, pendente_caixa ou concluido sem transação ativa
+    // Sincronização: Se o agendamento possui transação ativa, garantir que seu status esteja como 'concluido'
+    if (idsComTransacaoAtiva.length > 0) {
+      try {
+        await (supabase.from('agendamento') as any)
+          .update({ status: 'concluido' })
+          .eq('salao_id', usuario.salao_id)
+          .in('id', idsComTransacaoAtiva)
+          .neq('status', 'concluido')
+      } catch (errSync) {
+        console.error('Erro ao sincronizar status concluido de agendamentos baixados:', errSync)
+      }
+    }
+
+    // 2. Buscar agendamentos verdadeiramente pendentes (em_atendimento ou pendente_caixa) sem transação ativa
     let query = supabase
       .from('agendamento')
       .select(AGENDAMENTO_SELECT)
       .eq('salao_id', usuario.salao_id)
-      .in('status', ['em_atendimento', 'pendente_caixa', 'concluido'])
+      .in('status', ['em_atendimento', 'pendente_caixa'])
       .gte('data_hora', startDate)
       .lte('data_hora', endDate)
 
@@ -196,12 +209,12 @@ export const agendamentoService = {
       .map((t: any) => t.agendamento_id)
       .filter(Boolean)
 
-    // Buscar se existe algum agendamento em_atendimento ou concluido sem transação ativa
+    // Buscar se existe algum agendamento verdadeiramente pendente
     let query = supabase
       .from('agendamento')
       .select('id', { count: 'exact', head: true })
       .eq('salao_id', usuario.salao_id)
-      .in('status', ['em_atendimento', 'pendente_caixa', 'concluido'])
+      .in('status', ['em_atendimento', 'pendente_caixa'])
 
     if (profissionalId) {
       query = query.eq('profissional_id', profissionalId)
