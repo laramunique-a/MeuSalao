@@ -108,12 +108,11 @@ export function AgendamentosColumns({
 
   const isToday = isSameDay(selectedDate, now)
 
-  // Gerar slots de 30 em 30 minutos das 8h às 20h (estilo agenda de papel)
+  // Gerar slots de 30 em 30 minutos cobrindo as 24 horas completas do dia (00:00 às 23:30)
   const timeSlots = useMemo<TimeSlot[]>(() => {
     const slots: TimeSlot[] = []
-    for (let hour = 8; hour <= 20; hour++) {
+    for (let hour = 0; hour < 24; hour++) {
       for (let minute = 0; minute < 60; minute += 30) {
-        if (hour === 20 && minute > 0) break
         const hourStr = hour.toString().padStart(2, '0')
         const minuteStr = minute.toString().padStart(2, '0')
         slots.push({
@@ -300,7 +299,7 @@ export function AgendamentosColumns({
               )
             })}
 
-            {/* Linhas da Grade de Papel (30 em 30 min) */}
+            {/* Linhas da Grade de Papel (24 Horas: 00:00 às 23:30) */}
             {timeSlots.map((slot) => {
               return (
                 <div key={slot.label} className="contents relative">
@@ -439,14 +438,16 @@ export function AgendamentosColumns({
               )
             })}
 
-            {/* Espaçador de rolagem inferior para garantir que os horários do final do dia subam para a parte superior/meio da tela */}
+            {/* Espaçador de rolagem inferior para garantir que os últimos horários do dia (23:00, 23:30) subam para o meio da tela */}
             <div className="sticky left-0 border-r border-border p-3 bg-muted/20 text-[10px] font-mono text-muted-foreground/60 flex items-center">
               ••:••
             </div>
             <div
-              className="border-b border-transparent h-[380px] bg-muted/5"
+              className="border-b border-transparent h-[380px] bg-muted/5 flex items-center justify-center text-[10px] text-muted-foreground/40 font-mono uppercase tracking-widest"
               style={{ gridColumn: `span ${profissionais.length}` }}
-            />
+            >
+              — Fim das 24 Horas do Dia —
+            </div>
           </div>
         </div>
       </div>
