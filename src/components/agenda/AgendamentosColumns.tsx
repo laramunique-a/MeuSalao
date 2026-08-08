@@ -8,19 +8,9 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog'
-import { MoreVertical, Pencil, Ban, UserCheck, UserX, Plus, Clock, Sparkles, Check } from 'lucide-react'
+import { MoreVertical, Pencil, Ban, UserCheck, Plus, Clock, Sparkles, Check } from 'lucide-react'
 import type { Agendamento } from '@/types/models'
-import { isAfter, addMinutes, setHours, setMinutes, isSameDay } from 'date-fns'
+import { setHours, setMinutes, isSameDay } from 'date-fns'
 import { useState, useMemo, useEffect, useRef } from 'react'
 
 interface AgendamentosColumnsProps {
@@ -97,9 +87,6 @@ export function AgendamentosColumns({
   onChangeStatus,
   onSlotClick,
 }: AgendamentosColumnsProps) {
-  const [showClienteChegouDialog, setShowClienteChegouDialog] = useState(false)
-  const [selectedAgendamento, setSelectedAgendamento] = useState<Agendamento | null>(null)
-
   // Estado para armazenar o horário atual do sistema
   const [now, setNow] = useState(new Date())
 
@@ -247,34 +234,6 @@ export function AgendamentosColumns({
     })
   }
 
-  function shouldShowClienteChegouPrompt(agendamento: Agendamento): boolean {
-    const agendamentoHora = new Date(agendamento.data_hora)
-    const toleranciaMinutos = 15
-    const agendamentoComTolerancia = addMinutes(agendamentoHora, -toleranciaMinutos)
-
-    return (
-      ['agendado', 'em_atraso'].includes(agendamento.status) &&
-      isAfter(now, agendamentoComTolerancia)
-    )
-  }
-
-  function handleClienteChegou(agendamento: Agendamento) {
-    setSelectedAgendamento(agendamento)
-    setShowClienteChegouDialog(true)
-  }
-
-  function handleClienteChegouSim() {
-    if (selectedAgendamento) {
-      onChangeStatus(selectedAgendamento, 'em_atendimento')
-    }
-    setShowClienteChegouDialog(false)
-    setSelectedAgendamento(null)
-  }
-
-  function handleClienteChegouNao(agendamento: Agendamento) {
-    onChangeStatus(agendamento, 'em_atraso')
-  }
-
   function handleCellClick(profissionalId: string, slot: TimeSlot) {
     if (!onSlotClick) return
     const slotDate = setMinutes(setHours(new Date(selectedDate), slot.hour), slot.minute)
@@ -412,10 +371,10 @@ export function AgendamentosColumns({
                                                 Editar Detalhes
                                               </DropdownMenuItem>
                                             )}
-                                            {agendamento.status !== 'em_atendimento' && (
-                                              <DropdownMenuItem onClick={() => handleClienteChegou(agendamento)} className="py-2 text-xs font-semibold uppercase tracking-wider">
+                                            {['agendado', 'em_atraso'].includes(agendamento.status) && (
+                                              <DropdownMenuItem onClick={() => onChangeStatus(agendamento, 'em_atendimento')} className="py-2 text-xs font-semibold uppercase tracking-wider text-blue-600 font-bold">
                                                 <UserCheck className="h-3.5 w-3.5 mr-2" />
-                                                Cliente chegou?
+                                                Iniciar Atendimento
                                               </DropdownMenuItem>
                                             )}
                                             {agendamento.status === 'em_atendimento' && (
@@ -447,29 +406,6 @@ export function AgendamentosColumns({
                                         <span className="truncate">{agendamento.servico?.nome}</span>
                                       </p>
                                     </div>
-
-                                    {shouldShowClienteChegouPrompt(agendamento) && (
-                                      <div className="pt-1.5 border-t border-black/10 dark:border-white/10 mt-1 flex gap-1.5">
-                                        <Button
-                                          size="sm"
-                                          variant="outline"
-                                          onClick={() => handleClienteChegou(agendamento)}
-                                          className="h-6 text-[10px] font-bold gap-1 flex-1 bg-muted/60 hover:bg-emerald-500/10 border-border/60 text-emerald-700 dark:text-emerald-300"
-                                        >
-                                          <UserCheck className="h-3 w-3 text-emerald-600" />
-                                          Chegou
-                                        </Button>
-                                        <Button
-                                          size="sm"
-                                          variant="outline"
-                                          onClick={() => handleClienteChegouNao(agendamento)}
-                                          className="h-6 text-[10px] font-bold gap-1 flex-1 bg-muted/60 hover:bg-rose-500/10 border-border/60 text-rose-700 dark:text-rose-300"
-                                        >
-                                          <UserX className="h-3 w-3 text-rose-600" />
-                                          Atrasou
-                                        </Button>
-                                      </div>
-                                    )}
                                   </CardContent>
                                 </Card>
                               )
@@ -513,25 +449,6 @@ export function AgendamentosColumns({
           </div>
         </div>
       </div>
-
-      {/* Modal de confirmação se o cliente chegou */}
-      <AlertDialog open={showClienteChegouDialog} onOpenChange={setShowClienteChegouDialog}>
-        <AlertDialogContent className="rounded-xl border-border bg-background">
-          <AlertDialogHeader>
-            <AlertDialogTitle className="text-sm font-bold uppercase tracking-wider">Confirmar chegada do cliente</AlertDialogTitle>
-            <AlertDialogDescription className="text-xs text-muted-foreground">
-              Deseja confirmar que o cliente{' '}
-              <strong className="text-foreground">{selectedAgendamento?.cliente?.nome}</strong> chegou para o atendimento?
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel className="text-xs uppercase">Cancelar</AlertDialogCancel>
-            <AlertDialogAction onClick={handleClienteChegouSim} className="text-xs uppercase bg-primary text-primary-foreground">
-              Sim, cliente chegou
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </div>
   )
 }
