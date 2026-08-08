@@ -146,32 +146,17 @@ export const agendamentoService = {
     const usuario = useAuthStore.getState().usuario
     if (!usuario || !usuario.salao_id) throw new Error('Usuário não autenticado')
 
-    // 1. Buscar IDs de agendamentos que já têm transação ATIVA vinculada neste salão
+    // 1. Buscar transações ATIVAS deste salão
     const { data: transacoes } = await supabase
       .from('transacao_caixa')
-      .select('agendamento_id')
+      .select('id, agendamento_id, descricao')
       .eq('salao_id', usuario.salao_id)
-      .not('agendamento_id', 'is', null)
       .eq('status', 'ativo')
 
-    const idsComTransacaoAtiva = (transacoes || [])
-      .map((t: any) => t.agendamento_id)
-      .filter(Boolean)
-
-    const idsComTransacaoSet = new Set(idsComTransacaoAtiva)
-
-    // Sincronização: Se o agendamento possui transação ativa, garantir que seu status esteja como 'concluido'
-    if (idsComTransacaoAtiva.length > 0) {
-      try {
-        await (supabase.from('agendamento') as any)
-          .update({ status: 'concluido' })
-          .eq('salao_id', usuario.salao_id)
-          .in('id', idsComTransacaoAtiva)
-          .neq('status', 'concluido')
-      } catch (errSync) {
-        console.error('Erro ao sincronizar status concluido de agendamentos baixados:', errSync)
-      }
-    }
+    const transList = transacoes || []
+    const idsComTransacaoSet = new Set(
+      transList.map((t: any) => t.agendamento_id).filter(Boolean)
+    )
 
     // 2. Buscar agendamentos em_atendimento ou pendente_caixa do salão
     let query = supabase
@@ -192,28 +177,73 @@ export const agendamentoService = {
     if (error) throw error
 
     const mapped = (data || []).map(mapAgendamentoRealTimeStatus) as unknown as Agendamento[]
-    return mapped.filter((ag: any) => ag.status === 'pendente_caixa' && !idsComTransacaoSet.has(ag.id))
+
+    const agendamentosSemBaixa: Agendamento[] = []
+    const agendamentosParaConcluir: string[] = []
+
+    for (const ag of mapped) {
+      if (ag.status !== 'pendente_caixa') continue
+
+      // Caso 1: Vínculo direto por agendamento_id
+      if (idsComTransacaoSet.has(ag.id)) {
+        agendamentosParaConcluir.push(ag.id)
+        continue
+      }
+
+      // Caso 2: Vínculo por nome do cliente na descrição da transação
+      const clienteNome = ag.cliente?.nome?.trim().toLowerCase()
+      if (clienteNome && clienteNome.length > 2) {
+        const transCorrespondente = transList.find((t: any) => {
+          const desc = (t.descricao || '').toLowerCase()
+          return desc.includes(clienteNome)
+        })
+
+        if (transCorrespondente) {
+          agendamentosParaConcluir.push(ag.id)
+          // Vincular transação ao agendamento se estiver nulo
+          if (!transCorrespondente.agendamento_id) {
+            ;(supabase.from('transacao_caixa') as any)
+              .update({ agendamento_id: ag.id })
+              .eq('id', transCorrespondente.id)
+              .then(() => {})
+          }
+          continue
+        }
+      }
+
+      agendamentosSemBaixa.push(ag)
+    }
+
+    // Sincronização em lote: Marcar como 'concluido' no banco os agendamentos que já possuem movimentação ativa
+    if (agendamentosParaConcluir.length > 0) {
+      try {
+        await (supabase.from('agendamento') as any)
+          .update({ status: 'concluido' })
+          .eq('salao_id', usuario.salao_id)
+          .in('id', agendamentosParaConcluir)
+      } catch (errSync) {
+        console.error('Erro ao sincronizar status concluido de agendamentos baixados:', errSync)
+      }
+    }
+
+    return agendamentosSemBaixa
   },
 
   async hasAnyPendencia(profissionalId?: string): Promise<boolean> {
     const usuario = useAuthStore.getState().usuario
     if (!usuario || !usuario.salao_id) throw new Error('Usuário não autenticado')
 
-    // Buscar IDs de agendamentos que já têm transação ATIVA vinculada neste salão
     const { data: transacoes } = await supabase
       .from('transacao_caixa')
-      .select('agendamento_id')
+      .select('id, agendamento_id, descricao')
       .eq('salao_id', usuario.salao_id)
-      .not('agendamento_id', 'is', null)
       .eq('status', 'ativo')
 
-    const idsComTransacaoAtiva = (transacoes || [])
-      .map((t: any) => t.agendamento_id)
-      .filter(Boolean)
+    const transList = transacoes || []
+    const idsComTransacaoSet = new Set(
+      transList.map((t: any) => t.agendamento_id).filter(Boolean)
+    )
 
-    const idsComTransacaoSet = new Set(idsComTransacaoAtiva)
-
-    // Buscar agendamentos em_atendimento ou pendente_caixa do salão
     let query = supabase
       .from('agendamento')
       .select(AGENDAMENTO_SELECT)
@@ -228,7 +258,18 @@ export const agendamentoService = {
     if (error) throw error
 
     const mapped = (data || []).map(mapAgendamentoRealTimeStatus) as unknown as Agendamento[]
-    const pendentes = mapped.filter((ag: any) => ag.status === 'pendente_caixa' && !idsComTransacaoSet.has(ag.id))
+    
+    const pendentes = mapped.filter((ag: any) => {
+      if (ag.status !== 'pendente_caixa') return false
+      if (idsComTransacaoSet.has(ag.id)) return false
+      const clienteNome = ag.cliente?.nome?.trim().toLowerCase()
+      if (clienteNome && clienteNome.length > 2) {
+        const transCorrespondente = transList.find((t: any) => (t.descricao || '').toLowerCase().includes(clienteNome))
+        if (transCorrespondente) return false
+      }
+      return true
+    })
+
     return pendentes.length > 0
   },
 
