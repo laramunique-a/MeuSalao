@@ -137,14 +137,15 @@ export function AgendamentosColumns({
     return `${hourStr}:${roundedMin}`
   }, [isToday, now])
 
-  // Função para rolar automaticamente para o horário atual
+  // Função para rolar automaticamente posicionando o horário no terço superior (meio da tela)
   const scrollToCurrentTime = (smooth = true) => {
     if (!currentSlotLabel || !containerRef.current) return
     const targetEl = slotRefs.current.get(currentSlotLabel)
     if (targetEl) {
       const container = containerRef.current
       const targetTop = targetEl.offsetTop
-      const scrollToY = targetTop - container.clientHeight / 2 + targetEl.clientHeight / 2
+      // Posiciona a célula do horário atual ~120px do topo do container (terço superior/meio da tela)
+      const scrollToY = targetTop - 120
 
       container.scrollTo({
         top: Math.max(0, scrollToY),
@@ -437,6 +438,15 @@ export function AgendamentosColumns({
                 </div>
               )
             })}
+
+            {/* Espaçador de rolagem inferior para garantir que os horários do final do dia subam para a parte superior/meio da tela */}
+            <div className="sticky left-0 border-r border-border p-3 bg-muted/20 text-[10px] font-mono text-muted-foreground/60 flex items-center">
+              ••:••
+            </div>
+            <div
+              className="border-b border-transparent h-[380px] bg-muted/5"
+              style={{ gridColumn: `span ${profissionais.length}` }}
+            />
           </div>
         </div>
       </div>
