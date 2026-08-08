@@ -20,7 +20,7 @@ import {
 } from '@/components/ui/alert-dialog'
 import { MoreVertical, Pencil, Ban, UserCheck, UserX, Plus, Clock } from 'lucide-react'
 import type { Agendamento } from '@/types/models'
-import { isAfter, addMinutes, setHours, setMinutes, isSameDay } from 'date-fns'
+import { isAfter, addMinutes, setHours, setMinutes, isSameDay, format } from 'date-fns'
 import { useState, useMemo, useEffect, useRef } from 'react'
 
 interface AgendamentosColumnsProps {
@@ -153,7 +153,7 @@ export function AgendamentosColumns({
     }
   }
 
-  // Auto-scroll inicial e contínuo a cada 10 segundos
+  // Auto-scroll inicial e contínuo a cada 30 segundos
   useEffect(() => {
     if (!isToday) return
 
@@ -191,18 +191,23 @@ export function AgendamentosColumns({
     return grouped
   }, [agendamentos, profissionais])
 
-  function getAgendamentoInSlot(profissionalId: string, slot: TimeSlot): Agendamento | null {
+  // Buscar TODOS os agendamentos pertencentes ao slot de 30 minutos (suporta minutos quebrados ex: 20:15 e múltiplos agendamentos no mesmo horário)
+  function getAgendamentosInSlot(profissionalId: string, slot: TimeSlot): Agendamento[] {
     const agendamentosList = agendamentosPorProfissional.get(profissionalId) || []
 
-    return (
-      agendamentosList.find((ag) => {
-        const agDate = new Date(ag.data_hora)
-        const agHour = agDate.getHours()
-        const agMinute = agDate.getMinutes()
+    return agendamentosList.filter((ag) => {
+      const agDate = new Date(ag.data_hora)
+      const agHour = agDate.getHours()
+      const agMinute = agDate.getMinutes()
 
-        return agHour === slot.hour && Math.abs(agMinute - slot.minute) < 15
-      }) || null
-    )
+      if (agHour !== slot.hour) return false
+
+      if (slot.minute === 0) {
+        return agMinute >= 0 && agMinute < 30
+      } else {
+        return agMinute >= 30 && agMinute < 60
+      }
+    })
   }
 
   function shouldShowClienteChegouPrompt(agendamento: Agendamento): boolean {
@@ -320,95 +325,105 @@ export function AgendamentosColumns({
 
                   {/* Células de cada profissional na linha do horário */}
                   {profissionais.map((prof) => {
-                    const agendamento = getAgendamentoInSlot(prof.id, slot)
+                    const slotAgendamentos = getAgendamentosInSlot(prof.id, slot)
 
-                    if (agendamento) {
-                      const theme = getStatusTheme(agendamento.status)
-
+                    if (slotAgendamentos.length > 0) {
                       return (
                         <div
                           key={`${prof.id}-${slot.label}`}
-                          className={`p-1.5 min-h-[75px] border-r transition-all relative ${
+                          className={`p-1.5 min-h-[75px] border-r transition-all space-y-1.5 ${
                             slot.isFullHour
                               ? 'border-b border-border'
                               : 'border-b border-dashed border-border/40'
                           }`}
                         >
-                          <Card className={`h-full border-2 rounded-xl transition-all ${theme.cardBg}`}>
-                            <CardContent className="p-2.5 space-y-1.5">
-                              <div className="flex items-start justify-between gap-1">
-                                <div className="flex-1 min-w-0">
-                                  <span className={theme.badgeBg}>
-                                    {theme.label}
-                                  </span>
-                                  <p className="font-black text-xs uppercase tracking-wider truncate mt-1.5">
-                                    {agendamento.cliente?.nome}
-                                  </p>
-                                  <p className="text-[10px] font-medium opacity-80 truncate">
-                                    {agendamento.servico?.nome}
-                                  </p>
-                                </div>
+                          {slotAgendamentos.map((agendamento) => {
+                            const theme = getStatusTheme(agendamento.status)
+                            const agTimeStr = format(new Date(agendamento.data_hora), 'HH:mm')
 
-                                {!['concluido', 'cancelado', 'pendente_caixa'].includes(agendamento.status) && (
-                                  <DropdownMenu>
-                                    <DropdownMenuTrigger asChild>
-                                      <Button variant="ghost" size="sm" className="h-6 w-6 p-0 hover:bg-black/10 dark:hover:bg-white/10 rounded-lg">
-                                        <MoreVertical className="h-3.5 w-3.5" />
+                            return (
+                              <Card key={agendamento.id} className={`border-2 rounded-xl transition-all ${theme.cardBg}`}>
+                                <CardContent className="p-2.5 space-y-1.5">
+                                  <div className="flex items-start justify-between gap-1">
+                                    <div className="flex-1 min-w-0">
+                                      <div className="flex items-center gap-1.5 flex-wrap">
+                                        <span className={theme.badgeBg}>
+                                          {theme.label}
+                                        </span>
+                                        <span className="text-[10px] font-bold opacity-75 font-mono">
+                                          {agTimeStr}
+                                        </span>
+                                      </div>
+                                      <p className="font-black text-xs uppercase tracking-wider truncate mt-1.5">
+                                        {agendamento.cliente?.nome}
+                                      </p>
+                                      <p className="text-[10px] font-medium opacity-80 truncate">
+                                        {agendamento.servico?.nome}
+                                      </p>
+                                    </div>
+
+                                    {!['concluido', 'cancelado', 'pendente_caixa'].includes(agendamento.status) && (
+                                      <DropdownMenu>
+                                        <DropdownMenuTrigger asChild>
+                                          <Button variant="ghost" size="sm" className="h-6 w-6 p-0 hover:bg-black/10 dark:hover:bg-white/10 rounded-lg">
+                                            <MoreVertical className="h-3.5 w-3.5" />
+                                          </Button>
+                                        </DropdownMenuTrigger>
+                                        <DropdownMenuContent align="end" className="text-xs">
+                                          <DropdownMenuLabel>Ações</DropdownMenuLabel>
+                                          <DropdownMenuSeparator />
+                                          {agendamento.status !== 'em_atendimento' && (
+                                            <DropdownMenuItem onClick={() => onEdit(agendamento)}>
+                                              <Pencil className="h-3.5 w-3.5 mr-2" />
+                                              Editar
+                                            </DropdownMenuItem>
+                                          )}
+                                          {agendamento.status === 'em_atraso' && (
+                                            <DropdownMenuItem onClick={() => handleClienteChegou(agendamento)} className="text-amber-600">
+                                              <UserCheck className="h-3.5 w-3.5 mr-2" />
+                                              Cliente chegou?
+                                            </DropdownMenuItem>
+                                          )}
+                                          <DropdownMenuItem onClick={() => onCancel(agendamento)} className="text-red-600">
+                                            <Ban className="h-3.5 w-3.5 mr-2" />
+                                            Cancelar
+                                          </DropdownMenuItem>
+                                        </DropdownMenuContent>
+                                      </DropdownMenu>
+                                    )}
+                                  </div>
+
+                                  <div className="flex items-center justify-between text-[10px] opacity-90 pt-1 font-bold">
+                                    <span>R$ {agendamento.valor.toFixed(2).replace('.', ',')}</span>
+                                    <span>{agendamento.servico?.duracao_minutos || 60} min</span>
+                                  </div>
+
+                                  {shouldShowClienteChegouPrompt(agendamento) && (
+                                    <div className="pt-1.5 border-t border-black/10 dark:border-white/10 mt-1 flex gap-1">
+                                      <Button
+                                        size="sm"
+                                        variant="outline"
+                                        onClick={() => handleClienteChegou(agendamento)}
+                                        className="h-6 text-[10px] font-bold gap-1 flex-1 bg-white/80 dark:bg-black/40"
+                                      >
+                                        <UserCheck className="h-3 w-3 text-emerald-600" />
+                                        Chegou
                                       </Button>
-                                    </DropdownMenuTrigger>
-                                    <DropdownMenuContent align="end" className="text-xs">
-                                      <DropdownMenuLabel>Ações</DropdownMenuLabel>
-                                      <DropdownMenuSeparator />
-                                      {agendamento.status !== 'em_atendimento' && (
-                                        <DropdownMenuItem onClick={() => onEdit(agendamento)}>
-                                          <Pencil className="h-3.5 w-3.5 mr-2" />
-                                          Editar
-                                        </DropdownMenuItem>
-                                      )}
-                                      {agendamento.status === 'em_atraso' && (
-                                        <DropdownMenuItem onClick={() => handleClienteChegou(agendamento)} className="text-amber-600">
-                                          <UserCheck className="h-3.5 w-3.5 mr-2" />
-                                          Cliente chegou?
-                                        </DropdownMenuItem>
-                                      )}
-                                      <DropdownMenuItem onClick={() => onCancel(agendamento)} className="text-red-600">
-                                        <Ban className="h-3.5 w-3.5 mr-2" />
-                                        Cancelar
-                                      </DropdownMenuItem>
-                                    </DropdownMenuContent>
-                                  </DropdownMenu>
-                                )}
-                              </div>
-
-                              <div className="flex items-center justify-between text-[10px] opacity-90 pt-1 font-bold">
-                                <span>R$ {agendamento.valor.toFixed(2).replace('.', ',')}</span>
-                                <span>{agendamento.servico?.duracao_minutos || 60} min</span>
-                              </div>
-
-                              {shouldShowClienteChegouPrompt(agendamento) && (
-                                <div className="pt-1.5 border-t border-black/10 dark:border-white/10 mt-1 flex gap-1">
-                                  <Button
-                                    size="sm"
-                                    variant="outline"
-                                    onClick={() => handleClienteChegou(agendamento)}
-                                    className="h-6 text-[10px] font-bold gap-1 flex-1 bg-white/80 dark:bg-black/40"
-                                  >
-                                    <UserCheck className="h-3 w-3 text-emerald-600" />
-                                    Chegou
-                                  </Button>
-                                  <Button
-                                    size="sm"
-                                    variant="outline"
-                                    onClick={() => handleClienteChegouNao(agendamento)}
-                                    className="h-6 text-[10px] font-bold gap-1 flex-1 text-red-600 bg-white/80 dark:bg-black/40"
-                                  >
-                                    <UserX className="h-3 w-3" />
-                                    Atrasou
-                                  </Button>
-                                </div>
-                              )}
-                            </CardContent>
-                          </Card>
+                                      <Button
+                                        size="sm"
+                                        variant="outline"
+                                        onClick={() => handleClienteChegouNao(agendamento)}
+                                        className="h-6 text-[10px] font-bold gap-1 flex-1 text-red-600 bg-white/80 dark:bg-black/40"
+                                      >
+                                        <UserX className="h-3 w-3" />
+                                        Atrasou
+                                      </Button>
+                                    </div>
+                                  )}
+                                </CardContent>
+                              </Card>
+                            )
+                          })}
                         </div>
                       )
                     }
