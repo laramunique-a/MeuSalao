@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { Plus, Filter, List, CalendarRange, Ban } from 'lucide-react'
+import { Plus, Filter, List, CalendarRange, Ban, Users } from 'lucide-react'
 import { AgendaButton, AgendaFilterButton } from '@/components/agenda/AgendaComponents'
 import { Badge } from '@/components/ui/badge'
 import { DateNavigator } from '@/components/ui/date-navigator'
@@ -41,6 +41,7 @@ import { BloqueioFormDialog } from '@/components/agenda/BloqueioFormDialog'
 import { ConfirmacaoAcaoDialog } from '@/components/auth/ConfirmacaoAcaoDialog'
 import { AgendamentosList } from '@/components/agenda/AgendamentosList'
 import { AgendamentosWeek } from '@/components/agenda/AgendamentosWeek'
+import { AgendamentosColumns } from '@/components/agenda/AgendamentosColumns'
 import type { Agendamento } from '@/types/models'
 import { useToast } from '@/hooks/use-toast'
 import { format, startOfDay, endOfDay, addDays, subDays, startOfWeek, endOfWeek } from 'date-fns'
@@ -55,6 +56,9 @@ export default function Agenda() {
   const [selectedDate, setSelectedDate] = useState(new Date())
   const [isFormOpen, setIsFormOpen] = useState(false)
   const [selectedAgendamento, setSelectedAgendamento] = useState<Agendamento | null>(null)
+  const [slotDate, setSlotDate] = useState<Date | null>(null)
+  const [slotProfissionalId, setSlotProfissionalId] = useState<string | undefined>(undefined)
+
   const [isBloqueioFormOpen, setIsBloqueioFormOpen] = useState(false)
   const [isConfirmDialogOpen, setIsConfirmDialogOpen] = useState(false)
   const [blockToDelete, setBlockToDelete] = useState<string | null>(null)
@@ -66,12 +70,11 @@ export default function Agenda() {
   const [filterStatus, setFilterStatus] = useState<string[]>(
     Object.values(STATUS_AGENDAMENTO).filter(s => s !== STATUS_AGENDAMENTO.CANCELADO)
   )
-  const [viewMode, setViewMode] = useState<'list' | 'week'>('list')
+  const [viewMode, setViewMode] = useState<'columns' | 'week' | 'list'>('columns')
 
   const viewStartDate = viewMode === 'week' ? startOfWeek(selectedDate, { locale: ptBR }) : startOfDay(selectedDate)
   const viewEndDate = viewMode === 'week' ? endOfWeek(selectedDate, { locale: ptBR }) : endOfDay(selectedDate)
 
-  // Usar toISOString() para incluir o offset UTC corretamente (ex: UTC-3 → horários até 02:00 UTC do dia seguinte)
   const startDate = viewStartDate.toISOString()
   const endDate = viewEndDate.toISOString()
 
@@ -85,7 +88,6 @@ export default function Agenda() {
     const block = bloqueios.find(b => b.id === id)
     if (!block) return
 
-    // Authorization check
     if (!isAdmin && block.profissional_id !== usuario?.id) {
       toast({
         title: 'Acesso negado',
@@ -117,14 +119,12 @@ export default function Agenda() {
         description: 'E-mail ou senha incorretos. Tente novamente.',
         variant: 'destructive',
       })
-      throw error // Let the dialog handle loading state
+      throw error
     }
   }
 
-  // Refs para evitar chamadas duplicadas de auto-update
   const statusUpdateInProgress = useRef<Set<string>>(new Set())
 
-  // Auto-atualizar status do agendamento conforme o tempo passa
   useEffect(() => {
     const updateStatuses = async () => {
       const now = new Date()
@@ -137,12 +137,9 @@ export default function Agenda() {
         const duracao = ag.servico?.duracao_minutos || 60
         const dataFim = new Date(dataInicio.getTime() + duracao * 60000)
 
-        // 1. Agendado -> Em Atendimento (quando chega o horário)
         if (ag.status === 'agendado' && dataInicio <= now) {
           toUpdate.push({ id: ag.id, status: 'em_atendimento' })
-        }
-        // 2. Em Atendimento -> Pendente Caixa (quando termina a duração)
-        else if (ag.status === 'em_atendimento' && dataFim <= now) {
+        } else if (ag.status === 'em_atendimento' && dataFim <= now) {
           toUpdate.push({ id: ag.id, status: 'pendente_caixa' })
         }
       })
@@ -165,7 +162,7 @@ export default function Agenda() {
 
     const timer = setInterval(() => {
       if (agendamentos.length > 0) updateStatuses()
-    }, 10000) // Verifica a cada 10 segundos
+    }, 10000)
 
     return () => clearInterval(timer)
   }, [agendamentos, updateStatus])
@@ -211,7 +208,7 @@ export default function Agenda() {
         status: 'cancelado',
       })
       toast({
-        title: 'Agendamento cancelado!',
+        title: 'Agendamento cancelado',
         description: 'O agendamento foi cancelado com sucesso.',
       })
       setIsCancelDialogOpen(false)
@@ -225,9 +222,9 @@ export default function Agenda() {
     }
   }
 
-  async function handleChangeStatus(agendamento: Agendamento, status: Agendamento['status']) {
+  function handleChangeStatus(agendamento: Agendamento, status: Agendamento['status']) {
     try {
-      await updateStatus.mutateAsync({ id: agendamento.id, status })
+      updateStatus.mutateAsync({ id: agendamento.id, status })
       toast({
         title: 'Status atualizado!',
         description: `Agendamento alterado para ${STATUS_AGENDAMENTO_LABELS[status] || status}.`,
@@ -241,9 +238,18 @@ export default function Agenda() {
     }
   }
 
+  function handleSlotClick(profissionalId: string, date: Date) {
+    setSelectedAgendamento(null)
+    setSlotProfissionalId(profissionalId)
+    setSlotDate(date)
+    setIsFormOpen(true)
+  }
+
   function handleCloseForm() {
     setIsFormOpen(false)
     setSelectedAgendamento(null)
+    setSlotDate(null)
+    setSlotProfissionalId(undefined)
   }
 
   function handlePrevious() {
@@ -261,10 +267,10 @@ export default function Agenda() {
   const isToday = format(selectedDate, 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd')
 
   return (
-    <div className="max-w-[1120px] mx-auto px-4 py-6">
+    <div className="max-w-[1400px] mx-auto px-4 py-6">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
         <div>
-          <h1 className="text-xl font-medium tracking-tight">Agenda</h1>
+          <h1 className="text-xl font-bold tracking-tight uppercase">Agenda do Salão</h1>
         </div>
         <div className="flex items-center gap-2">
           <AgendaButton variant="outline" className="bg-background dark:bg-card" onClick={() => setIsBloqueioFormOpen(true)}>
@@ -277,7 +283,8 @@ export default function Agenda() {
           </AgendaButton>
         </div>
       </div>
-      <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 mb-6 bg-card p-3 rounded-lg border border-border">
+
+      <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 mb-6 bg-card p-3 rounded-2xl border border-border shadow-sm">
         <div className="flex flex-wrap items-center gap-3">
           <DateNavigator
             mode="single"
@@ -289,12 +296,12 @@ export default function Agenda() {
             isTodayActive={isToday}
           />
 
-          <Badge variant="secondary" className="h-7 px-3 text-[10px] font-medium border border-border text-muted-foreground bg-background rounded-full">
+          <Badge variant="secondary" className="h-7 px-3 text-[10px] font-bold border border-border text-muted-foreground bg-background rounded-full uppercase">
             {agendamentosOrdenados.length === 0 ? (
               <span>Nenhum agendamento</span>
             ) : (
               <>
-                <span className="font-semibold text-foreground mr-1">{agendamentosOrdenados.length}</span>
+                <span className="font-bold text-foreground mr-1">{agendamentosOrdenados.length}</span>
                 {agendamentosOrdenados.length === 1 ? 'agendamento' : 'agendamentos'}
               </>
             )}
@@ -370,18 +377,34 @@ export default function Agenda() {
             onValueChange={(value) => value && setViewMode(value as any)}
             className="bg-background border border-border p-0.5 rounded-xl h-10 flex items-center gap-1"
           >
-            <ToggleGroupItem value="list" className="h-9 w-9 p-0 rounded-lg" aria-label="Lista">
-              <List className="h-4 w-4" />
+            <ToggleGroupItem value="columns" className="h-9 px-3 text-xs font-bold rounded-lg flex items-center gap-1.5" aria-label="Painel Multi-Profissional">
+              <Users className="h-4 w-4 text-primary" />
+              <span className="hidden sm:inline">Equipe</span>
             </ToggleGroupItem>
-            <ToggleGroupItem value="week" className="h-9 w-9 p-0 rounded-lg" aria-label="Semana">
+            <ToggleGroupItem value="week" className="h-9 px-3 text-xs font-bold rounded-lg flex items-center gap-1.5" aria-label="Semana">
               <CalendarRange className="h-4 w-4" />
+              <span className="hidden sm:inline">Semana</span>
+            </ToggleGroupItem>
+            <ToggleGroupItem value="list" className="h-9 px-3 text-xs font-bold rounded-lg flex items-center gap-1.5" aria-label="Lista">
+              <List className="h-4 w-4" />
+              <span className="hidden sm:inline">Lista</span>
             </ToggleGroupItem>
           </ToggleGroup>
         </div>
       </div>
 
       {isLoading ? (
-        <div className="text-center py-12">Carregando agendamentos...</div>
+        <div className="text-center py-12 text-xs uppercase tracking-wider text-muted-foreground">Carregando agenda...</div>
+      ) : viewMode === 'columns' ? (
+        <AgendamentosColumns
+          agendamentos={agendamentosOrdenados}
+          profissionais={filterProfissional === 'todos' ? profissionais : profissionais.filter(p => p.id === filterProfissional)}
+          selectedDate={selectedDate}
+          onEdit={handleEdit}
+          onCancel={handleCancel}
+          onChangeStatus={handleChangeStatus}
+          onSlotClick={handleSlotClick}
+        />
       ) : viewMode === 'list' ? (
         <AgendamentosList
           agendamentos={agendamentosOrdenados}
@@ -409,7 +432,8 @@ export default function Agenda() {
         open={isFormOpen}
         onOpenChange={handleCloseForm}
         agendamento={selectedAgendamento}
-        defaultDate={selectedDate}
+        defaultDate={slotDate || selectedDate}
+        defaultProfissionalId={slotProfissionalId}
       />
 
       <BloqueioFormDialog
@@ -426,10 +450,10 @@ export default function Agenda() {
       />
 
       <AlertDialog open={isCancelDialogOpen} onOpenChange={setIsCancelDialogOpen}>
-        <AlertDialogContent className="border-border rounded-lg bg-background">
+        <AlertDialogContent className="border-border rounded-xl bg-background">
           <AlertDialogHeader>
-            <AlertDialogTitle>Cancelar agendamento</AlertDialogTitle>
-            <AlertDialogDescription>
+            <AlertDialogTitle className="text-sm font-bold uppercase tracking-wider">Cancelar agendamento</AlertDialogTitle>
+            <AlertDialogDescription className="text-xs text-muted-foreground">
               Tem certeza que deseja cancelar este agendamento? O registro será mantido com status "Cancelado".
             </AlertDialogDescription>
           </AlertDialogHeader>

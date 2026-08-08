@@ -5,6 +5,7 @@ import type { Agendamento } from '@/types/models'
 import { cn } from '@/lib/utils'
 import { Clock, User, Ban, Trash2 } from 'lucide-react'
 import type { BloqueioAgenda } from '@/types/models'
+import { getStatusTheme } from './AgendamentosColumns'
 
 interface AgendamentosWeekProps {
     agendamentos: Agendamento[]
@@ -73,6 +74,7 @@ export function AgendamentosWeek({
                                     mergedItems.map((item) => {
                                         if (item.type === 'agendamento') {
                                             const ag = item.data
+                                            const theme = getStatusTheme(ag.status)
                                             return (
                                                 <div
                                                     key={ag.id}
@@ -82,30 +84,23 @@ export function AgendamentosWeek({
                                                         }
                                                     }}
                                                     className={cn(
-                                                        "p-2 rounded-lg border text-[11px] transition-all",
+                                                        "p-2.5 rounded-xl border-2 text-[11px] transition-all shadow-sm",
                                                         ['concluido', 'cancelado'].includes(ag.status)
-                                                            ? "cursor-default opacity-75"
-                                                            : "cursor-pointer hover:shadow-md hover:border-primary",
-                                                        ag.status === 'cancelado'
-                                                            ? "line-through bg-gray-100 dark:bg-gray-800"
-                                                            : "bg-white dark:bg-gray-900 border-gray-100 dark:border-gray-800"
+                                                            ? "cursor-default opacity-85"
+                                                            : "cursor-pointer hover:shadow-md hover:scale-[1.02]",
+                                                        theme.cardBg
                                                     )}
                                                 >
-                                                    <div className="flex justify-between items-center mb-1">
-                                                        <span className="font-bold flex items-center gap-1 text-primary">
-                                                            <Clock className="h-3 w-3" />
+                                                    <div className="flex justify-between items-center mb-1 gap-1">
+                                                        <span className="font-bold flex items-center gap-1 text-[10px]">
+                                                            <Clock className="h-3 w-3 shrink-0" />
                                                             {item.time}
                                                         </span>
-                                                        <div className={cn(
-                                                            "w-2 h-2 rounded-full",
-                                                            ag.status === 'concluido' ? "bg-green-700" :
-                                                                ag.status === 'pendente_caixa' ? "bg-purple-500" :
-                                                                    ag.status === 'em_atendimento' ? "bg-yellow-500" :
-                                                                        ag.status === 'em_atraso' ? "bg-orange-500" :
-                                                                            ag.status === 'cancelado' ? "bg-red-500" : "bg-blue-500"
-                                                        )} />
+                                                        <span className={theme.badgeBg}>
+                                                            {theme.label}
+                                                        </span>
                                                     </div>
-                                                    <div className="font-semibold truncate uppercase tracking-tight">{ag.cliente?.nome}</div>
+                                                    <div className="font-black truncate uppercase tracking-wider">{ag.cliente?.nome}</div>
                                                     {filterProfissional === 'todos' && (
                                                         <div className="text-gray-500 flex items-center gap-1 truncate text-[10px]">
                                                             <User className="h-3 w-3 opacity-70" />

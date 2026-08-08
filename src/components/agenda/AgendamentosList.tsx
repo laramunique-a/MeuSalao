@@ -27,10 +27,10 @@ import {
 import { User, Scissors, MoreVertical, Pencil, Ban, Check, Trash2, UserCheck, UserX, Clock } from 'lucide-react'
 import type { Agendamento } from '@/types/models'
 import { format, isAfter, addMinutes } from 'date-fns'
-import { STATUS_AGENDAMENTO_LABELS } from '@/lib/constants'
 import { useState, useMemo } from 'react'
 import type { BloqueioAgenda } from '@/types/models'
 import { cn } from '@/lib/utils'
+import { getStatusTheme } from './AgendamentosColumns'
 
 interface AgendamentosListProps {
   agendamentos: Agendamento[]
@@ -82,27 +82,6 @@ export function AgendamentosList({
     )
   }
 
-  const getStatusBadgeStyles = (status: Agendamento['status']) => {
-    switch (status) {
-      case 'agendado':
-        return 'bg-blue-500 text-white border-transparent hover:bg-blue-600'
-      case 'confirmado':
-        return 'bg-green-500 text-white border-transparent hover:bg-green-600'
-      case 'em_atendimento':
-        return 'bg-yellow-500 text-yellow-950 border-transparent hover:bg-yellow-600'
-      case 'em_atraso':
-        return 'bg-orange-500 text-white border-transparent hover:bg-orange-600'
-      case 'pendente_caixa':
-        return 'bg-purple-500 text-white border-transparent hover:bg-purple-600'
-      case 'concluido':
-        return 'bg-green-700 text-white border-transparent hover:bg-green-800'
-      case 'cancelado':
-        return 'bg-red-500 text-white border-transparent hover:bg-red-600'
-      default:
-        return 'bg-primary text-primary-foreground border-transparent'
-    }
-  }
-
   function shouldShowClienteChegouPrompt(agendamento: Agendamento): boolean {
     const now = new Date()
     const agendamentoHora = new Date(agendamento.data_hora)
@@ -145,19 +124,20 @@ export function AgendamentosList({
       {mergedItems.map((item) => {
         if (item.type === 'agendamento') {
           const { data: agendamento } = item
+          const theme = getStatusTheme(agendamento.status)
           return (
-            <Card key={agendamento.id} className="relative flex flex-col h-full overflow-hidden border-border bg-card hover:bg-accent/10 transition-colors">
+            <Card key={agendamento.id} className={cn("relative flex flex-col h-full overflow-hidden border-2 transition-all shadow-sm", theme.cardBg)}>
               <CardHeader className="py-4 px-5 pb-2">
                 <div className="flex items-start justify-between">
                   <div className="space-y-0">
-                    <CardTitle className="text-lg font-medium tracking-tight text-foreground">
+                    <CardTitle className="text-lg font-black tracking-tight uppercase">
                       {item.time}
                     </CardTitle>
                   </div>
                   <div className="flex items-center gap-2">
-                    <Badge className={cn("px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider border shadow-none", getStatusBadgeStyles(agendamento.status))}>
-                      {STATUS_AGENDAMENTO_LABELS[agendamento.status]}
-                    </Badge>
+                    <span className={theme.badgeBg}>
+                      {theme.label}
+                    </span>
                     {(agendamento as any).metadata?.retroativo && (
                       <Badge className="px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider border shadow-none bg-amber-100 text-amber-700 border-amber-300 dark:bg-amber-900/30 dark:text-amber-400 dark:border-amber-700 flex items-center gap-1">
                         <Clock className="h-2.5 w-2.5" />

@@ -62,6 +62,7 @@ interface AgendamentoFormDialogProps {
   onOpenChange: (open: boolean) => void
   agendamento?: Agendamento | null
   defaultDate?: Date
+  defaultProfissionalId?: string
 }
 
 export function AgendamentoFormDialog({
@@ -69,6 +70,7 @@ export function AgendamentoFormDialog({
   onOpenChange,
   agendamento,
   defaultDate,
+  defaultProfissionalId,
 }: AgendamentoFormDialogProps) {
   const { toast } = useToast()
   const createAgendamento = useCreateAgendamento()
@@ -103,11 +105,11 @@ export function AgendamentoFormDialog({
       itens: [
         {
           servico_id: '',
-          profissional_id: '',
+          profissional_id: defaultProfissionalId || '',
         },
       ],
       data: defaultDate ? format(defaultDate, 'yyyy-MM-dd') : format(new Date(), 'yyyy-MM-dd'),
-      hora: '',
+      hora: defaultDate ? format(defaultDate, 'HH:mm') : '',
       observacoes: '',
     },
   })
@@ -181,15 +183,15 @@ export function AgendamentoFormDialog({
         itens: [
           {
             servico_id: '',
-            profissional_id: '',
+            profissional_id: defaultProfissionalId || '',
           },
         ],
         data: defaultDate ? format(defaultDate, 'yyyy-MM-dd') : format(new Date(), 'yyyy-MM-dd'),
-        hora: '',
+        hora: defaultDate ? format(defaultDate, 'HH:mm') : '',
         observacoes: '',
       })
     }
-  }, [agendamento, defaultDate, form, open])
+  }, [agendamento, defaultDate, defaultProfissionalId, form, open])
 
   async function onSubmit(data: AgendamentoFormData) {
     try {
