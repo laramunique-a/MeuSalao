@@ -146,16 +146,19 @@ export const agendamentoService = {
     const usuario = useAuthStore.getState().usuario
     if (!usuario || !usuario.salao_id) throw new Error('Usuário não autenticado')
 
-    // 1. Buscar IDs de agendamentos que já têm transação ATIVA vinculada
+    // 1. Buscar IDs de agendamentos que já têm transação ATIVA vinculada neste salão
     const { data: transacoes } = await supabase
       .from('transacao_caixa')
       .select('agendamento_id')
+      .eq('salao_id', usuario.salao_id)
       .not('agendamento_id', 'is', null)
       .eq('status', 'ativo')
 
     const idsComTransacaoAtiva = (transacoes || [])
       .map((t: any) => t.agendamento_id)
       .filter(Boolean)
+
+    const idsComTransacaoSet = new Set(idsComTransacaoAtiva)
 
     // Sincronização: Se o agendamento possui transação ativa, garantir que seu status esteja como 'concluido'
     if (idsComTransacaoAtiva.length > 0) {
@@ -170,7 +173,7 @@ export const agendamentoService = {
       }
     }
 
-    // 2. Buscar agendamentos verdadeiramente pendentes (em_atendimento ou pendente_caixa) sem transação ativa
+    // 2. Buscar agendamentos em_atendimento ou pendente_caixa do salão
     let query = supabase
       .from('agendamento')
       .select(AGENDAMENTO_SELECT)
@@ -185,23 +188,22 @@ export const agendamentoService = {
 
     query = query.order('data_hora', { ascending: true })
 
-    if (idsComTransacaoAtiva.length > 0) {
-      query = query.not('id', 'in', `(${idsComTransacaoAtiva.join(',')})`)
-    }
-
     const { data, error } = await query
     if (error) throw error
-    return (data || []).map(mapAgendamentoRealTimeStatus) as unknown as Agendamento[]
+
+    const mapped = (data || []).map(mapAgendamentoRealTimeStatus) as unknown as Agendamento[]
+    return mapped.filter((ag: any) => ag.status === 'pendente_caixa' && !idsComTransacaoSet.has(ag.id))
   },
 
   async hasAnyPendencia(profissionalId?: string): Promise<boolean> {
     const usuario = useAuthStore.getState().usuario
     if (!usuario || !usuario.salao_id) throw new Error('Usuário não autenticado')
 
-    // Buscar IDs de agendamentos que já têm transação ATIVA vinculada
+    // Buscar IDs de agendamentos que já têm transação ATIVA vinculada neste salão
     const { data: transacoes } = await supabase
       .from('transacao_caixa')
       .select('agendamento_id')
+      .eq('salao_id', usuario.salao_id)
       .not('agendamento_id', 'is', null)
       .eq('status', 'ativo')
 
@@ -209,10 +211,12 @@ export const agendamentoService = {
       .map((t: any) => t.agendamento_id)
       .filter(Boolean)
 
-    // Buscar se existe algum agendamento verdadeiramente pendente
+    const idsComTransacaoSet = new Set(idsComTransacaoAtiva)
+
+    // Buscar agendamentos em_atendimento ou pendente_caixa do salão
     let query = supabase
       .from('agendamento')
-      .select('id', { count: 'exact', head: true })
+      .select(AGENDAMENTO_SELECT)
       .eq('salao_id', usuario.salao_id)
       .in('status', ['em_atendimento', 'pendente_caixa'])
 
@@ -220,13 +224,12 @@ export const agendamentoService = {
       query = query.eq('profissional_id', profissionalId)
     }
 
-    if (idsComTransacaoAtiva.length > 0) {
-      query = query.not('id', 'in', `(${idsComTransacaoAtiva.join(',')})`)
-    }
-
-    const { count, error } = await query
+    const { data, error } = await query
     if (error) throw error
-    return (count || 0) > 0
+
+    const mapped = (data || []).map(mapAgendamentoRealTimeStatus) as unknown as Agendamento[]
+    const pendentes = mapped.filter((ag: any) => ag.status === 'pendente_caixa' && !idsComTransacaoSet.has(ag.id))
+    return pendentes.length > 0
   },
 
   async getByProfissionalAndDate(
