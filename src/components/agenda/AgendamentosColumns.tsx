@@ -341,20 +341,20 @@ export function AgendamentosColumns({
               )
             })}
 
-            {/* Linhas da Grade de Papel (24 Horas + Linhas Específicas Padronizadas) */}
+            {/* Linhas da Grade de Papel (Com linhas de divisão visíveis em TODOS os horários) */}
             {timeSlots.map((slot) => {
               return (
                 <div key={slot.label} className="contents relative">
-                  {/* Marcador de Horário na Régua Lateral (Estilo uniforme padrão para todas as horas) */}
+                  {/* Marcador de Horário na Régua Lateral */}
                   <div
                     ref={(el) => {
                       if (el) slotRefs.current.set(slot.label, el)
                       else slotRefs.current.delete(slot.label)
                     }}
-                    className={`sticky left-0 z-10 border-r border-border px-3 py-1.5 text-[11px] font-sans font-bold flex items-center justify-between ${
+                    className={`sticky left-0 z-10 border-r border-b border-border/80 px-3 py-2 text-[11px] font-sans font-bold flex items-center justify-between ${
                       slot.isFullHour
-                        ? 'bg-background/95 backdrop-blur-sm border-b border-border text-foreground'
-                        : 'bg-background/80 backdrop-blur-sm border-b border-dashed border-border/40 text-muted-foreground/70'
+                        ? 'bg-background/95 backdrop-blur-sm text-foreground'
+                        : 'bg-background/85 backdrop-blur-sm text-muted-foreground/80'
                     }`}
                   >
                     <span>{slot.label}</span>
@@ -368,11 +368,7 @@ export function AgendamentosColumns({
                       return (
                         <div
                           key={`${prof.id}-${slot.label}`}
-                          className={`p-1 min-h-[50px] border-r transition-all bg-background/40 ${
-                            slot.isFullHour
-                              ? 'border-b border-border'
-                              : 'border-b border-dashed border-border/40'
-                          }`}
+                          className="p-1 min-h-[55px] border-r border-b border-border/80 transition-all bg-background/40"
                         >
                           {/* Agendamentos exibidos LADO A LADO caso haja mais de um no mesmo horário */}
                           <div
@@ -388,7 +384,7 @@ export function AgendamentosColumns({
                                   key={agendamento.id}
                                   className={`border rounded-lg transition-all shadow-sm ${theme.cardBg}`}
                                 >
-                                  <CardContent className="p-1.5 space-y-1">
+                                  <CardContent className="p-2 space-y-1.5">
                                     <div className="flex items-center justify-between gap-1">
                                       <span className={theme.badgeBg}>
                                         {theme.label}
@@ -435,34 +431,34 @@ export function AgendamentosColumns({
                                       )}
                                     </div>
 
-                                    <div className="space-y-0.5 pt-0.5">
-                                      <p className="font-black text-xs uppercase tracking-wider truncate leading-tight text-foreground">
+                                    <div className="space-y-1 py-0.5">
+                                      <p className="font-black text-xs uppercase tracking-wider text-foreground leading-snug truncate">
                                         {agendamento.cliente?.nome}
                                       </p>
-                                      <p className="font-bold text-[11px] uppercase tracking-wide truncate leading-tight text-foreground/90 flex items-center gap-1">
-                                        <Scissors className="h-3 w-3 shrink-0 opacity-75" />
+                                      <p className="font-bold text-[11px] uppercase tracking-wide text-foreground/85 flex items-center gap-1.5 leading-snug truncate">
+                                        <Scissors className="h-3.5 w-3.5 shrink-0 opacity-75 text-primary" />
                                         <span className="truncate">{agendamento.servico?.nome}</span>
                                       </p>
                                     </div>
 
                                     {shouldShowClienteChegouPrompt(agendamento) && (
-                                      <div className="pt-1 border-t border-black/10 dark:border-white/10 mt-1 flex gap-1">
+                                      <div className="pt-1.5 border-t border-black/10 dark:border-white/10 mt-1 flex gap-1.5">
                                         <Button
                                           size="sm"
                                           variant="outline"
                                           onClick={() => handleClienteChegou(agendamento)}
-                                          className="h-5 text-[9px] font-bold gap-0.5 flex-1 bg-white/80 dark:bg-black/40"
+                                          className="h-6 text-[10px] font-bold gap-1 flex-1 bg-muted/60 hover:bg-emerald-500/10 border-border/60 text-emerald-700 dark:text-emerald-300"
                                         >
-                                          <UserCheck className="h-2.5 w-2.5 text-emerald-600" />
+                                          <UserCheck className="h-3 w-3 text-emerald-600" />
                                           Chegou
                                         </Button>
                                         <Button
                                           size="sm"
                                           variant="outline"
                                           onClick={() => handleClienteChegouNao(agendamento)}
-                                          className="h-5 text-[9px] font-bold gap-0.5 flex-1 text-red-600 bg-white/80 dark:bg-black/40"
+                                          className="h-6 text-[10px] font-bold gap-1 flex-1 bg-muted/60 hover:bg-rose-500/10 border-border/60 text-rose-700 dark:text-rose-300"
                                         >
-                                          <UserX className="h-2.5 w-2.5" />
+                                          <UserX className="h-3 w-3 text-rose-600" />
                                           Atrasou
                                         </Button>
                                       </div>
@@ -476,16 +472,12 @@ export function AgendamentosColumns({
                       )
                     }
 
-                    // Linha/Célula vazia estilo Agenda de Papel (mantém as linhas de fundo transparentes)
+                    // Linha/Célula vazia estilo Agenda de Papel (com linha de divisão visível em todos os horários)
                     return (
                       <div
                         key={`${prof.id}-${slot.label}`}
                         onClick={() => handleCellClick(prof.id, slot)}
-                        className={`p-1 min-h-[45px] border-r transition-all group cursor-pointer relative bg-background/30 hover:bg-emerald-500/5 ${
-                          slot.isFullHour
-                            ? 'border-b border-border'
-                            : 'border-b border-dashed border-border/40'
-                        }`}
+                        className="p-1 min-h-[50px] border-r border-b border-border/80 transition-all group cursor-pointer relative bg-background/30 hover:bg-emerald-500/5"
                         title={`Clique para agendar às ${slot.label} com ${prof.nome}`}
                       >
                         <div className="h-full w-full rounded border border-transparent group-hover:border-emerald-500/30 group-hover:bg-emerald-500/5 flex items-center justify-center gap-1 text-[10px] text-muted-foreground/40 group-hover:text-emerald-600 font-bold transition-all">
