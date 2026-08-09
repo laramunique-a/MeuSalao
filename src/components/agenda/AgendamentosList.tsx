@@ -14,23 +14,13 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog'
-import { User, Scissors, MoreVertical, Pencil, Ban, Check, Trash2, UserCheck, UserX, Clock } from 'lucide-react'
+import { User, Scissors, MoreVertical, Pencil, Ban, Check, Trash2, UserCheck, Clock } from 'lucide-react'
 import type { Agendamento } from '@/types/models'
-import { format, isAfter, addMinutes } from 'date-fns'
-import { STATUS_AGENDAMENTO_LABELS } from '@/lib/constants'
-import { useState, useMemo } from 'react'
+import { format } from 'date-fns'
+import { useMemo } from 'react'
 import type { BloqueioAgenda } from '@/types/models'
 import { cn } from '@/lib/utils'
+import { getStatusTheme } from './AgendamentosColumns'
 
 interface AgendamentosListProps {
   agendamentos: Agendamento[]
@@ -51,9 +41,6 @@ export function AgendamentosList({
   onChangeStatus,
   onDeleteBlock,
 }: AgendamentosListProps) {
-  const [showClienteChegouDialog, setShowClienteChegouDialog] = useState(false)
-  const [selectedAgendamento, setSelectedAgendamento] = useState<Agendamento | null>(null)
-
   const mergedItems = useMemo(() => {
     const items: (
       | { type: 'agendamento'; data: Agendamento; time: string }
@@ -82,82 +69,25 @@ export function AgendamentosList({
     )
   }
 
-  const getStatusBadgeStyles = (status: Agendamento['status']) => {
-    switch (status) {
-      case 'agendado':
-        return 'bg-blue-500 text-white border-transparent hover:bg-blue-600'
-      case 'confirmado':
-        return 'bg-green-500 text-white border-transparent hover:bg-green-600'
-      case 'em_atendimento':
-        return 'bg-yellow-500 text-yellow-950 border-transparent hover:bg-yellow-600'
-      case 'em_atraso':
-        return 'bg-orange-500 text-white border-transparent hover:bg-orange-600'
-      case 'pendente_caixa':
-        return 'bg-purple-500 text-white border-transparent hover:bg-purple-600'
-      case 'concluido':
-        return 'bg-green-700 text-white border-transparent hover:bg-green-800'
-      case 'cancelado':
-        return 'bg-red-500 text-white border-transparent hover:bg-red-600'
-      default:
-        return 'bg-primary text-primary-foreground border-transparent'
-    }
-  }
-
-  function shouldShowClienteChegouPrompt(agendamento: Agendamento): boolean {
-    const now = new Date()
-    const agendamentoHora = new Date(agendamento.data_hora)
-
-    const isToday =
-      agendamentoHora.getDate() === now.getDate() &&
-      agendamentoHora.getMonth() === now.getMonth() &&
-      agendamentoHora.getFullYear() === now.getFullYear()
-
-    if (!isToday) return false
-
-    const toleranciaMinutos = 20
-    const agendamentoComTolerancia = addMinutes(agendamentoHora, -toleranciaMinutos)
-
-    return (
-      ['agendado', 'em_atraso'].includes(agendamento.status) &&
-      isAfter(now, agendamentoComTolerancia)
-    )
-  }
-
-  function handleClienteChegou(agendamento: Agendamento) {
-    setSelectedAgendamento(agendamento)
-    setShowClienteChegouDialog(true)
-  }
-
-  function handleClienteChegouSim() {
-    if (selectedAgendamento) {
-      onChangeStatus(selectedAgendamento, 'em_atendimento')
-    }
-    setShowClienteChegouDialog(false)
-    setSelectedAgendamento(null)
-  }
-
-  function handleClienteChegouNao(agendamento: Agendamento) {
-    onChangeStatus(agendamento, 'em_atraso')
-  }
-
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
       {mergedItems.map((item) => {
         if (item.type === 'agendamento') {
           const { data: agendamento } = item
+          const theme = getStatusTheme(agendamento.status)
           return (
-            <Card key={agendamento.id} className="relative flex flex-col h-full overflow-hidden border-border bg-card hover:bg-accent/10 transition-colors">
+            <Card key={agendamento.id} className={cn("relative flex flex-col h-full overflow-hidden border-2 transition-all shadow-sm", theme.cardBg)}>
               <CardHeader className="py-4 px-5 pb-2">
                 <div className="flex items-start justify-between">
                   <div className="space-y-0">
-                    <CardTitle className="text-lg font-medium tracking-tight text-foreground">
+                    <CardTitle className="text-lg font-black tracking-tight uppercase">
                       {item.time}
                     </CardTitle>
                   </div>
                   <div className="flex items-center gap-2">
-                    <Badge className={cn("px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider border shadow-none", getStatusBadgeStyles(agendamento.status))}>
-                      {STATUS_AGENDAMENTO_LABELS[agendamento.status]}
-                    </Badge>
+                    <span className={theme.badgeBg}>
+                      {theme.label}
+                    </span>
                     {(agendamento as any).metadata?.retroativo && (
                       <Badge className="px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider border shadow-none bg-amber-100 text-amber-700 border-amber-300 dark:bg-amber-900/30 dark:text-amber-400 dark:border-amber-700 flex items-center gap-1">
                         <Clock className="h-2.5 w-2.5" />
@@ -180,19 +110,19 @@ export function AgendamentosList({
                               Editar Detalhes
                             </DropdownMenuItem>
                           )}
-                          {!['em_atendimento'].includes(agendamento.status) && (
-                            <DropdownMenuItem onClick={() => handleClienteChegou(agendamento)} className="py-2.5 text-xs font-semibold uppercase tracking-wider">
+                          {['agendado', 'em_atraso'].includes(agendamento.status) && (
+                            <DropdownMenuItem onClick={() => onChangeStatus(agendamento, 'em_atendimento')} className="py-2.5 text-xs font-semibold uppercase tracking-wider text-blue-600 font-bold">
                               <UserCheck className="h-4 w-4 mr-2" />
-                              Cliente chegou?
+                              Iniciar Atendimento
                             </DropdownMenuItem>
                           )}
                           {agendamento.status === 'em_atendimento' && (
-                            <DropdownMenuItem onClick={() => onChangeStatus(agendamento, 'pendente_caixa')} className="py-2.5 text-xs font-semibold uppercase tracking-wider">
+                            <DropdownMenuItem onClick={() => onChangeStatus(agendamento, 'pendente_caixa')} className="py-2.5 text-xs font-semibold uppercase tracking-wider text-emerald-600 font-bold">
                               <Check className="h-4 w-4 mr-2" />
                               Finalizar Atendimento
                             </DropdownMenuItem>
                           )}
-                          {!['concluido', 'cancelado', 'em_atendimento', 'pendente_caixa'].includes(agendamento.status) && (
+                          {!['concluido', 'cancelado', 'pendente_caixa'].includes(agendamento.status) && (
                             <>
                               <DropdownMenuSeparator />
                               <DropdownMenuItem
@@ -218,83 +148,24 @@ export function AgendamentosList({
                     <div className="p-1 bg-accent rounded-full">
                       <User className="h-3.5 w-3.5 text-muted-foreground" />
                     </div>
-                    <div className="flex flex-col">
-                      <span className="font-semibold text-sm text-foreground tracking-tight truncate">
+                    <div className="flex flex-col min-w-0">
+                      <span className="font-black text-sm uppercase tracking-wider text-foreground truncate">
                         {agendamento.cliente?.nome}
                       </span>
-                      {agendamento.cliente?.telefone && (
-                        <span className="text-[10px] text-muted-foreground font-medium">
-                          {agendamento.cliente.telefone}
-                        </span>
-                      )}
                     </div>
                   </div>
 
-                  <div className="space-y-1.5 pl-0.5">
-                    {agendamento.itens && agendamento.itens.length > 0 ? (
-                      <div className="space-y-1">
-                        {agendamento.itens.map((it: any, idx: number) => (
-                          <div key={idx} className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                            <Scissors className="h-3.5 w-3.5 text-muted-foreground/60 shrink-0" />
-                            <span className="font-semibold text-foreground">{it.servico?.nome || 'Serviço'}</span>
-                            <span className="text-[11px] text-muted-foreground">({it.profissional?.nome || agendamento.profissional?.nome})</span>
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <>
-                        {filterProfissional === 'todos' && (
-                          <div className="text-xs text-muted-foreground flex items-center gap-2">
-                            <span className="font-normal uppercase tracking-wider">Profissional:</span>
-                            <span className="font-semibold text-foreground truncate">{agendamento.profissional?.nome}</span>
-                          </div>
-                        )}
-                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                          <Scissors className="h-3.5 w-3.5 text-muted-foreground/60" />
-                          <span className="font-medium truncate">{agendamento.servico?.nome}</span>
-                        </div>
-                      </>
-                    )}
-                  </div>
-
-                  {agendamento.observacoes && (
-                    <div className="pt-2 border-t border-dashed mt-1">
-                      <p className="text-[10px] leading-relaxed text-muted-foreground line-clamp-2">
-                        <span className="font-bold mr-1.5 text-[9px] uppercase tracking-widest opacity-50">Obs:</span>
-                        {agendamento.observacoes}
-                      </p>
+                  <div className="flex items-center gap-2.5">
+                    <div className="p-1 bg-accent rounded-full">
+                      <Scissors className="h-3.5 w-3.5 text-muted-foreground" />
                     </div>
-                  )}
+                    <div className="flex flex-col min-w-0">
+                      <span className="font-bold text-xs uppercase tracking-wide text-foreground/80 truncate">
+                        {agendamento.servico?.nome}
+                      </span>
+                    </div>
+                  </div>
                 </div>
-
-                {/* Direita: Prompt de Chegada (Apenas se aplicável) */}
-                {shouldShowClienteChegouPrompt(agendamento) && (
-                  <div className="w-full sm:w-44 flex-shrink-0 bg-accent/40 border border-border rounded-lg p-3 flex flex-col items-center justify-center gap-2 self-stretch" style={{ height: 'fit-content' }}>
-                    <span className="text-xs font-bold text-muted-foreground text-center uppercase tracking-wider leading-tight">
-                      Cliente chegou?
-                    </span>
-                    <div className="flex items-center gap-2 w-full">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleClienteChegou(agendamento)}
-                        className="h-8 text-[10px] gap-1 flex-1 text-foreground border-border hover:bg-accent"
-                      >
-                        <UserCheck className="h-3.5 w-3.5 text-muted-foreground" />
-                        Sim
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleClienteChegouNao(agendamento)}
-                        className="h-8 text-[10px] gap-1 flex-1 text-foreground border-border hover:bg-accent"
-                      >
-                        <UserX className="h-3.5 w-3.5 text-muted-foreground" />
-                        Não
-                      </Button>
-                    </div>
-                  </div>
-                )}
               </CardContent>
             </Card>
           )
@@ -347,25 +218,6 @@ export function AgendamentosList({
           )
         }
       })}
-
-      <AlertDialog open={showClienteChegouDialog} onOpenChange={setShowClienteChegouDialog}>
-        <AlertDialogContent className="border-border rounded-lg bg-background">
-          <AlertDialogHeader>
-            <AlertDialogTitle className="text-sm font-semibold uppercase tracking-wider">Confirmar chegada do cliente</AlertDialogTitle>
-            <AlertDialogDescription className="text-xs text-muted-foreground">
-              Deseja confirmar que o cliente{' '}
-              <strong>{selectedAgendamento?.cliente?.nome}</strong> chegou para o
-              atendimento?
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel className="text-xs uppercase tracking-wider h-9">Cancelar</AlertDialogCancel>
-            <AlertDialogAction onClick={handleClienteChegouSim} className="text-xs uppercase tracking-wider h-9 bg-primary text-primary-foreground">
-              Sim, cliente chegou
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </div>
   )
 }
