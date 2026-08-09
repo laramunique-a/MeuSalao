@@ -8,19 +8,21 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { MoreVertical, Pencil, Ban, UserCheck, Plus, Clock, Sparkles, Check } from 'lucide-react'
-import type { Agendamento } from '@/types/models'
+import { MoreVertical, Pencil, Ban, UserCheck, Plus, Clock, Sparkles, Check, Trash2 } from 'lucide-react'
+import type { Agendamento, BloqueioAgenda } from '@/types/models'
 import { setHours, setMinutes, isSameDay } from 'date-fns'
 import { useState, useMemo, useEffect, useRef } from 'react'
 
 interface AgendamentosColumnsProps {
   agendamentos: Agendamento[]
+  bloqueios?: BloqueioAgenda[]
   profissionais: any[]
   selectedDate: Date
   onEdit: (agendamento: Agendamento) => void
   onCancel: (agendamento: Agendamento) => void
   onChangeStatus: (agendamento: Agendamento, status: Agendamento['status']) => void
   onSlotClick?: (profissionalId: string, date: Date) => void
+  onDeleteBlock?: (id: string) => void
 }
 
 interface TimeSlot {
@@ -80,12 +82,14 @@ export function getStatusTheme(status: Agendamento['status']) {
 
 export function AgendamentosColumns({
   agendamentos,
+  bloqueios = [],
   profissionais,
   selectedDate,
   onEdit,
   onCancel,
   onChangeStatus,
   onSlotClick,
+  onDeleteBlock,
 }: AgendamentosColumnsProps) {
   // Estado para armazenar o horário atual do sistema
   const [now, setNow] = useState(new Date())
@@ -96,7 +100,7 @@ export function AgendamentosColumns({
 
   const isToday = isSameDay(selectedDate, now)
 
-  // Gerar slots de 30 em 30 minutos + incluir linhas dinâmicas de horários específicos de agendamentos (ex: 20:25, 20:40, 13:45)
+  // Gerar slots de 30 em 30 minutos + incluir linhas dinâmicas de horários específicos de agendamentos e bloqueios
   const timeSlots = useMemo<TimeSlot[]>(() => {
     const slotMap = new Map<string, TimeSlot>()
 
@@ -136,12 +140,28 @@ export function AgendamentosColumns({
       }
     })
 
-    // 3. Ordenar todos os slots cronologicamente (00:00 -> 23:59)
+    // 3. Adicionar linhas de horários específicos de início de bloqueios
+    bloqueios.forEach((bq) => {
+      const label = bq.horario_inicio.slice(0, 5)
+      const [hour, minute] = label.split(':').map(Number)
+
+      if (!slotMap.has(label)) {
+        slotMap.set(label, {
+          hour: isNaN(hour) ? 0 : hour,
+          minute: isNaN(minute) ? 0 : minute,
+          label,
+          isFullHour: minute === 0,
+          isCustom: true,
+        })
+      }
+    })
+
+    // 4. Ordenar todos os slots cronologicamente (00:00 -> 23:59)
     return Array.from(slotMap.values()).sort((a, b) => {
       if (a.hour !== b.hour) return a.hour - b.hour
       return a.minute - b.minute
     })
-  }, [agendamentos])
+  }, [agendamentos, bloqueios])
 
   // Identificar a label do slot atual (ex: "14:30")
   const currentSlotLabel = useMemo(() => {
@@ -234,6 +254,16 @@ export function AgendamentosColumns({
     })
   }
 
+  // Buscar bloqueios pertencentes ao slot de horário
+  function getBloqueiosInSlot(profissionalId: string, slot: TimeSlot): BloqueioAgenda[] {
+    return bloqueios.filter((bq) => {
+      if (bq.profissional_id !== profissionalId) return false
+      const start = bq.horario_inicio.slice(0, 5)
+      const end = bq.horario_fim.slice(0, 5)
+      return slot.label >= start && slot.label < end
+    })
+  }
+
   function handleCellClick(profissionalId: string, slot: TimeSlot) {
     if (!onSlotClick) return
     const slotDate = setMinutes(setHours(new Date(selectedDate), slot.hour), slot.minute)
@@ -322,94 +352,133 @@ export function AgendamentosColumns({
                   {/* Células de cada profissional na linha do horário */}
                   {profissionais.map((prof) => {
                     const slotAgendamentos = getAgendamentosInSlot(prof.id, slot)
+                    const slotBloqueios = getBloqueiosInSlot(prof.id, slot)
 
-                    if (slotAgendamentos.length > 0) {
+                    if (slotAgendamentos.length > 0 || slotBloqueios.length > 0) {
                       return (
                         <div
                           key={`${prof.id}-${slot.label}`}
                           className="p-1 min-h-[55px] border-r border-b border-border/80 transition-all bg-background/40"
                         >
-                          {/* Agendamentos exibidos LADO A LADO caso haja mais de um no mesmo horário */}
-                          <div
-                            className={`grid gap-1 ${
-                              slotAgendamentos.length > 1 ? 'grid-cols-2' : 'grid-cols-1'
-                            }`}
-                          >
-                            {slotAgendamentos.map((agendamento) => {
-                              const theme = getStatusTheme(agendamento.status)
+                          <div className="flex flex-col gap-1">
+                            {/* Cards de Bloqueio de Agenda */}
+                            {slotBloqueios.map((bloqueio) => (
+                              <Card
+                                key={bloqueio.id}
+                                className="border-2 border-dashed border-zinc-300 dark:border-zinc-700 bg-zinc-100/90 dark:bg-zinc-900/80 rounded-lg shadow-sm"
+                              >
+                                <CardContent className="p-2 space-y-1">
+                                  <div className="flex items-center justify-between gap-1">
+                                    <span className="bg-zinc-600 text-white font-bold text-[9px] uppercase px-1.5 py-0.5 rounded-full flex items-center gap-1">
+                                      <Ban className="h-2.5 w-2.5" />
+                                      Bloqueado
+                                    </span>
+                                    {onDeleteBlock && (
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        className="h-5 w-5 p-0 hover:bg-red-500/20 text-zinc-500 hover:text-red-600 rounded"
+                                        onClick={() => onDeleteBlock(bloqueio.id)}
+                                        title="Remover Bloqueio"
+                                      >
+                                        <Trash2 className="h-3 w-3" />
+                                      </Button>
+                                    )}
+                                  </div>
+                                  <p className="font-bold text-xs uppercase tracking-wider text-zinc-700 dark:text-zinc-300 truncate">
+                                    {bloqueio.motivo || 'Horário Indisponível'}
+                                  </p>
+                                  <p className="text-[10px] text-zinc-500 font-mono">
+                                    {bloqueio.horario_inicio.slice(0, 5)} - {bloqueio.horario_fim.slice(0, 5)}
+                                  </p>
+                                </CardContent>
+                              </Card>
+                            ))}
 
-                              return (
-                                <Card
-                                  key={agendamento.id}
-                                  className={`border rounded-lg transition-all shadow-sm ${theme.cardBg}`}
-                                >
-                                  <CardContent className="p-2 space-y-1.5">
-                                    <div className="flex items-center justify-between gap-1">
-                                      <span className={theme.badgeBg}>
-                                        {theme.label}
-                                      </span>
+                            {/* Agendamentos exibidos LADO A LADO caso haja mais de um no mesmo horário */}
+                            {slotAgendamentos.length > 0 && (
+                              <div
+                                className={`grid gap-1 ${
+                                  slotAgendamentos.length > 1 ? 'grid-cols-2' : 'grid-cols-1'
+                                }`}
+                              >
+                                {slotAgendamentos.map((agendamento) => {
+                                  const theme = getStatusTheme(agendamento.status)
 
-                                      {!['concluido', 'cancelado', 'pendente_caixa'].includes(agendamento.status) && (
-                                        <DropdownMenu>
-                                          <DropdownMenuTrigger asChild>
-                                            <Button
-                                              variant="ghost"
-                                              size="sm"
-                                              className="h-5 w-5 p-0 hover:bg-black/10 dark:hover:bg-white/10 rounded"
-                                            >
-                                              <MoreVertical className="h-3 w-3" />
-                                            </Button>
-                                          </DropdownMenuTrigger>
-                                          <DropdownMenuContent align="end" className="w-52 border-border text-xs">
-                                            <DropdownMenuLabel className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
-                                              Gerenciar Agendamento
-                                            </DropdownMenuLabel>
-                                            <DropdownMenuSeparator />
-                                            {agendamento.status !== 'em_atendimento' && (
-                                              <DropdownMenuItem onClick={() => onEdit(agendamento)} className="py-2 text-xs font-semibold uppercase tracking-wider">
-                                                <Pencil className="h-3.5 w-3.5 mr-2" />
-                                                Editar Detalhes
-                                              </DropdownMenuItem>
-                                            )}
-                                            {['agendado', 'em_atraso'].includes(agendamento.status) && (
-                                              <DropdownMenuItem onClick={() => onChangeStatus(agendamento, 'em_atendimento')} className="py-2 text-xs font-semibold uppercase tracking-wider text-blue-600 font-bold">
-                                                <UserCheck className="h-3.5 w-3.5 mr-2" />
-                                                Iniciar Atendimento
-                                              </DropdownMenuItem>
-                                            )}
-                                            {agendamento.status === 'em_atendimento' && (
-                                              <DropdownMenuItem onClick={() => onChangeStatus(agendamento, 'pendente_caixa')} className="py-2 text-xs font-semibold uppercase tracking-wider text-emerald-600 font-bold">
-                                                <Check className="h-3.5 w-3.5 mr-2" />
-                                                Finalizar Atendimento
-                                              </DropdownMenuItem>
-                                            )}
-                                            {!['concluido', 'cancelado', 'em_atendimento', 'pendente_caixa'].includes(agendamento.status) && (
-                                              <>
+                                  return (
+                                    <Card
+                                      key={agendamento.id}
+                                      className={`border rounded-lg transition-all shadow-sm ${theme.cardBg}`}
+                                    >
+                                      <CardContent className="p-2 space-y-1.5">
+                                        <div className="flex items-center justify-between gap-1">
+                                          <span className={theme.badgeBg}>
+                                            {theme.label}
+                                          </span>
+
+                                          {!['concluido', 'cancelado', 'pendente_caixa'].includes(agendamento.status) && (
+                                            <DropdownMenu>
+                                              <DropdownMenuTrigger asChild>
+                                                <Button
+                                                  variant="ghost"
+                                                  size="sm"
+                                                  className="h-5 w-5 p-0 hover:bg-black/10 dark:hover:bg-white/10 rounded"
+                                                >
+                                                  <MoreVertical className="h-3 w-3" />
+                                                </Button>
+                                              </DropdownMenuTrigger>
+                                              <DropdownMenuContent align="end" className="w-52 border-border text-xs">
+                                                <DropdownMenuLabel className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
+                                                  Gerenciar Agendamento
+                                                </DropdownMenuLabel>
                                                 <DropdownMenuSeparator />
-                                                <DropdownMenuItem onClick={() => onCancel(agendamento)} className="py-2 text-xs font-semibold uppercase tracking-wider text-red-600">
-                                                  <Ban className="h-3.5 w-3.5 mr-2" />
-                                                  Cancelar Horário
-                                                </DropdownMenuItem>
-                                              </>
-                                            )}
-                                          </DropdownMenuContent>
-                                        </DropdownMenu>
-                                      )}
-                                    </div>
+                                                {agendamento.status !== 'em_atendimento' && (
+                                                  <DropdownMenuItem onClick={() => onEdit(agendamento)} className="py-2 text-xs font-semibold uppercase tracking-wider">
+                                                    <Pencil className="h-3.5 w-3.5 mr-2" />
+                                                    Editar Detalhes
+                                                  </DropdownMenuItem>
+                                                )}
+                                                {['agendado', 'em_atraso'].includes(agendamento.status) && (
+                                                  <DropdownMenuItem onClick={() => onChangeStatus(agendamento, 'em_atendimento')} className="py-2 text-xs font-semibold uppercase tracking-wider text-blue-600 font-bold">
+                                                    <UserCheck className="h-3.5 w-3.5 mr-2" />
+                                                    Iniciar Atendimento
+                                                  </DropdownMenuItem>
+                                                )}
+                                                {agendamento.status === 'em_atendimento' && (
+                                                  <DropdownMenuItem onClick={() => onChangeStatus(agendamento, 'pendente_caixa')} className="py-2 text-xs font-semibold uppercase tracking-wider text-emerald-600 font-bold">
+                                                    <Check className="h-3.5 w-3.5 mr-2" />
+                                                    Finalizar Atendimento
+                                                  </DropdownMenuItem>
+                                                )}
+                                                {!['concluido', 'cancelado', 'em_atendimento', 'pendente_caixa'].includes(agendamento.status) && (
+                                                  <>
+                                                    <DropdownMenuSeparator />
+                                                    <DropdownMenuItem onClick={() => onCancel(agendamento)} className="py-2 text-xs font-semibold uppercase tracking-wider text-red-600">
+                                                      <Ban className="h-3.5 w-3.5 mr-2" />
+                                                      Cancelar Horário
+                                                    </DropdownMenuItem>
+                                                  </>
+                                                )}
+                                              </DropdownMenuContent>
+                                            </DropdownMenu>
+                                          )}
+                                        </div>
 
-                                    <div className="space-y-1 py-0.5">
-                                      <p className="font-black text-xs uppercase tracking-wider text-foreground leading-snug truncate">
-                                        {agendamento.cliente?.nome}
-                                      </p>
-                                      <p className="font-bold text-[11px] uppercase tracking-wide text-foreground/85 flex items-center gap-1.5 leading-snug truncate">
-                                        <Sparkles className="h-3.5 w-3.5 shrink-0 opacity-75 text-primary" />
-                                        <span className="truncate">{agendamento.servico?.nome}</span>
-                                      </p>
-                                    </div>
-                                  </CardContent>
-                                </Card>
-                              )
-                            })}
+                                        <div className="space-y-1 py-0.5">
+                                          <p className="font-black text-xs uppercase tracking-wider text-foreground leading-snug truncate">
+                                            {agendamento.cliente?.nome}
+                                          </p>
+                                          <p className="font-bold text-[11px] uppercase tracking-wide text-foreground/85 flex items-center gap-1.5 leading-snug truncate">
+                                            <Sparkles className="h-3.5 w-3.5 shrink-0 opacity-75 text-primary" />
+                                            <span className="truncate">{agendamento.servico?.nome}</span>
+                                          </p>
+                                        </div>
+                                      </CardContent>
+                                    </Card>
+                                  )
+                                })}
+                              </div>
+                            )}
                           </div>
                         </div>
                       )

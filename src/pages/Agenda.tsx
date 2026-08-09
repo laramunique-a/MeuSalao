@@ -398,12 +398,14 @@ export default function Agenda() {
       ) : viewMode === 'columns' ? (
         <AgendamentosColumns
           agendamentos={agendamentosOrdenados}
+          bloqueios={filteredBloqueios}
           profissionais={filterProfissional === 'todos' ? profissionais : profissionais.filter(p => p.id === filterProfissional)}
           selectedDate={selectedDate}
           onEdit={handleEdit}
           onCancel={handleCancel}
           onChangeStatus={handleChangeStatus}
           onSlotClick={handleSlotClick}
+          onDeleteBlock={handleDeleteBlock}
         />
       ) : viewMode === 'list' ? (
         <AgendamentosList
