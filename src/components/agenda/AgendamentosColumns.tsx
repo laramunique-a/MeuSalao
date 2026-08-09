@@ -450,7 +450,7 @@ export function AgendamentosColumns({
                                                     Finalizar Atendimento
                                                   </DropdownMenuItem>
                                                 )}
-                                                {!['concluido', 'cancelado', 'em_atendimento', 'pendente_caixa'].includes(agendamento.status) && (
+                                                {!['concluido', 'cancelado', 'pendente_caixa'].includes(agendamento.status) && (
                                                   <>
                                                     <DropdownMenuSeparator />
                                                     <DropdownMenuItem onClick={() => onCancel(agendamento)} className="py-2 text-xs font-semibold uppercase tracking-wider text-red-600">

@@ -122,7 +122,7 @@ export function AgendamentosList({
                               Finalizar Atendimento
                             </DropdownMenuItem>
                           )}
-                          {!['concluido', 'cancelado', 'em_atendimento', 'pendente_caixa'].includes(agendamento.status) && (
+                          {!['concluido', 'cancelado', 'pendente_caixa'].includes(agendamento.status) && (
                             <>
                               <DropdownMenuSeparator />
                               <DropdownMenuItem
