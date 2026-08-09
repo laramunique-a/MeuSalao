@@ -361,39 +361,69 @@ export function AgendamentosColumns({
                           className="p-1 min-h-[55px] border-r border-b border-border/80 transition-all bg-background/40"
                         >
                           <div className="flex flex-col gap-1">
-                            {/* Cards de Bloqueio de Agenda */}
-                            {slotBloqueios.map((bloqueio) => (
-                              <Card
-                                key={bloqueio.id}
-                                className="border-2 border-dashed border-zinc-300 dark:border-zinc-700 bg-zinc-100/90 dark:bg-zinc-900/80 rounded-lg shadow-sm"
-                              >
-                                <CardContent className="p-2 space-y-1">
-                                  <div className="flex items-center justify-between gap-1">
-                                    <span className="bg-zinc-600 text-white font-bold text-[9px] uppercase px-1.5 py-0.5 rounded-full flex items-center gap-1">
-                                      <Ban className="h-2.5 w-2.5" />
-                                      Bloqueado
-                                    </span>
-                                    {onDeleteBlock && (
-                                      <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        className="h-5 w-5 p-0 hover:bg-red-500/20 text-zinc-500 hover:text-red-600 rounded"
-                                        onClick={() => onDeleteBlock(bloqueio.id)}
-                                        title="Remover Bloqueio"
-                                      >
-                                        <Trash2 className="h-3 w-3" />
-                                      </Button>
-                                    )}
-                                  </div>
-                                  <p className="font-bold text-xs uppercase tracking-wider text-zinc-700 dark:text-zinc-300 truncate">
-                                    {bloqueio.motivo || 'Horário Indisponível'}
-                                  </p>
-                                  <p className="text-[10px] text-zinc-500 font-mono">
-                                    {bloqueio.horario_inicio.slice(0, 5)} - {bloqueio.horario_fim.slice(0, 5)}
-                                  </p>
-                                </CardContent>
-                              </Card>
-                            ))}
+                            {/* Exibição dos Bloqueios de Agenda */}
+                            {slotBloqueios.map((bloqueio) => {
+                              const isStartSlot = bloqueio.horario_inicio.slice(0, 5) === slot.label
+
+                              if (isStartSlot) {
+                                return (
+                                  <Card
+                                    key={bloqueio.id}
+                                    className="border-2 border-dashed border-zinc-300 dark:border-zinc-700 bg-zinc-100/90 dark:bg-zinc-900/80 rounded-lg shadow-sm"
+                                  >
+                                    <CardContent className="p-2 space-y-1">
+                                      <div className="flex items-center justify-between gap-1">
+                                        <span className="bg-zinc-600 text-white font-bold text-[9px] uppercase px-1.5 py-0.5 rounded-full flex items-center gap-1">
+                                          <Ban className="h-2.5 w-2.5" />
+                                          Bloqueado
+                                        </span>
+                                        {onDeleteBlock && (
+                                          <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            className="h-5 w-5 p-0 hover:bg-red-500/20 text-zinc-500 hover:text-red-600 rounded"
+                                            onClick={() => onDeleteBlock(bloqueio.id)}
+                                            title="Remover Bloqueio"
+                                          >
+                                            <Trash2 className="h-3 w-3" />
+                                          </Button>
+                                        )}
+                                      </div>
+                                      <p className="font-bold text-xs uppercase tracking-wider text-zinc-700 dark:text-zinc-300 truncate">
+                                        {bloqueio.motivo || 'Horário Indisponível'}
+                                      </p>
+                                      <p className="text-[10px] text-zinc-500 font-mono">
+                                        {bloqueio.horario_inicio.slice(0, 5)} - {bloqueio.horario_fim.slice(0, 5)}
+                                      </p>
+                                    </CardContent>
+                                  </Card>
+                                )
+                              }
+
+                              // Faixa visual sutil de continuação do bloqueio em horários subsequentes
+                              return (
+                                <div
+                                  key={bloqueio.id}
+                                  className="px-2 py-1.5 rounded bg-zinc-200/50 dark:bg-zinc-900/50 border-x-2 border-dashed border-zinc-300 dark:border-zinc-700 flex items-center justify-between text-[10px] text-zinc-500 font-semibold italic"
+                                >
+                                  <span className="flex items-center gap-1 text-[9px] uppercase tracking-wider">
+                                    <Ban className="h-3 w-3 opacity-60" />
+                                    Bloqueado (até {bloqueio.horario_fim.slice(0, 5)})
+                                  </span>
+                                  {onDeleteBlock && (
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      className="h-4 w-4 p-0 hover:bg-red-500/20 text-zinc-400 hover:text-red-600 rounded"
+                                      onClick={() => onDeleteBlock(bloqueio.id)}
+                                      title="Remover Bloqueio"
+                                    >
+                                      <Trash2 className="h-2.5 w-2.5" />
+                                    </Button>
+                                  )}
+                                </div>
+                              )
+                            })}
 
                             {/* Agendamentos exibidos LADO A LADO caso haja mais de um no mesmo horário */}
                             {slotAgendamentos.length > 0 && (
