@@ -25,7 +25,7 @@ import {
 import { useTransacoesByDate, useCaixaSummary, useCaixaAberto, useEstornarTransacao, useSaldoCaixaAberto, useTransacoesByCaixa } from '@/hooks/useCaixa'
 import { useAgendamentosEmAtendimento, usePendenciasGlobais } from '@/hooks/useAgendamentos'
 import { useProfissionais } from '@/hooks/useProfissionais'
-import { format, startOfDay, endOfDay, subDays, isBefore, parseISO } from 'date-fns'
+import { format, startOfDay, endOfDay, subDays, addDays, isBefore, parseISO } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { Badge } from '@/components/ui/badge'
 import { useAuthStore } from '@/store/authStore'
@@ -90,9 +90,11 @@ export default function Caixa() {
     }
   }, [caixaAberto, transacoesCaixa, resumen])
   
-  // Buscar pendências de até 7 dias atrás
+  // Buscar pendências de até 7 dias atrás e 7 dias à frente
+  // (captura agendamentos futuros que foram marcados como pendente_caixa indevidamente)
   const [dataPendenciasInicio] = useState(subDays(startOfDay(new Date()), 7).toISOString())
-  const { data: pendencias } = useAgendamentosEmAtendimento(dataPendenciasInicio, dataFim)
+  const [dataPendenciasFim] = useState(addDays(endOfDay(new Date()), 7).toISOString())
+  const { data: pendencias } = useAgendamentosEmAtendimento(dataPendenciasInicio, dataPendenciasFim)
   const estornar = useEstornarTransacao()
   const { data: todosProfissionais = [] } = useProfissionais()
 

@@ -134,7 +134,17 @@ export default function Agenda() {
         if (statusUpdateInProgress.current.has(ag.id)) return
 
         const dataInicio = new Date(ag.data_hora)
-        const duracao = ag.servico?.duracao_minutos || 60
+
+        // Só processa agendamentos do dia de hoje — nunca agendamentos futuros
+        const inicioDiaHoje = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0)
+        const fimDiaHoje = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59)
+        if (dataInicio < inicioDiaHoje || dataInicio > fimDiaHoje) return
+
+        // Calcula duração real: prioriza itens[], depois servico, fallback 60min
+        const duracaoItens = ag.itens && ag.itens.length > 0
+          ? ag.itens.reduce((acc, it) => acc + (it.duracao_minutos || 0), 0)
+          : 0
+        const duracao = duracaoItens > 0 ? duracaoItens : (ag.servico?.duracao_minutos || 60)
         const dataFim = new Date(dataInicio.getTime() + duracao * 60000)
 
         if (ag.status === 'agendado' && dataInicio <= now) {
