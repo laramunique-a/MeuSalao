@@ -360,7 +360,21 @@ export function AgendamentosColumns({
                       >
                         <CardContent className="p-2 h-full flex flex-col gap-1 overflow-hidden">
                           <div className="flex items-center justify-between gap-1 flex-shrink-0">
-                            <span className={theme.badgeBg}>{theme.label}</span>
+                            <div className="flex items-center gap-1.5 min-w-0 overflow-hidden">
+                              <span className={`${theme.badgeBg} flex-shrink-0`}>{theme.label}</span>
+                              {/* Horario discreto ao lado do status */}
+                              {(() => {
+                                const inicio = new Date(ag.data_hora)
+                                const fim = new Date(inicio.getTime() + getDuracao(ag) * 60000)
+                                const fmt = (d: Date) =>
+                                  `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}h`
+                                return (
+                                  <span className="text-[9px] text-foreground/50 font-medium truncate leading-none">
+                                    {fmt(inicio)} às {fmt(fim)}
+                                  </span>
+                                )
+                              })()}
+                            </div>
                             {!['concluido', 'cancelado', 'pendente_caixa'].includes(ag.status) && (
                               <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
@@ -418,18 +432,7 @@ export function AgendamentosColumns({
                               <Sparkles className="h-3.5 w-3.5 shrink-0 opacity-75 text-primary" />
                               <span className="truncate">{ag.servico?.nome}</span>
                             </p>
-                            {/* Horario discreto: 09:00h as 10:30h */}
-                            {(() => {
-                              const inicio = new Date(ag.data_hora)
-                              const fim = new Date(inicio.getTime() + getDuracao(ag) * 60000)
-                              const fmt = (d: Date) =>
-                                `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}h`
-                              return (
-                                <p className="text-[10px] text-foreground/50 font-medium mt-1 leading-none">
-                                  {fmt(inicio)} às {fmt(fim)}
-                                </p>
-                              )
-                            })()}
+
                           </div>
                         </CardContent>
                       </Card>
