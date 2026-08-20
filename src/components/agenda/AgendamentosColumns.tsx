@@ -225,6 +225,11 @@ export function AgendamentosColumns({
     return grouped
   }, [agendamentos, profissionais])
 
+  // Converte hora e minuto para total de minutos desde meia-noite
+  function toTotalMinutes(hour: number, minute: number): number {
+    return hour * 60 + minute
+  }
+
   // Buscar TODOS os agendamentos pertencentes ao slot de horário
   function getAgendamentosInSlot(profissionalId: string, slot: TimeSlot): Agendamento[] {
     const agendamentosList = agendamentosPorProfissional.get(profissionalId) || []
@@ -252,6 +257,32 @@ export function AgendamentosColumns({
         )
       }
     })
+  }
+
+  // Verifica se este slot está COBERTO (mas não é o início) de um agendamento
+  // Retorna o agendamento que cobre o slot, ou null
+  function getAgendamentoCobrandoSlot(profissionalId: string, slot: TimeSlot): Agendamento | null {
+    const agendamentosList = agendamentosPorProfissional.get(profissionalId) || []
+    const slotMin = toTotalMinutes(slot.hour, slot.minute)
+
+    for (const ag of agendamentosList) {
+      if (ag.status === 'cancelado') continue
+      const agDate = new Date(ag.data_hora)
+      const agStartMin = toTotalMinutes(agDate.getHours(), agDate.getMinutes())
+
+      // Calcula duração real: itens[] > servico > fallback 30min
+      const duracaoItens = ag.itens && ag.itens.length > 0
+        ? ag.itens.reduce((acc, it) => acc + (it.duracao_minutos || 0), 0)
+        : 0
+      const duracao = duracaoItens > 0 ? duracaoItens : (ag.servico?.duracao_minutos || 30)
+      const agEndMin = agStartMin + duracao
+
+      // Este slot é coberto se está APÓS o início e ANTES do fim do agendamento
+      if (slotMin > agStartMin && slotMin < agEndMin) {
+        return ag
+      }
+    }
+    return null
   }
 
   // Buscar bloqueios pertencentes ao slot de horário
@@ -353,6 +384,37 @@ export function AgendamentosColumns({
                   {profissionais.map((prof) => {
                     const slotAgendamentos = getAgendamentosInSlot(prof.id, slot)
                     const slotBloqueios = getBloqueiosInSlot(prof.id, slot)
+                    const agendamentoCobrindo = slotAgendamentos.length === 0 && slotBloqueios.length === 0
+                      ? getAgendamentoCobrandoSlot(prof.id, slot)
+                      : null
+
+                    // Célula que está sendo COBERTA por um agendamento em andamento (faixa de ocupação)
+                    if (agendamentoCobrindo) {
+                      const theme = getStatusTheme(agendamentoCobrindo.status)
+                      return (
+                        <div
+                          key={`${prof.id}-${slot.label}`}
+                          className="min-h-[50px] border-r border-b border-border/80 relative overflow-hidden"
+                        >
+                          {/* Faixa colorida de ocupação com borda lateral esquerda espessa */}
+                          <div
+                            className={`absolute inset-0 border-l-4 ${
+                              agendamentoCobrindo.status === 'agendado'
+                                ? 'bg-sky-50/80 dark:bg-sky-950/30 border-l-sky-400'
+                                : agendamentoCobrindo.status === 'em_atendimento'
+                                ? 'bg-blue-50/80 dark:bg-blue-950/30 border-l-blue-400'
+                                : agendamentoCobrindo.status === 'concluido'
+                                ? 'bg-emerald-50/80 dark:bg-emerald-950/30 border-l-emerald-400'
+                                : agendamentoCobrindo.status === 'pendente_caixa'
+                                ? 'bg-amber-50/80 dark:bg-amber-950/30 border-l-amber-400'
+                                : agendamentoCobrindo.status === 'em_atraso'
+                                ? 'bg-rose-50/80 dark:bg-rose-950/30 border-l-rose-400'
+                                : 'bg-muted/30 border-l-border'
+                            }`}
+                          />
+                        </div>
+                      )
+                    }
 
                     if (slotAgendamentos.length > 0 || slotBloqueios.length > 0) {
                       return (
