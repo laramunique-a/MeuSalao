@@ -1,4 +1,4 @@
-﻿import { Button } from '@/components/ui/button'
+import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import {
   DropdownMenu,
@@ -418,6 +418,18 @@ export function AgendamentosColumns({
                               <Sparkles className="h-3.5 w-3.5 shrink-0 opacity-75 text-primary" />
                               <span className="truncate">{ag.servico?.nome}</span>
                             </p>
+                            {/* Horario discreto: 09:00h as 10:30h */}
+                            {(() => {
+                              const inicio = new Date(ag.data_hora)
+                              const fim = new Date(inicio.getTime() + getDuracao(ag) * 60000)
+                              const fmt = (d: Date) =>
+                                `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}h`
+                              return (
+                                <p className="text-[10px] text-foreground/50 font-medium mt-1 leading-none">
+                                  {fmt(inicio)} às {fmt(fim)}
+                                </p>
+                              )
+                            })()}
                           </div>
                         </CardContent>
                       </Card>
