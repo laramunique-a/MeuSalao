@@ -89,8 +89,9 @@ export function AgendamentoFormDialog({
   const [conflictData, setConflictData] = useState<any>(null)
   const [pendingAgendamento, setPendingAgendamento] = useState<any>(null)
 
-  // Estado para guardar a duração personalizada informada pelo usuário
-  const [customDuracao, setCustomDuracao] = useState<number | null>(null)
+  // Estado para guardar a duração personalizada informada pelo usuário (como string para edição fluida no mobile)
+  const [duracaoInput, setDuracaoInput] = useState<string>('30')
+  const [isCustomDuracao, setIsCustomDuracao] = useState(false)
 
   // Controla se é um agendamento retroativo (atendimento já realizado)
   const [isRetroativo, setIsRetroativo] = useState(false)
@@ -136,8 +137,18 @@ export function AgendamentoFormDialog({
     return acc + (serv?.duracao_minutos || 0)
   }, 0)
 
+  // Sincroniza a duração padrão caso o usuário não tenha digitado uma duração manual
+  useEffect(() => {
+    if (!isCustomDuracao) {
+      setDuracaoInput(String(sumDuracaoServicos > 0 ? sumDuracaoServicos : 30))
+    }
+  }, [sumDuracaoServicos, isCustomDuracao])
+
   // Se o usuário editou manualmente a duração, usamos ela; caso contrário, usamos a soma dos serviços
-  const effectiveDuracao = customDuracao !== null && customDuracao >= 0 ? customDuracao : sumDuracaoServicos
+  const parsedInputDur = parseInt(duracaoInput, 10)
+  const effectiveDuracao = !isNaN(parsedInputDur) && parsedInputDur > 0
+    ? parsedInputDur
+    : (sumDuracaoServicos > 0 ? sumDuracaoServicos : 30)
 
   useEffect(() => {
     if (agendamento) {
@@ -145,9 +156,10 @@ export function AgendamentoFormDialog({
 
       const initialDur = agendamento.itens && agendamento.itens.length > 0
         ? agendamento.itens.reduce((acc, it) => acc + (it.duracao_minutos || 0), 0)
-        : (agendamento.servico?.duracao_minutos || null)
+        : (agendamento.servico?.duracao_minutos || 30)
       
-      setCustomDuracao(initialDur)
+      setIsCustomDuracao(true)
+      setDuracaoInput(String(initialDur || 30))
 
       if (agendamento.itens && agendamento.itens.length > 0) {
         form.reset({
@@ -175,7 +187,8 @@ export function AgendamentoFormDialog({
         })
       }
     } else {
-      setCustomDuracao(null)
+      setIsCustomDuracao(false)
+      setDuracaoInput(String(sumDuracaoServicos > 0 ? sumDuracaoServicos : 30))
       setIsRetroativo(false)
       isRetroativoRef.current = false
       form.reset({
@@ -655,16 +668,19 @@ export function AgendamentoFormDialog({
                     </span>
                     <div className="flex items-center gap-1.5">
                       <Input
-                        type="number"
-                        min={1}
-                        step={1}
-                        value={customDuracao !== null ? customDuracao : (sumDuracaoServicos || 30)}
+                        type="text"
+                        inputMode="numeric"
+                        pattern="[0-9]*"
+                        value={duracaoInput}
                         onChange={(e) => {
-                          const val = parseInt(e.target.value)
-                          if (!isNaN(val) && val >= 0) {
-                            setCustomDuracao(val)
-                          } else if (e.target.value === '') {
-                            setCustomDuracao(null)
+                          const val = e.target.value.replace(/\D/g, '')
+                          setIsCustomDuracao(true)
+                          setDuracaoInput(val)
+                        }}
+                        onBlur={() => {
+                          if (!duracaoInput || parseInt(duracaoInput, 10) <= 0) {
+                            setDuracaoInput(String(sumDuracaoServicos > 0 ? sumDuracaoServicos : 30))
+                            setIsCustomDuracao(false)
                           }
                         }}
                         className="w-20 h-8 text-center font-bold text-sm bg-white dark:bg-card px-1 py-0"
