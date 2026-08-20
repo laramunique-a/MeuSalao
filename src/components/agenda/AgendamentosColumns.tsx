@@ -390,7 +390,6 @@ export function AgendamentosColumns({
 
                     // Célula que está sendo COBERTA por um agendamento em andamento (faixa de ocupação)
                     if (agendamentoCobrindo) {
-                      const theme = getStatusTheme(agendamentoCobrindo.status)
                       return (
                         <div
                           key={`${prof.id}-${slot.label}`}
