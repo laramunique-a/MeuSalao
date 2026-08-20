@@ -645,7 +645,7 @@ export function AgendamentoFormDialog({
                 </Button>
 
                 {/* Box do Total */}
-                <div className="p-4 bg-white dark:bg-card border border-border rounded-xl flex flex-wrap items-center justify-between gap-3 shadow-sm text-sm">
+                <div className="p-4 bg-white dark:bg-card border border-border rounded-xl shadow-sm text-sm flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                   <span className="font-semibold text-foreground">
                     Total: <span className="font-bold text-foreground">R$ {totalValor.toFixed(2)}</span>
                   </span>
