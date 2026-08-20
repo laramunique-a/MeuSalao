@@ -83,8 +83,16 @@ export function BloqueioFormDialog({ open, onOpenChange, bloqueio }: BloqueioFor
 
   async function onSubmit(data: BloqueioAgendaFormData) {
     try {
-      const startIso = `${data.data_inicio}T${data.horario_inicio}:00`
-      const endIso = `${data.data_fim}T${data.horario_fim}:00`
+      // Calcula o offset do fuso horário local para garantir que o horário
+      // seja salvo corretamente no banco (ex: 16:00 BRT → 19:00 UTC)
+      const offsetMinutes = new Date().getTimezoneOffset()
+      const offsetSign = offsetMinutes <= 0 ? '+' : '-'
+      const offsetHH = String(Math.floor(Math.abs(offsetMinutes) / 60)).padStart(2, '0')
+      const offsetMM = String(Math.abs(offsetMinutes) % 60).padStart(2, '0')
+      const tzOffset = `${offsetSign}${offsetHH}:${offsetMM}`
+
+      const startIso = `${data.data_inicio}T${data.horario_inicio}:00${tzOffset}`
+      const endIso = `${data.data_fim}T${data.horario_fim}:00${tzOffset}`
 
       if (new Date(endIso) <= new Date(startIso)) {
         toast({
