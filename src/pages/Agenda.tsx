@@ -142,15 +142,17 @@ export default function Agenda() {
 
         // Calcula duração real: prioriza itens[], depois servico, fallback 60min
         const duracaoItens = ag.itens && ag.itens.length > 0
-          ? ag.itens.reduce((acc, it) => acc + (it.duracao_minutos || 0), 0)
+          ? ag.itens.reduce((acc, it) => acc + (Number(it.duracao_minutos) || 0), 0)
           : 0
-        const duracao = duracaoItens > 0 ? duracaoItens : (ag.servico?.duracao_minutos || 60)
+        const duracao = duracaoItens > 0 ? duracaoItens : (Number(ag.servico?.duracao_minutos) || 60)
         const dataFim = new Date(dataInicio.getTime() + duracao * 60000)
 
-        if (ag.status === 'agendado' && dataInicio <= now) {
-          toUpdate.push({ id: ag.id, status: 'em_atendimento' })
-        } else if (ag.status === 'em_atendimento' && dataFim <= now) {
-          toUpdate.push({ id: ag.id, status: 'pendente_caixa' })
+        if (['agendado', 'em_atendimento', 'em_atraso'].includes(ag.status)) {
+          if (dataFim <= now) {
+            toUpdate.push({ id: ag.id, status: 'pendente_caixa' })
+          } else if (dataInicio <= now && ag.status !== 'em_atendimento') {
+            toUpdate.push({ id: ag.id, status: 'em_atendimento' })
+          }
         }
       })
 

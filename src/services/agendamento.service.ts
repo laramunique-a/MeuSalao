@@ -29,19 +29,25 @@ export function mapAgendamentoRealTimeStatus(ag: any): any {
   const dataInicio = new Date(ag.data_hora)
   
   // Se houver itens, a duração total é a soma das durações dos itens
-  let duracao = ag.servico?.duracao_minutos || 60
+  let duracao = Number(ag.servico?.duracao_minutos) || 60
   if (ag.itens && ag.itens.length > 0) {
-    duracao = ag.itens.reduce((acc: number, item: any) => acc + (Number(item.duracao_minutos) || 0), 0)
+    const durItens = ag.itens.reduce((acc: number, item: any) => acc + (Number(item.duracao_minutos) || 0), 0)
+    if (durItens > 0) {
+      duracao = durItens
+    }
   }
   
   const dataFim = new Date(dataInicio.getTime() + duracao * 60000)
 
   let status = ag.status
 
-  if (status === 'agendado' && dataInicio <= now) {
-    status = 'em_atendimento'
-  } else if (status === 'em_atendimento' && dataFim <= now) {
-    status = 'pendente_caixa'
+  // Se o agendamento está ativo/em andamento e seu horário terminou, promove diretamente a pendente_caixa
+  if (['agendado', 'em_atendimento', 'em_atraso'].includes(status)) {
+    if (dataFim <= now) {
+      status = 'pendente_caixa'
+    } else if (dataInicio <= now) {
+      status = 'em_atendimento'
+    }
   }
 
   if (status !== ag.status) {
@@ -160,12 +166,12 @@ export const agendamentoService = {
 
     const idsComTransacaoSet = new Set(idsComTransacaoAtiva)
 
-    // 2. Buscar agendamentos em_atendimento ou pendente_caixa do salão no período
+    // 2. Buscar agendamentos do salão no período
     let query = supabase
       .from('agendamento')
       .select(AGENDAMENTO_SELECT)
       .eq('salao_id', usuario.salao_id)
-      .in('status', ['em_atendimento', 'pendente_caixa'])
+      .in('status', ['agendado', 'em_atendimento', 'pendente_caixa'])
       .gte('data_hora', startDate)
       .lte('data_hora', endDate)
 
@@ -203,7 +209,7 @@ export const agendamentoService = {
       .from('agendamento')
       .select(AGENDAMENTO_SELECT)
       .eq('salao_id', usuario.salao_id)
-      .in('status', ['em_atendimento', 'pendente_caixa'])
+      .in('status', ['agendado', 'em_atendimento', 'pendente_caixa'])
 
     if (profissionalId) {
       query = query.eq('profissional_id', profissionalId)
@@ -289,7 +295,7 @@ export const agendamentoService = {
         servico_id: item.servico_id,
         profissional_id: item.profissional_id,
         valor: item.valor,
-        duracao_minutos: item.duracao_minutos || 30,
+        duracao_minutos: Number(item.duracao_minutos) || 30,
         comissao_percentual: item.comissao_percentual || null,
         comissao_valor: item.comissao_valor || 0,
       }))
@@ -300,6 +306,7 @@ export const agendamentoService = {
 
       if (errorItens) {
         console.error('Erro ao salvar itens do agendamento:', errorItens)
+        throw errorItens
       }
     }
 
@@ -331,12 +338,16 @@ export const agendamentoService = {
           servico_id: item.servico_id,
           profissional_id: item.profissional_id,
           valor: item.valor,
-          duracao_minutos: item.duracao_minutos || 30,
+          duracao_minutos: Number(item.duracao_minutos) || 30,
           comissao_percentual: item.comissao_percentual || null,
           comissao_valor: item.comissao_valor || 0,
         }))
 
-        await (supabase.from('agendamento_servico') as any).insert(itensToInsert)
+        const { error: errorItens } = await (supabase.from('agendamento_servico') as any).insert(itensToInsert)
+        if (errorItens) {
+          console.error('Erro ao atualizar itens do agendamento:', errorItens)
+          throw errorItens
+        }
       }
     }
 
@@ -372,7 +383,7 @@ export const agendamentoService = {
       .from('agendamento')
       .select(AGENDAMENTO_SELECT)
       .eq('salao_id', usuario.salao_id)
-      .in('status', ['em_atendimento', 'pendente_caixa'])
+      .in('status', ['agendado', 'em_atendimento', 'pendente_caixa'])
       .order('data_hora', { ascending: false })
 
     if (error) throw error
@@ -408,7 +419,10 @@ export const agendamentoService = {
       if (excludeId && ag.id === excludeId) return false
 
       const agInicio = new Date(ag.data_hora)
-      const agDuracao = ag.servico?.duracao_minutos || 60
+      const agDuracaoItens = ag.itens && ag.itens.length > 0
+        ? ag.itens.reduce((acc: number, it: any) => acc + (Number(it.duracao_minutos) || 0), 0)
+        : 0
+      const agDuracao = agDuracaoItens > 0 ? agDuracaoItens : (Number(ag.servico?.duracao_minutos) || 60)
       const agFim = new Date(agInicio.getTime() + agDuracao * 60000)
 
       // Lógica de sobreposição: (A_inicio < B_fim) AND (A_fim > B_inicio)

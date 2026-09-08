@@ -155,8 +155,8 @@ export function AgendamentoFormDialog({
       const dataHora = new Date(agendamento.data_hora)
 
       const initialDur = agendamento.itens && agendamento.itens.length > 0
-        ? agendamento.itens.reduce((acc, it) => acc + (it.duracao_minutos || 0), 0)
-        : (agendamento.servico?.duracao_minutos || 30)
+        ? agendamento.itens.reduce((acc, it) => acc + (Number(it.duracao_minutos) || 0), 0)
+        : (Number(agendamento.servico?.duracao_minutos) || 30)
       
       setIsCustomDuracao(true)
       setDuracaoInput(String(initialDur || 30))
@@ -206,6 +206,43 @@ export function AgendamentoFormDialog({
     }
   }, [agendamento, defaultDate, defaultProfissionalId, form, open])
 
+  // Calcula as durações individuais de cada item respeitando effectiveDuracao
+  function calculateItemDurations(
+    itens: { servico_id: string; profissional_id: string }[],
+    totalTargetDur: number
+  ): number[] {
+    if (itens.length === 0) return []
+    if (itens.length === 1) return [totalTargetDur]
+
+    const baseDurations = itens.map((it) => {
+      const serv = servicos.find((s) => s.id === it.servico_id)
+      return Number(serv?.duracao_minutos) || 30
+    })
+
+    const baseSum = baseDurations.reduce((acc, d) => acc + d, 0)
+    if (baseSum <= 0) {
+      const perItem = Math.floor(totalTargetDur / itens.length)
+      const res = new Array(itens.length).fill(perItem)
+      res[res.length - 1] += totalTargetDur - perItem * itens.length
+      return res
+    }
+
+    let allocated = 0
+    const results: number[] = []
+
+    for (let i = 0; i < baseDurations.length; i++) {
+      if (i === baseDurations.length - 1) {
+        results.push(Math.max(5, totalTargetDur - allocated))
+      } else {
+        const itemDur = Math.max(5, Math.round((baseDurations[i] / baseSum) * totalTargetDur))
+        allocated += itemDur
+        results.push(itemDur)
+      }
+    }
+
+    return results
+  }
+
   async function onSubmit(data: AgendamentoFormData) {
     try {
       if (!data.itens || data.itens.length === 0) {
@@ -242,6 +279,7 @@ export function AgendamentoFormDialog({
       // Verificações de bloqueio e conflito somente para agendamentos futuros
       if (!isRetroativo) {
         let itemStart = new Date(currentDataHora)
+        const itemDurations = calculateItemDurations(data.itens, effectiveDuracao)
 
         for (let i = 0; i < data.itens.length; i++) {
           const item = data.itens[i]
@@ -262,7 +300,7 @@ export function AgendamentoFormDialog({
             return
           }
 
-          const duracaoItemCheck = data.itens.length === 1 ? (effectiveDuracao || servico.duracao_minutos) : servico.duracao_minutos
+          const duracaoItemCheck = itemDurations[i] || servico.duracao_minutos
 
           const conflictResult = await checkConflict.mutateAsync({
             profissionalId: item.profissional_id,
@@ -304,14 +342,15 @@ export function AgendamentoFormDialog({
       const mainProf = itensList[0]?.profissional_id || ''
       const mainServ = itensList[0]?.servico_id || ''
 
-      const mappedItens: AgendamentoServico[] = itensList.map((it) => {
+      const itemDurations = calculateItemDurations(itensList, effectiveDuracao)
+
+      const mappedItens: AgendamentoServico[] = itensList.map((it, idx) => {
         const serv = servicos.find((s) => s.id === it.servico_id)
-        const dur = itensList.length === 1 ? effectiveDuracao : (serv?.duracao_minutos || 30)
         return {
           servico_id: it.servico_id,
           profissional_id: it.profissional_id,
           valor: serv?.valor || 0,
-          duracao_minutos: dur,
+          duracao_minutos: itemDurations[idx] || 30,
         }
       })
 

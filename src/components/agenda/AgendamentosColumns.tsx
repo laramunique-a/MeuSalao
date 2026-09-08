@@ -8,10 +8,11 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { MoreVertical, Pencil, Ban, UserCheck, Plus, Clock, Sparkles, Check, Trash2 } from 'lucide-react'
+import { MoreVertical, Pencil, Ban, UserCheck, Plus, Clock, Sparkles, Check, Trash2, Receipt } from 'lucide-react'
 import type { Agendamento, BloqueioAgenda } from '@/types/models'
 import { setHours, setMinutes, isSameDay } from 'date-fns'
 import { useState, useMemo, useEffect, useRef } from 'react'
+import { useNavigate } from 'react-router-dom'
 
 interface AgendamentosColumnsProps {
   agendamentos: Agendamento[]
@@ -102,18 +103,32 @@ export function AgendamentosColumns({
   onSlotClick,
   onDeleteBlock,
 }: AgendamentosColumnsProps) {
+  const navigate = useNavigate()
   const [now, setNow] = useState(new Date())
   const containerRef = useRef<HTMLDivElement>(null)
   const isToday = isSameDay(selectedDate, now)
 
-  // Agrupar agendamentos por profissional
+  // Agrupar agendamentos por profissional (incluindo se o profissional estiver nos itens)
   const agendamentosPorProfissional = useMemo(() => {
     const grouped = new Map<string, Agendamento[]>()
     profissionais.forEach(prof => grouped.set(prof.id, []))
     agendamentos.forEach(ag => {
       const list = grouped.get(ag.profissional_id) || []
-      list.push(ag)
-      grouped.set(ag.profissional_id, list)
+      if (!list.some(item => item.id === ag.id)) {
+        list.push(ag)
+        grouped.set(ag.profissional_id, list)
+      }
+      if (ag.itens && ag.itens.length > 0) {
+        ag.itens.forEach((it: any) => {
+          if (it.profissional_id && it.profissional_id !== ag.profissional_id) {
+            const extraList = grouped.get(it.profissional_id) || []
+            if (!extraList.some(item => item.id === ag.id)) {
+              extraList.push(ag)
+              grouped.set(it.profissional_id, extraList)
+            }
+          }
+        })
+      }
     })
     return grouped
   }, [agendamentos, profissionais])
@@ -148,9 +163,9 @@ export function AgendamentosColumns({
   function getDuracao(ag: Agendamento): number {
     const duracaoItens =
       ag.itens && ag.itens.length > 0
-        ? ag.itens.reduce((acc, it) => acc + (it.duracao_minutos || 0), 0)
+        ? ag.itens.reduce((acc, it) => acc + (Number(it.duracao_minutos) || 0), 0)
         : 0
-    return duracaoItens > 0 ? duracaoItens : ag.servico?.duracao_minutos || 30
+    return duracaoItens > 0 ? duracaoItens : (Number(ag.servico?.duracao_minutos) || 30)
   }
 
   function handleCellClick(profissionalId: string, slot: { hour: number; minute: number }) {
@@ -375,7 +390,7 @@ export function AgendamentosColumns({
                                 )
                               })()}
                             </div>
-                            {!['concluido', 'cancelado', 'pendente_caixa'].includes(ag.status) && (
+                            {!['concluido', 'cancelado'].includes(ag.status) && (
                               <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
                                   <Button
@@ -392,33 +407,46 @@ export function AgendamentosColumns({
                                     Gerenciar Agendamento
                                   </DropdownMenuLabel>
                                   <DropdownMenuSeparator />
+
+                                  {ag.status === 'pendente_caixa' && (
+                                    <DropdownMenuItem onClick={() => navigate('/caixa')} className="py-2 text-xs font-semibold uppercase tracking-wider text-amber-600 dark:text-amber-400 font-bold">
+                                      <Receipt className="h-3.5 w-3.5 mr-2" />
+                                      Ir para o Caixa
+                                    </DropdownMenuItem>
+                                  )}
+
                                   {ag.status !== 'em_atendimento' && (
                                     <DropdownMenuItem onClick={() => onEdit(ag)} className="py-2 text-xs font-semibold uppercase tracking-wider">
                                       <Pencil className="h-3.5 w-3.5 mr-2" />
                                       Editar Detalhes
                                     </DropdownMenuItem>
                                   )}
+
                                   {['agendado', 'em_atraso'].includes(ag.status) && (
-                                    <DropdownMenuItem onClick={() => onChangeStatus(ag, 'em_atendimento')} className="py-2 text-xs font-semibold uppercase tracking-wider text-blue-600 font-bold">
-                                      <UserCheck className="h-3.5 w-3.5 mr-2" />
-                                      Iniciar Atendimento
-                                    </DropdownMenuItem>
+                                    <>
+                                      <DropdownMenuItem onClick={() => onChangeStatus(ag, 'em_atendimento')} className="py-2 text-xs font-semibold uppercase tracking-wider text-blue-600 font-bold">
+                                        <UserCheck className="h-3.5 w-3.5 mr-2" />
+                                        Iniciar Atendimento
+                                      </DropdownMenuItem>
+                                      <DropdownMenuItem onClick={() => onChangeStatus(ag, 'pendente_caixa')} className="py-2 text-xs font-semibold uppercase tracking-wider text-emerald-600 font-bold">
+                                        <Check className="h-3.5 w-3.5 mr-2" />
+                                        Finalizar (Enviar ao Caixa)
+                                      </DropdownMenuItem>
+                                    </>
                                   )}
+
                                   {ag.status === 'em_atendimento' && (
                                     <DropdownMenuItem onClick={() => onChangeStatus(ag, 'pendente_caixa')} className="py-2 text-xs font-semibold uppercase tracking-wider text-emerald-600 font-bold">
                                       <Check className="h-3.5 w-3.5 mr-2" />
                                       Finalizar Atendimento
                                     </DropdownMenuItem>
                                   )}
-                                  {!['concluido', 'cancelado', 'pendente_caixa'].includes(ag.status) && (
-                                    <>
-                                      <DropdownMenuSeparator />
-                                      <DropdownMenuItem onClick={() => onCancel(ag)} className="py-2 text-xs font-semibold uppercase tracking-wider text-red-600">
-                                        <Ban className="h-3.5 w-3.5 mr-2" />
-                                        Cancelar Horario
-                                      </DropdownMenuItem>
-                                    </>
-                                  )}
+
+                                  <DropdownMenuSeparator />
+                                  <DropdownMenuItem onClick={() => onCancel(ag)} className="py-2 text-xs font-semibold uppercase tracking-wider text-red-600">
+                                    <Ban className="h-3.5 w-3.5 mr-2" />
+                                    Cancelar Horario
+                                  </DropdownMenuItem>
                                 </DropdownMenuContent>
                               </DropdownMenu>
                             )}

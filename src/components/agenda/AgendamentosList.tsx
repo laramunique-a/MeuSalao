@@ -14,10 +14,11 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { User, Scissors, MoreVertical, Pencil, Ban, Check, Trash2, UserCheck, Clock } from 'lucide-react'
+import { User, Scissors, MoreVertical, Pencil, Ban, Check, Trash2, UserCheck, Clock, Receipt } from 'lucide-react'
 import type { Agendamento } from '@/types/models'
 import { format } from 'date-fns'
 import { useMemo } from 'react'
+import { useNavigate } from 'react-router-dom'
 import type { BloqueioAgenda } from '@/types/models'
 import { cn } from '@/lib/utils'
 import { getStatusTheme } from './AgendamentosColumns'
@@ -41,6 +42,7 @@ export function AgendamentosList({
   onChangeStatus,
   onDeleteBlock,
 }: AgendamentosListProps) {
+  const navigate = useNavigate()
   const mergedItems = useMemo(() => {
     const items: (
       | { type: 'agendamento'; data: Agendamento; time: string }
@@ -94,7 +96,7 @@ export function AgendamentosList({
                         Retroativo
                       </Badge>
                     )}
-                    {!['concluido', 'cancelado', 'pendente_caixa'].includes(agendamento.status) && (
+                    {!['concluido', 'cancelado'].includes(agendamento.status) && (
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full hover:bg-accent">
@@ -104,36 +106,49 @@ export function AgendamentosList({
                         <DropdownMenuContent align="end" className="w-56 border-border">
                           <DropdownMenuLabel className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Gerenciar Agendamento</DropdownMenuLabel>
                           <DropdownMenuSeparator />
+
+                          {agendamento.status === 'pendente_caixa' && (
+                            <DropdownMenuItem onClick={() => navigate('/caixa')} className="py-2.5 text-xs font-semibold uppercase tracking-wider text-amber-600 dark:text-amber-400 font-bold">
+                              <Receipt className="h-4 w-4 mr-2" />
+                              Ir para o Caixa
+                            </DropdownMenuItem>
+                          )}
+
                           {agendamento.status !== 'em_atendimento' && (
                             <DropdownMenuItem onClick={() => onEdit(agendamento)} className="py-2.5 text-xs font-semibold uppercase tracking-wider">
                               <Pencil className="h-4 w-4 mr-2" />
                               Editar Detalhes
                             </DropdownMenuItem>
                           )}
+
                           {['agendado', 'em_atraso'].includes(agendamento.status) && (
-                            <DropdownMenuItem onClick={() => onChangeStatus(agendamento, 'em_atendimento')} className="py-2.5 text-xs font-semibold uppercase tracking-wider text-blue-600 font-bold">
-                              <UserCheck className="h-4 w-4 mr-2" />
-                              Iniciar Atendimento
-                            </DropdownMenuItem>
+                            <>
+                              <DropdownMenuItem onClick={() => onChangeStatus(agendamento, 'em_atendimento')} className="py-2.5 text-xs font-semibold uppercase tracking-wider text-blue-600 font-bold">
+                                <UserCheck className="h-4 w-4 mr-2" />
+                                Iniciar Atendimento
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => onChangeStatus(agendamento, 'pendente_caixa')} className="py-2.5 text-xs font-semibold uppercase tracking-wider text-emerald-600 font-bold">
+                                <Check className="h-4 w-4 mr-2" />
+                                Finalizar (Enviar ao Caixa)
+                              </DropdownMenuItem>
+                            </>
                           )}
+
                           {agendamento.status === 'em_atendimento' && (
                             <DropdownMenuItem onClick={() => onChangeStatus(agendamento, 'pendente_caixa')} className="py-2.5 text-xs font-semibold uppercase tracking-wider text-emerald-600 font-bold">
                               <Check className="h-4 w-4 mr-2" />
                               Finalizar Atendimento
                             </DropdownMenuItem>
                           )}
-                          {!['concluido', 'cancelado', 'pendente_caixa'].includes(agendamento.status) && (
-                            <>
-                              <DropdownMenuSeparator />
-                              <DropdownMenuItem
-                                onClick={() => onCancel(agendamento)}
-                                className="text-red-500 focus:text-red-500 py-2.5 text-xs font-semibold uppercase tracking-wider"
-                              >
-                                <Ban className="h-4 w-4 mr-2" />
-                                Cancelar Horário
-                              </DropdownMenuItem>
-                            </>
-                          )}
+
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem
+                            onClick={() => onCancel(agendamento)}
+                            className="text-red-500 focus:text-red-500 py-2.5 text-xs font-semibold uppercase tracking-wider"
+                          >
+                            <Ban className="h-4 w-4 mr-2" />
+                            Cancelar Horário
+                          </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
                     )}

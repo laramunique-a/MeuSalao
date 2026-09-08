@@ -103,7 +103,9 @@ export default function Caixa() {
   // Seleção de Comandas Pendentes
   const pendenciasFiltradas = useMemo(() => {
     if (!pendencias) return []
-    return pendencias.filter(ag => isAdmin || ag.profissional_id === usuario?.id)
+    return pendencias.filter(
+      ag => isAdmin || ag.profissional_id === usuario?.id || (ag.itens && ag.itens.some((it: any) => it.profissional_id === usuario?.id))
+    )
   }, [pendencias, isAdmin, usuario?.id])
 
   const isAllSelected = pendenciasFiltradas.length > 0 && selectedAgendamentos.length === pendenciasFiltradas.length

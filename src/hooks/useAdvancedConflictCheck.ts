@@ -25,6 +25,14 @@ interface ConflictResult {
   suggestedTimes: string[]
 }
 
+function getAgendamentoDuracao(ag: any): number {
+  if (ag.itens && ag.itens.length > 0) {
+    const durItens = ag.itens.reduce((acc: number, item: any) => acc + (Number(item.duracao_minutos) || 0), 0)
+    if (durItens > 0) return durItens
+  }
+  return Number(ag.servico?.duracao_minutos) || 60
+}
+
 export function useAdvancedConflictCheck() {
   return useMutation({
     mutationFn: async (params: ConflictCheckParams): Promise<ConflictResult> => {
@@ -62,7 +70,7 @@ export function useAdvancedConflictCheck() {
         if (excludeId && ag.id === excludeId) return false
 
         const agInicio = new Date(ag.data_hora)
-        const agFim = addMinutes(agInicio, ag.servico?.duracao_minutos || 60)
+        const agFim = addMinutes(agInicio, getAgendamentoDuracao(ag))
 
         // Verificar sobreposição
         return (
@@ -75,7 +83,8 @@ export function useAdvancedConflictCheck() {
       let conflictInfo
       if (conflitante) {
         const agInicio = new Date(conflitante.data_hora)
-        const agFim = addMinutes(agInicio, conflitante.servico?.duracao_minutos || 60)
+        const conflitanteDuracao = getAgendamentoDuracao(conflitante)
+        const agFim = addMinutes(agInicio, conflitanteDuracao)
 
         const conflictStart = novoInicio > agInicio ? novoInicio : agInicio
         const conflictEnd = novoFim < agFim ? novoFim : agFim
@@ -88,7 +97,7 @@ export function useAdvancedConflictCheck() {
             cliente: conflitante.cliente?.nome || 'Cliente',
             servico: conflitante.servico?.nome || 'Serviço',
             horario: format(agInicio, 'HH:mm'),
-            duracao: conflitante.servico?.duracao_minutos || 60,
+            duracao: conflitanteDuracao,
           },
         }
       }
@@ -124,7 +133,7 @@ function generateSuggestedTimes(
   // Criar array de slots ocupados
   const slotsOcupados = agendamentos.map((ag) => {
     const inicio = new Date(ag.data_hora)
-    const fim = addMinutes(inicio, ag.servico?.duracao_minutos || 60)
+    const fim = addMinutes(inicio, getAgendamentoDuracao(ag))
     return { inicio, fim }
   })
 
