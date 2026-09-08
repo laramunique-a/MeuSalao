@@ -52,7 +52,7 @@ import { useToast } from '@/hooks/use-toast'
 import { useEffect, useState, useRef } from 'react'
 import type { Agendamento, AgendamentoServico } from '@/types/models'
 import { format, addMinutes } from 'date-fns'
-import { Check, ChevronsUpDown, UserPlus, AlertCircle, Plus, Trash2, Clock } from 'lucide-react'
+import { Check, ChevronsUpDown, UserPlus, AlertCircle, Plus, Trash2, Clock, Ban } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { ClienteFormDialog } from '@/components/clientes/ClienteFormDialog'
 import { ConflictWarningDialog } from './ConflictWarningDialog'
@@ -63,6 +63,7 @@ interface AgendamentoFormDialogProps {
   agendamento?: Agendamento | null
   defaultDate?: Date
   defaultProfissionalId?: string
+  onSwitchToBloqueio?: (profissionalId?: string, date?: Date) => void
 }
 
 export function AgendamentoFormDialog({
@@ -71,6 +72,7 @@ export function AgendamentoFormDialog({
   agendamento,
   defaultDate,
   defaultProfissionalId,
+  onSwitchToBloqueio,
 }: AgendamentoFormDialogProps) {
   const { toast } = useToast()
   const createAgendamento = useCreateAgendamento()
@@ -430,6 +432,31 @@ export function AgendamentoFormDialog({
                   : 'Selecione o cliente, os serviços e os profissionais correspondentes.'}
             </DialogDescription>
           </DialogHeader>
+
+          {/* Atalho para bloquear horário em vez de agendar */}
+          {!agendamento && onSwitchToBloqueio && (
+            <div className="flex items-center justify-between p-2.5 rounded-xl bg-muted/50 border border-border text-xs">
+              <span className="text-muted-foreground font-medium">Precisa reservar o horário para descanso ou indisponibilidade?</span>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="h-7 text-xs font-semibold text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/30 border-red-200 dark:border-red-900/50 gap-1.5 shrink-0"
+                onClick={() => {
+                  const formValues = form.getValues()
+                  const profId = formValues.itens?.[0]?.profissional_id || defaultProfissionalId
+                  let slotD = defaultDate
+                  if (formValues.data && formValues.hora) {
+                    slotD = new Date(`${formValues.data}T${formValues.hora}:00`)
+                  }
+                  onSwitchToBloqueio(profId, slotD)
+                }}
+              >
+                <Ban className="h-3.5 w-3.5 text-red-500" />
+                Bloquear este horário
+              </Button>
+            </div>
+          )}
 
           {/* Toggle Retroativo — apenas em novo agendamento */}
           {!agendamento && (

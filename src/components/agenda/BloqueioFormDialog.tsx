@@ -32,15 +32,28 @@ import { useProfissionais } from '@/hooks/useProfissionais'
 import { useToast } from '@/hooks/use-toast'
 import { useAuthStore } from '@/store/authStore'
 import { useEffect } from 'react'
+import { format, addMinutes } from 'date-fns'
 import type { BloqueioAgenda } from '@/types/models'
 
 interface BloqueioFormDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   bloqueio?: BloqueioAgenda | null
+  defaultProfissionalId?: string | null
+  defaultDate?: Date | null
+  defaultHorarioInicio?: string | null
+  defaultHorarioFim?: string | null
 }
 
-export function BloqueioFormDialog({ open, onOpenChange, bloqueio }: BloqueioFormDialogProps) {
+export function BloqueioFormDialog({
+  open,
+  onOpenChange,
+  bloqueio,
+  defaultProfissionalId,
+  defaultDate,
+  defaultHorarioInicio,
+  defaultHorarioFim,
+}: BloqueioFormDialogProps) {
   const { toast } = useToast()
   const { usuario, isAdmin } = useAuthStore()
   const { data: profissionais = [] } = useProfissionais()
@@ -70,16 +83,21 @@ export function BloqueioFormDialog({ open, onOpenChange, bloqueio }: BloqueioFor
         motivo: bloqueio.motivo || '',
       })
     } else {
+      const dateStr = defaultDate ? format(defaultDate, 'yyyy-MM-dd') : format(new Date(), 'yyyy-MM-dd')
+      const hInicio = defaultHorarioInicio || (defaultDate ? format(defaultDate, 'HH:mm') : '')
+      const hFim = defaultHorarioFim || (defaultDate ? format(addMinutes(defaultDate, 60), 'HH:mm') : '')
+      const profId = defaultProfissionalId || (!isAdmin ? usuario?.id || '' : '')
+
       form.reset({
-        profissional_id: !isAdmin ? usuario?.id || '' : '',
-        data_inicio: '',
-        data_fim: '',
-        horario_inicio: '',
-        horario_fim: '',
+        profissional_id: profId,
+        data_inicio: dateStr,
+        data_fim: dateStr,
+        horario_inicio: hInicio,
+        horario_fim: hFim,
         motivo: '',
       })
     }
-  }, [bloqueio, form, open])
+  }, [bloqueio, defaultDate, defaultProfissionalId, defaultHorarioInicio, defaultHorarioFim, form, open, isAdmin, usuario?.id])
 
   async function onSubmit(data: BloqueioAgendaFormData) {
     try {

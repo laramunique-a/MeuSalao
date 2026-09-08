@@ -23,6 +23,7 @@ interface AgendamentosColumnsProps {
   onCancel: (agendamento: Agendamento) => void
   onChangeStatus: (agendamento: Agendamento, status: Agendamento['status']) => void
   onSlotClick?: (profissionalId: string, date: Date) => void
+  onSlotBlock?: (profissionalId: string, date: Date) => void
   onDeleteBlock?: (id: string) => void
 }
 
@@ -101,6 +102,7 @@ export function AgendamentosColumns({
   onCancel,
   onChangeStatus,
   onSlotClick,
+  onSlotBlock,
   onDeleteBlock,
 }: AgendamentosColumnsProps) {
   const navigate = useNavigate()
@@ -174,6 +176,12 @@ export function AgendamentosColumns({
     onSlotClick(profissionalId, slotDate)
   }
 
+  function handleBlockClick(profissionalId: string, slot: { hour: number; minute: number }) {
+    if (!onSlotBlock) return
+    const slotDate = setMinutes(setHours(new Date(selectedDate), slot.hour), slot.minute)
+    onSlotBlock(profissionalId, slotDate)
+  }
+
   if (profissionais.length === 0) {
     return (
       <div className="text-center py-12 text-muted-foreground text-xs uppercase tracking-wider">
@@ -216,10 +224,25 @@ export function AgendamentosColumns({
                     <p className="text-[9px] text-muted-foreground capitalize truncate">{prof.perfil || 'Profissional'}</p>
                   </div>
                 </div>
-                <div className="mt-2 text-[9px] font-semibold text-muted-foreground">
+                <div className="mt-2 text-[9px] font-semibold text-muted-foreground flex items-center justify-between gap-1">
                   <span className="bg-background px-2 py-0.5 rounded border border-border">
                     {totalAtivos} {totalAtivos === 1 ? 'atendimento' : 'atendimentos'}
                   </span>
+                  {onSlotBlock && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-5 px-1.5 text-[9px] text-muted-foreground hover:text-red-500 hover:bg-red-500/10 font-bold uppercase tracking-wider gap-1"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        onSlotBlock(prof.id, selectedDate)
+                      }}
+                      title={`Bloquear horário para ${prof.nome}`}
+                    >
+                      <Ban className="h-2.5 w-2.5" />
+                      <span>Bloquear</span>
+                    </Button>
+                  )}
                 </div>
               </div>
             )
@@ -273,13 +296,27 @@ export function AgendamentosColumns({
                     }`}
                     style={{ top: `${i * SLOT_HEIGHT_PX}px`, height: `${SLOT_HEIGHT_PX}px` }}
                     onClick={() => handleCellClick(prof.id, slot)}
-                    title={`Agendar as ${slot.label} com ${prof.nome}`}
+                    title={`Agendar às ${slot.label} com ${prof.nome}`}
                   >
-                    <div className="h-full flex items-center justify-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-                      <Plus className="h-3 w-3 text-emerald-600" />
-                      <span className="text-[9px] text-emerald-600 font-bold uppercase tracking-wider">
-                        Agendar as {slot.label}
-                      </span>
+                    <div className="h-full flex items-center justify-between px-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <div className="flex items-center gap-1 text-emerald-600 font-bold text-[10px] uppercase tracking-wider">
+                        <Plus className="h-3 w-3" />
+                        <span>Agendar às {slot.label}</span>
+                      </div>
+                      {onSlotBlock && (
+                        <button
+                          type="button"
+                          className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-background hover:bg-red-500 hover:text-white dark:bg-card dark:hover:bg-red-600 text-muted-foreground font-bold text-[9px] uppercase tracking-wider transition-all border border-border shadow-xs hover:border-red-500 z-10"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            handleBlockClick(prof.id, slot)
+                          }}
+                          title={`Bloquear horário às ${slot.label} para ${prof.nome}`}
+                        >
+                          <Ban className="h-2.5 w-2.5 text-red-500 hover:text-white" />
+                          <span>Bloquear</span>
+                        </button>
+                      )}
                     </div>
                   </div>
                 ))}

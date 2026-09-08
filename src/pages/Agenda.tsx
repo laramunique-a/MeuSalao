@@ -250,6 +250,9 @@ export default function Agenda() {
     }
   }
 
+  const [bloqueioSlotProfissionalId, setBloqueioSlotProfissionalId] = useState<string | undefined>(undefined)
+  const [bloqueioSlotDate, setBloqueioSlotDate] = useState<Date | null>(null)
+
   function handleSlotClick(profissionalId: string, date: Date) {
     setSelectedAgendamento(null)
     setSlotProfissionalId(profissionalId)
@@ -257,11 +260,35 @@ export default function Agenda() {
     setIsFormOpen(true)
   }
 
+  function handleSlotBlock(profissionalId: string, date: Date) {
+    setBloqueioSlotProfissionalId(profissionalId)
+    setBloqueioSlotDate(date)
+    setIsBloqueioFormOpen(true)
+  }
+
   function handleCloseForm() {
     setIsFormOpen(false)
     setSelectedAgendamento(null)
     setSlotDate(null)
     setSlotProfissionalId(undefined)
+  }
+
+  function handleCloseBloqueioForm(open: boolean) {
+    setIsBloqueioFormOpen(open)
+    if (!open) {
+      setBloqueioSlotProfissionalId(undefined)
+      setBloqueioSlotDate(null)
+    }
+  }
+
+  function handleSwitchToBloqueio(profissionalId?: string, date?: Date) {
+    setIsFormOpen(false)
+    setSelectedAgendamento(null)
+    setSlotDate(null)
+    setSlotProfissionalId(undefined)
+    if (profissionalId) setBloqueioSlotProfissionalId(profissionalId)
+    if (date) setBloqueioSlotDate(date)
+    setIsBloqueioFormOpen(true)
   }
 
   function handlePrevious() {
@@ -417,6 +444,7 @@ export default function Agenda() {
           onCancel={handleCancel}
           onChangeStatus={handleChangeStatus}
           onSlotClick={handleSlotClick}
+          onSlotBlock={handleSlotBlock}
           onDeleteBlock={handleDeleteBlock}
         />
       ) : viewMode === 'list' ? (
@@ -448,11 +476,14 @@ export default function Agenda() {
         agendamento={selectedAgendamento}
         defaultDate={slotDate || selectedDate}
         defaultProfissionalId={slotProfissionalId}
+        onSwitchToBloqueio={handleSwitchToBloqueio}
       />
 
       <BloqueioFormDialog
         open={isBloqueioFormOpen}
-        onOpenChange={setIsBloqueioFormOpen}
+        onOpenChange={handleCloseBloqueioForm}
+        defaultDate={bloqueioSlotDate || selectedDate}
+        defaultProfissionalId={bloqueioSlotProfissionalId}
       />
 
       <ConfirmacaoAcaoDialog
