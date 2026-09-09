@@ -74,7 +74,7 @@ export default function Caixa() {
   // Calcular Entradas, Saídas e Saldo do Caixa Aberto (se houver) ou do Dia (se fechado)
   const resumoAtivo = useMemo(() => {
     if (caixaAberto) {
-      const ativas = transacoesCaixa?.filter((t: any) => t.status === 'ativo') || []
+      const ativas = transacoesCaixa?.filter((t: any) => t.status === 'ativo' && t.categoria !== 'Pagamento de Comissão') || []
       const entradas = ativas.filter((t: any) => t.tipo === 'entrada').reduce((sum: number, t: any) => sum + Number(t.valor), 0)
       const saidas = ativas.filter((t: any) => t.tipo === 'saida').reduce((sum: number, t: any) => sum + Number(t.valor), 0)
       return {
@@ -194,8 +194,9 @@ export default function Caixa() {
   const filteredTransacoes = useMemo(() => {
     const list = transacoesExibidas || []
     return list.filter((t: any) => 
-      t.descricao.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      t.categoria?.toLowerCase().includes(searchTerm.toLowerCase())
+      t.categoria !== 'Pagamento de Comissão' &&
+      (t.descricao.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      t.categoria?.toLowerCase().includes(searchTerm.toLowerCase()))
     )
   }, [transacoesExibidas, searchTerm])
 

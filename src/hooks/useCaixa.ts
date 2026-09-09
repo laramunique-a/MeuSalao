@@ -145,7 +145,7 @@ export function useSaldoCaixaAberto(caixaId: string | null | undefined) {
     queryFn: async () => {
       if (!caixaId) return 0
       const transacoes = await caixaService.getTransacoesByCaixa(caixaId)
-      const ativas = transacoes.filter((t) => t.status === 'ativo')
+      const ativas = transacoes.filter((t) => t.status === 'ativo' && t.categoria !== 'Pagamento de Comissão')
       return ativas.reduce((acc, t) => {
         return t.tipo === 'entrada' ? acc + Number(t.valor) : acc - Number(t.valor)
       }, 0)

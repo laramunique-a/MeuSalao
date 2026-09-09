@@ -504,6 +504,70 @@ export type Database = {
           },
         ]
       }
+      pagamento_comissao: {
+        Row: {
+          created_at: string | null
+          data_pagamento: string
+          forma_pagamento: string
+          id: string
+          observacoes: string | null
+          profissional_id: string
+          salao_id: string
+          status: string
+          updated_at: string | null
+          usuario_id: string
+          valor: number
+        }
+        Insert: {
+          created_at?: string | null
+          data_pagamento?: string
+          forma_pagamento?: string
+          id?: string
+          observacoes?: string | null
+          profissional_id: string
+          salao_id: string
+          status?: string
+          updated_at?: string | null
+          usuario_id: string
+          valor: number
+        }
+        Update: {
+          created_at?: string | null
+          data_pagamento?: string
+          forma_pagamento?: string
+          id?: string
+          observacoes?: string | null
+          profissional_id?: string
+          salao_id?: string
+          status?: string
+          updated_at?: string | null
+          usuario_id?: string
+          valor?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pagamento_comissao_profissional_id_fkey"
+            columns: ["profissional_id"]
+            isOneToOne: false
+            referencedRelation: "usuario"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pagamento_comissao_salao_id_fkey"
+            columns: ["salao_id"]
+            isOneToOne: false
+            referencedRelation: "salao"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pagamento_comissao_usuario_id_fkey"
+            columns: ["usuario_id"]
+            isOneToOne: false
+            referencedRelation: "usuario"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       usuario: {
         Row: {
           ativo: boolean | null

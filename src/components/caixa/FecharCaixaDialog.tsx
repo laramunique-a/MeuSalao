@@ -73,7 +73,7 @@ export function FecharCaixaDialog({
     let posteriorCount = 0
 
     for (const t of transacoes) {
-      if (t.status !== 'ativo') continue
+      if (t.status !== 'ativo' || t.categoria === 'Pagamento de Comissão') continue
       const tDate = new Date(t.data_hora)
       const val = t.tipo === 'entrada' ? Number(t.valor) : -Number(t.valor)
 

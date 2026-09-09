@@ -122,32 +122,117 @@ export const relatoriosService = {
     return reportItems
   },
 
+  async registrarPagamentoComissao(dados: {
+    profissional_id: string
+    valor: number
+    forma_pagamento: string
+    data_pagamento: string
+    observacoes?: string
+  }) {
+    const usuario = useAuthStore.getState().usuario
+    if (!usuario || !usuario.salao_id) throw new Error('Usuário não autenticado')
+
+    const { data, error } = await (supabase
+      .from('pagamento_comissao') as any)
+      .insert({
+        salao_id: usuario.salao_id,
+        profissional_id: dados.profissional_id,
+        usuario_id: usuario.id,
+        valor: dados.valor,
+        forma_pagamento: dados.forma_pagamento,
+        data_pagamento: dados.data_pagamento,
+        observacoes: dados.observacoes,
+        status: 'pago',
+      })
+      .select('*, profissional:profissional_id(nome), usuario:usuario_id(nome)')
+      .single()
+
+    if (error) throw error
+    return data
+  },
+
+  async estornarPagamentoComissao(id: string) {
+    const { data, error } = await (supabase
+      .from('pagamento_comissao') as any)
+      .update({ status: 'estornado' })
+      .eq('id', id)
+      .select()
+      .single()
+
+    if (error) throw error
+    return data
+  },
+
   async getFolhaPagamentoReport(startDate?: string, endDate?: string) {
     const usuario = useAuthStore.getState().usuario
     if (!usuario || !usuario.salao_id) throw new Error('Usuário não autenticado')
 
-    let query = supabase
+    // 1. Buscar registros na nova tabela pagamento_comissao
+    let queryNovos = (supabase
+      .from('pagamento_comissao') as any)
+      .select('*, profissional:profissional_id(id, nome), usuario:usuario_id(nome)')
+      .eq('salao_id', usuario.salao_id)
+
+    if (usuario.perfil === 'profissional') {
+      queryNovos = queryNovos.eq('profissional_id', usuario.id)
+    }
+    if (startDate) {
+      queryNovos = queryNovos.gte('data_pagamento', startDate)
+    }
+    if (endDate) {
+      queryNovos = queryNovos.lte('data_pagamento', endDate)
+    }
+
+    const { data: novosData } = await queryNovos.order('data_pagamento', { ascending: false })
+
+    const novosIds = new Set((novosData || []).map((p: any) => p.id))
+
+    // 2. Buscar registros legados em transacao_caixa para compatibilidade
+    let queryLegadas = supabase
       .from('transacao_caixa')
       .select('*, usuario:usuario_id(nome)')
       .eq('salao_id', usuario.salao_id)
       .eq('categoria', 'Pagamento de Comissão')
 
-    // Se for profissional comum, ver apenas as próprias comissões pagas
     if (usuario.perfil === 'profissional') {
-      query = query.eq('metadata->>profissional_id', usuario.id)
+      queryLegadas = queryLegadas.eq('metadata->>profissional_id', usuario.id)
     }
-
     if (startDate) {
-      query = query.gte('data_hora', startDate)
+      queryLegadas = queryLegadas.gte('data_hora', startDate)
     }
     if (endDate) {
-      query = query.lte('data_hora', endDate)
+      queryLegadas = queryLegadas.lte('data_hora', endDate)
     }
 
-    const { data: transacoes, error } = await query.order('data_hora', { ascending: false })
+    const { data: legadasData } = await queryLegadas.order('data_hora', { ascending: false })
 
-    if (error) throw error
-    return (transacoes || []) as any[]
+    const resultado: any[] = []
+
+    novosData?.forEach((p: any) => {
+      resultado.push({
+        id: p.id,
+        data_hora: p.data_pagamento,
+        forma_pagamento: p.forma_pagamento,
+        descricao: p.observacoes || `Repasse: ${p.profissional?.nome || 'Profissional'}`,
+        valor: Number(p.valor),
+        status: p.status === 'pago' ? 'ativo' : p.status,
+        usuario: p.usuario,
+        profissional: p.profissional,
+        metadata: {
+          profissional_id: p.profissional_id,
+          profissional_nome: p.profissional?.nome,
+        },
+      })
+    })
+
+    legadasData?.forEach((t: any) => {
+      if (!novosIds.has(t.id)) {
+        resultado.push(t)
+      }
+    })
+
+    // Ordenar por data decrescente
+    return resultado.sort((a, b) => new Date(b.data_hora).getTime() - new Date(a.data_hora).getTime())
   },
 
   async getSaldosComissoesReport(startDate?: string, endDate?: string) {
@@ -178,15 +263,45 @@ export const relatoriosService = {
 
     if (errGeradas) throw errGeradas
 
-    // 2. Buscar todas as transações de pagamento de comissão (comissões pagas)
-    const { data: pagasData, error: errPagas } = await supabase
+    // 2. Buscar todas as comissões pagas (nova tabela + legado transacao_caixa)
+    const { data: pagasNovas } = await (supabase
+      .from('pagamento_comissao') as any)
+      .select('id, valor, data_pagamento, profissional_id, status')
+      .eq('salao_id', usuario.salao_id)
+      .eq('status', 'pago')
+
+    const novosIds = new Set((pagasNovas || []).map((p: any) => p.id))
+
+    const { data: pagasLegadas } = await supabase
       .from('transacao_caixa')
-      .select('valor, data_hora, metadata')
+      .select('id, valor, data_hora, metadata, status')
       .eq('salao_id', usuario.salao_id)
       .eq('categoria', 'Pagamento de Comissão')
       .eq('status', 'ativo')
 
-    if (errPagas) throw errPagas
+    const pagasData: any[] = []
+
+    pagasNovas?.forEach((p: any) => {
+      pagasData.push({
+        id: p.id,
+        valor: Number(p.valor),
+        data_hora: p.data_pagamento,
+        profissional_id: p.profissional_id,
+        status: p.status,
+      })
+    })
+
+    pagasLegadas?.forEach((t: any) => {
+      if (!novosIds.has(t.id)) {
+        pagasData.push({
+          id: t.id,
+          valor: Number(t.valor),
+          data_hora: t.data_hora,
+          profissional_id: t.metadata?.profissional_id,
+          status: t.status,
+        })
+      }
+    })
 
     // 3. Buscar profissionais ativos que podem atender (excluir super_admin)
     const { data: profissionais, error: errProfs } = await supabase
@@ -327,7 +442,7 @@ export const relatoriosService = {
 
     // Agrupar comissões pagas
     pagasData?.forEach((t: any) => {
-      const profId = t.metadata?.profissional_id
+      const profId = t.profissional_id || t.metadata?.profissional_id
       if (!profId || !saldosMap[profId]) return
 
       const valor = Number(t.valor) || 0

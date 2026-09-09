@@ -145,3 +145,19 @@ export interface BloqueioAgenda {
   updated_at: string
   profissional?: Usuario
 }
+
+export interface PagamentoComissao {
+  id: string
+  salao_id: string
+  profissional_id: string
+  usuario_id: string
+  valor: number
+  forma_pagamento: string
+  data_pagamento: string
+  observacoes?: string | null
+  status: 'pago' | 'estornado'
+  created_at: string
+  updated_at: string
+  profissional?: Usuario
+  usuario?: Usuario
+}

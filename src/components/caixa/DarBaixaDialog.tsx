@@ -375,7 +375,7 @@ export function DarBaixaDialog({ open, onOpenChange, agendamento, agendamentos }
             profissional_id: item.profissionalId,
             profissional_nome: profObj?.nome || 'Profissional',
             servico_nome: servicoNome,
-            valor_servico: Math.round(liquido1 * 100) / 100,
+            valor_servico: Math.round(bruto1 * 100) / 100,
             comissao_percentual: item.comissaoPercentual,
             comissao_valor: Math.round(comissao1 * 100) / 100,
           }]
@@ -397,7 +397,7 @@ export function DarBaixaDialog({ open, onOpenChange, agendamento, agendamentos }
           await createTransacao.mutateAsync({
             agendamento_id: item.agendamentoId,
             tipo: 'entrada',
-            valor: liquido1,
+            valor: Math.round(bruto1 * 100) / 100,
             forma_pagamento: data.forma_pagamento,
             categoria: item.categoria,
             descricao: `${prefix}${item.descricao}`,
@@ -423,7 +423,7 @@ export function DarBaixaDialog({ open, onOpenChange, agendamento, agendamentos }
               profissional_id: item.profissionalId,
               profissional_nome: profObj?.nome || 'Profissional',
               servico_nome: servicoNome,
-              valor_servico: Math.round(liquido2 * 100) / 100,
+              valor_servico: Math.round(bruto2 * 100) / 100,
               comissao_percentual: item.comissaoPercentual,
               comissao_valor: Math.round(comissao2 * 100) / 100,
             }]
@@ -444,7 +444,7 @@ export function DarBaixaDialog({ open, onOpenChange, agendamento, agendamentos }
             await createTransacao.mutateAsync({
               agendamento_id: item.agendamentoId,
               tipo: 'entrada',
-              valor: liquido2,
+              valor: Math.round(bruto2 * 100) / 100,
               forma_pagamento: data.forma_pagamento_2!,
               categoria: item.categoria,
               descricao: `[2/2] ${item.descricao}`,

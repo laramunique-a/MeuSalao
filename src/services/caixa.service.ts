@@ -344,7 +344,7 @@ export const caixaService = {
     // 1. Buscar todas as transações ativas deste caixa
     const { data: transacoes, error: errorTrans } = await (supabase
       .from('transacao_caixa') as any)
-      .select('id, tipo, valor, data_hora')
+      .select('id, tipo, valor, data_hora, categoria')
       .eq('caixa_id', caixaId)
       .eq('status', 'ativo')
 
@@ -367,7 +367,9 @@ export const caixaService = {
     }
 
     // 3. Calcular saldo do sistema para as transações pertencentes ao período fechado
+    // Pagamentos de comissão não incidem sobre o saldo do caixa diário
     const saldoSistema = transFechamento.reduce((acc, t) => {
+      if (t.categoria === 'Pagamento de Comissão') return acc
       return t.tipo === 'entrada' ? acc + Number(t.valor) : acc - Number(t.valor)
     }, 0)
 
@@ -426,7 +428,7 @@ export const caixaService = {
 
     let query = (supabase
       .from('transacao_caixa') as any)
-      .select('tipo, valor, comissao_valor, agendamento:agendamento_id(profissional_id)')
+      .select('tipo, valor, categoria, comissao_valor, agendamento:agendamento_id(profissional_id)')
       .eq('salao_id', usuario.salao_id)
       .eq('status', 'ativo')
       .gte('data_hora', startDate)
@@ -445,7 +447,7 @@ export const caixaService = {
       .reduce((sum, t) => sum + Number(t.valor), 0)
 
     const saidas = (data as any[])
-      .filter((t) => t.tipo === 'saida')
+      .filter((t) => t.tipo === 'saida' && t.categoria !== 'Pagamento de Comissão')
       .reduce((sum, t) => sum + Number(t.valor), 0)
 
     const comissoes = (data as any[])

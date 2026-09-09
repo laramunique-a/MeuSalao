@@ -19,40 +19,35 @@ import {
 } from '@/components/ui/select'
 import { useCreateTransacao } from '@/hooks/useCaixa'
 import { useToast } from '@/hooks/use-toast'
-import { MoveDown, MoveUp, ShieldAlert, SlidersHorizontal, User, AlertCircle } from 'lucide-react'
+import { MoveDown, MoveUp, ShieldAlert, SlidersHorizontal, AlertCircle } from 'lucide-react'
 import { useAuthStore } from '@/store/authStore'
-import { useProfissionais } from '@/hooks/useProfissionais'
 
 interface MovimentacaoManualDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   defaultTipoMovimento?: TipoMovimento
-  defaultProfissionalId?: string
   defaultValor?: string
   onSuccess?: () => void
 }
 
-type TipoMovimento = 'entrada' | 'saida' | 'retirada' | 'ajuste' | 'comissao'
+type TipoMovimento = 'entrada' | 'saida' | 'retirada' | 'ajuste'
 type SubTipoAjuste = 'positivo' | 'negativo'
 
 export function MovimentacaoManualDialog({ 
   open, 
   onOpenChange,
   defaultTipoMovimento,
-  defaultProfissionalId,
   defaultValor,
   onSuccess
 }: MovimentacaoManualDialogProps) {
   const { toast } = useToast()
   const createTransacao = useCreateTransacao()
   const { isAdmin } = useAuthStore()
-  const { data: profissionais = [] } = useProfissionais()
   
   const [tipoMovimento, setTipoMovimento] = useState<TipoMovimento>('entrada')
   const [subTipoAjuste, setSubTipoAjuste] = useState<SubTipoAjuste>('positivo')
   const [valor, setValor] = useState('')
   const [descricao, setDescricao] = useState('')
-  const [selectedProfissionalId, setSelectedProfissionalId] = useState<string>('')
   const [formaPagamento, setFormaPagamento] = useState<'dinheiro' | 'pix'>('dinheiro')
 
   // Formata o valor para o padrão monetário brasileiro (ex: 10 → 10,00 | 10.5 → 10,50)
@@ -81,27 +76,17 @@ export function MovimentacaoManualDialog({
       setSubTipoAjuste('positivo')
       setValor(defaultValor || '')
       setDescricao('')
-      setSelectedProfissionalId(defaultProfissionalId || '')
       setFormaPagamento('dinheiro')
     }
-  }, [open, defaultTipoMovimento, defaultProfissionalId, defaultValor])
+  }, [open, defaultTipoMovimento, defaultValor])
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     
-    if ((tipoMovimento === 'saida' || tipoMovimento === 'retirada' || tipoMovimento === 'ajuste' || tipoMovimento === 'comissao') && !isAdmin) {
+    if ((tipoMovimento === 'saida' || tipoMovimento === 'retirada' || tipoMovimento === 'ajuste') && !isAdmin) {
       toast({
         title: 'Acesso negado',
         description: 'Apenas administradores podem registrar esse tipo de movimentação.',
-        variant: 'destructive',
-      })
-      return
-    }
-
-    if (tipoMovimento === 'comissao' && !selectedProfissionalId) {
-      toast({
-        title: 'Profissional não selecionado',
-        description: 'Por favor, selecione o profissional que está recebendo a comissão.',
         variant: 'destructive',
       })
       return
@@ -141,14 +126,7 @@ export function MovimentacaoManualDialog({
         dbTipo = subTipoAjuste === 'positivo' ? 'entrada' : 'saida'
         finalCategoria = 'Ajuste de Caixa' // Forte compliance visível
         break
-      case 'comissao':
-        dbTipo = 'saida'
-        finalCategoria = 'Pagamento de Comissão'
-        break
     }
-
-    const prof = profissionais.find(p => p.id === selectedProfissionalId)
-    const profName = prof ? prof.nome : ''
 
     // Descrições padrão usadas quando o operador não preenche o campo
     const descricaoPadrao: Record<TipoMovimento, string> = {
@@ -156,16 +134,9 @@ export function MovimentacaoManualDialog({
       saida: 'Saída Manual',
       retirada: 'Retirada de Caixa',
       ajuste: subTipoAjuste === 'positivo' ? 'Ajuste Positivo de Caixa' : 'Ajuste Negativo de Caixa',
-      comissao: `Comissão: ${profName}`,
     }
 
-    const finalDescricao = tipoMovimento === 'comissao'
-      ? `Comissão: ${profName}${descricao ? ` - ${descricao}` : ''}`
-      : (descricao.trim() || descricaoPadrao[tipoMovimento])
-
-    const metadata = tipoMovimento === 'comissao' && selectedProfissionalId
-      ? { profissional_id: selectedProfissionalId, profissional_nome: profName }
-      : undefined
+    const finalDescricao = descricao.trim() || descricaoPadrao[tipoMovimento]
 
     try {
       await createTransacao.mutateAsync({
@@ -178,7 +149,6 @@ export function MovimentacaoManualDialog({
         status: 'ativo',
         agendamento_id: null,
         caixa_id: null, // Será preenchido pelo service
-        metadata: metadata as any
       })
       toast({
         title: 'Movimentação registrada!',
@@ -204,7 +174,6 @@ export function MovimentacaoManualDialog({
       case 'saida': return { icon: <MoveDown className="h-5 w-5 text-rose-600" />, title: 'Nova Saída', color: 'text-rose-600' }
       case 'retirada': return { icon: <ShieldAlert className="h-5 w-5 text-amber-600" />, title: 'Retirada de Caixa', color: 'text-amber-600' }
       case 'ajuste': return { icon: <SlidersHorizontal className="h-5 w-5 text-yellow-600" />, title: 'Ajuste de Caixa', color: 'text-yellow-600' }
-      case 'comissao': return { icon: <User className="h-5 w-5 text-rose-600" />, title: 'Pagamento de Comissão', color: 'text-rose-600' }
     }
   }
 
@@ -231,7 +200,6 @@ export function MovimentacaoManualDialog({
               <SelectContent>
                 <SelectItem value="entrada">Entrada</SelectItem>
                 {isAdmin && <SelectItem value="saida">Saída</SelectItem>}
-                {isAdmin && <SelectItem value="comissao">Pagamento de Comissão</SelectItem>}
                 {isAdmin && <SelectItem value="retirada">Retirada de Caixa</SelectItem>}
                 {isAdmin && <SelectItem value="ajuste">Ajuste de Caixa</SelectItem>}
               </SelectContent>
@@ -241,36 +209,16 @@ export function MovimentacaoManualDialog({
             <div className="flex items-start gap-2 bg-blue-50 dark:bg-blue-900/10 text-blue-700 dark:text-blue-300 p-3 rounded-lg border border-blue-200 dark:border-blue-900/30 text-xs font-semibold">
               <AlertCircle className="h-4 w-4 flex-shrink-0 mt-0.5" />
               <p>
-                {tipoMovimento === 'entrada' && "Utilize para registrar valores que entraram no caixa (receitas)."}
-                {tipoMovimento === 'saida' && "Utilize para registrar pagamentos ou despesas gerais do salão."}
-                {tipoMovimento === 'comissao' && "Utilize para registrar saídas referentes a pagamentos de comissões aos profissionais."}
-                {tipoMovimento === 'retirada' && "Utilize quando retirar dinheiro do caixa por segurança. Não é considerado despesa contábil."}
+                {tipoMovimento === 'entrada' && "Utilize para registrar valores que entraram no caixa (receitas manuais)."}
+                {tipoMovimento === 'saida' && "Utilize para registrar pagamentos ou despesas operacionais do salão."}
+                {tipoMovimento === 'retirada' && "Utilize quando retirar dinheiro físico do caixa por segurança (sangria). Não é considerado despesa contábil."}
                 {tipoMovimento === 'ajuste' && "Utilize para corrigir diferenças de valores no caixa (positivas ou negativas)."}
               </p>
             </div>
           </div>
 
-          {/* Seletor do Profissional (apenas para comissao) */}
-          {tipoMovimento === 'comissao' && (
-            <div className="space-y-2 pt-2 border-t">
-              <Label>Profissional <span className="text-rose-500">*</span></Label>
-              <Select value={selectedProfissionalId} onValueChange={setSelectedProfissionalId}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione o profissional..." />
-                </SelectTrigger>
-                <SelectContent>
-                  {profissionais.map((p) => (
-                    <SelectItem key={p.id} value={p.id}>
-                      {p.nome}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          )}
-
           {/* Forma de Pagamento */}
-          {(tipoMovimento === 'entrada' || tipoMovimento === 'saida' || tipoMovimento === 'comissao') && (
+          {(tipoMovimento === 'entrada' || tipoMovimento === 'saida') && (
             <div className="space-y-2 pt-2 border-t">
               <Label>Forma de Pagamento <span className="text-rose-500">*</span></Label>
               <Select value={formaPagamento} onValueChange={(val) => setFormaPagamento(val as 'dinheiro' | 'pix')}>
