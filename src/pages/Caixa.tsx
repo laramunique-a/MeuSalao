@@ -11,7 +11,9 @@ import {
   DollarSign,
   User,
   History,
-  Pencil
+  Pencil,
+  Clock,
+  Trash2
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -23,9 +25,9 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { useTransacoesByDate, useCaixaSummary, useCaixaAberto, useEstornarTransacao, useSaldoCaixaAberto, useTransacoesByCaixa } from '@/hooks/useCaixa'
-import { useAgendamentosEmAtendimento, usePendenciasGlobais } from '@/hooks/useAgendamentos'
+import { useAgendamentosEmAtendimento, usePendenciasGlobais, useUpdateAgendamentoStatus } from '@/hooks/useAgendamentos'
 import { useProfissionais } from '@/hooks/useProfissionais'
-import { format, startOfDay, endOfDay, subDays, addDays, isBefore, parseISO } from 'date-fns'
+import { format, startOfDay, endOfDay, subDays, addDays, isBefore, parseISO, isToday, isYesterday } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { Badge } from '@/components/ui/badge'
 import { useAuthStore } from '@/store/authStore'
@@ -90,15 +92,46 @@ export default function Caixa() {
     }
   }, [caixaAberto, transacoesCaixa, resumen])
   
-  // Buscar pendências de até 7 dias atrás e 7 dias à frente
-  // (captura agendamentos futuros que foram marcados como pendente_caixa indevidamente)
-  const [dataPendenciasInicio] = useState(subDays(startOfDay(new Date()), 7).toISOString())
+  // Buscar todas as pendências consolidadas (últimos 30 dias até próximos 7 dias)
+  const [dataPendenciasInicio] = useState(subDays(startOfDay(new Date()), 30).toISOString())
   const [dataPendenciasFim] = useState(addDays(endOfDay(new Date()), 7).toISOString())
   const { data: pendencias } = useAgendamentosEmAtendimento(dataPendenciasInicio, dataPendenciasFim)
   const estornar = useEstornarTransacao()
+  const updateStatus = useUpdateAgendamentoStatus()
   const { data: todosProfissionais = [] } = useProfissionais()
 
   const { data: pendenciasGlobais = [] } = usePendenciasGlobais()
+
+  const formatAgendamentoDataHora = (dataHoraStr: string) => {
+    try {
+      const date = parseISO(dataHoraStr)
+      if (isToday(date)) {
+        return `Hoje às ${format(date, 'HH:mm')}`
+      }
+      if (isYesterday(date)) {
+        return `Ontem às ${format(date, 'HH:mm')}`
+      }
+      return format(date, "dd/MM 'às' HH:mm", { locale: ptBR })
+    } catch {
+      return ''
+    }
+  }
+
+  const handleCancelarAgendamento = async (agendamentoId: string) => {
+    try {
+      await updateStatus.mutateAsync({ id: agendamentoId, status: 'cancelado' })
+      toast({
+        title: 'Comanda cancelada',
+        description: 'O agendamento pendente foi cancelado e removido do caixa.',
+      })
+    } catch (err: any) {
+      toast({
+        title: 'Erro ao cancelar',
+        description: err.message || 'Não foi possível cancelar o agendamento.',
+        variant: 'destructive',
+      })
+    }
+  }
 
   // Seleção de Comandas Pendentes
   const pendenciasFiltradas = useMemo(() => {
@@ -246,27 +279,6 @@ export default function Caixa() {
               Recomendamos fechar este caixa antes de processar as vendas de hoje.
             </p>
           </div>
-        </div>
-      )}
-      {caixaAberto && pendenciasPassadas.length > 0 && (
-        <div className="mb-6 p-4 border border-red-500/20 bg-red-500/10 dark:bg-red-500/20 rounded-lg flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-foreground">
-          <div className="flex items-center gap-3 text-xs uppercase tracking-wider">
-            <AlertCircle className="h-5 w-5 text-red-500 shrink-0" />
-            <div>
-              <p className="font-semibold text-red-600">Débitos de Caixas Anteriores Pendentes</p>
-              <p className="text-muted-foreground mt-0.5">
-                Existem {pendenciasPassadas.length} {pendenciasPassadas.length === 1 ? 'atendimento' : 'atendimentos'} de dias anteriores pendentes de quitação (Total: R$ {pendenciasPassadas.reduce((acc, p) => acc + Number(p.valor), 0).toFixed(2).replace('.', ',')}).
-              </p>
-            </div>
-          </div>
-          <Button
-            size="sm"
-            variant="outline"
-            className="text-xs uppercase tracking-wider h-8 text-red-500 hover:text-red-600 border-red-500/20 hover:bg-red-500/10 self-start sm:self-center bg-transparent"
-            onClick={() => setIsDebitosPassadosOpen(true)}
-          >
-            Visualizar Débitos
-          </Button>
         </div>
       )}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
@@ -450,6 +462,9 @@ export default function Caixa() {
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {pendenciasFiltradas.map((ag) => {
                   const isSelected = selectedAgendamentos.some(item => item.id === ag.id)
+                  const agDate = parseISO(ag.data_hora)
+                  const isFromPast = !isToday(agDate)
+
                   return (
                     <Card 
                       key={ag.id} 
@@ -459,8 +474,50 @@ export default function Caixa() {
                       )}
                       onClick={() => toggleSelectAgendamento(ag)}
                     >
-                      <CardContent className="p-4 flex flex-col justify-between h-full">
-                        <div className="flex justify-between items-start mb-3 gap-2">
+                      <CardContent className="p-4 flex flex-col justify-between h-full gap-3">
+                        {/* Header do Card: Data/Hora e Menu de Ações */}
+                        <div className="flex items-center justify-between gap-2 pb-2 border-b border-border/50 text-[11px]">
+                          <div className="flex items-center gap-1.5 text-muted-foreground">
+                            <Clock className="h-3.5 w-3.5 shrink-0 text-primary/70" />
+                            <span className="font-medium text-foreground">{formatAgendamentoDataHora(ag.data_hora)}</span>
+                          </div>
+                          <div className="flex items-center gap-1.5">
+                            {isFromPast && (
+                              <Badge variant="outline" className="h-4 px-1.5 text-[9px] font-bold bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/30 uppercase tracking-wider">
+                                Anterior
+                              </Badge>
+                            )}
+                            {isAdmin && (
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-6 w-6 text-muted-foreground hover:text-foreground -mr-1"
+                                    onClick={(e) => e.stopPropagation()}
+                                  >
+                                    <MoreVertical className="h-3.5 w-3.5" />
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end" className="rounded-xl">
+                                  <DropdownMenuItem
+                                    className="text-destructive focus:text-destructive text-xs cursor-pointer gap-2 font-medium"
+                                    onClick={(e) => {
+                                      e.stopPropagation()
+                                      handleCancelarAgendamento(ag.id)
+                                    }}
+                                  >
+                                    <Trash2 className="h-3.5 w-3.5" />
+                                    Cancelar / Remover Comanda
+                                  </DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Corpo: Checkbox, Cliente, Serviço e Valor */}
+                        <div className="flex justify-between items-start gap-2">
                           <div className="flex items-start gap-2.5">
                             <input
                               type="checkbox"
@@ -475,7 +532,9 @@ export default function Caixa() {
                           </div>
                           <p className="font-bold text-sm text-foreground whitespace-nowrap">R$ {ag.valor.toFixed(2).replace('.', ',')}</p>
                         </div>
-                        <div className="flex items-center justify-between mt-4">
+
+                        {/* Rodapé: Profissional e Botão Receber */}
+                        <div className="flex items-center justify-between pt-1">
                           <div className="flex items-center gap-1.5 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
                             <User className="h-3.5 w-3.5" />
                             {ag.profissional?.nome}

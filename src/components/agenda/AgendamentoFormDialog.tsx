@@ -91,8 +91,8 @@ export function AgendamentoFormDialog({
   const [conflictData, setConflictData] = useState<any>(null)
   const [pendingAgendamento, setPendingAgendamento] = useState<any>(null)
 
-  // Estado para guardar a duração personalizada informada pelo usuário (como string para edição fluida no mobile)
   const [duracaoInput, setDuracaoInput] = useState<string>('30')
+  const [isSubmitting, setIsSubmitting] = useState(false)
   const [isCustomDuracao, setIsCustomDuracao] = useState(false)
 
   // Controla se é um agendamento retroativo (atendimento já realizado)
@@ -246,6 +246,9 @@ export function AgendamentoFormDialog({
   }
 
   async function onSubmit(data: AgendamentoFormData) {
+    if (isSubmitting) return
+    setIsSubmitting(true)
+
     try {
       if (!data.itens || data.itens.length === 0) {
         toast({
@@ -253,6 +256,7 @@ export function AgendamentoFormDialog({
           description: 'Adicione pelo menos um serviço ao agendamento.',
           variant: 'destructive',
         })
+        setIsSubmitting(false)
         return
       }
 
@@ -263,6 +267,7 @@ export function AgendamentoFormDialog({
           description: 'Selecione o serviço e o profissional correspondente.',
           variant: 'destructive',
         })
+        setIsSubmitting(false)
         return
       }
 
@@ -275,6 +280,7 @@ export function AgendamentoFormDialog({
           description: 'Não é possível agendar para um horário que já passou. Para registrar um atendimento realizado, ative "Atendimento já realizado".',
           variant: 'destructive',
         })
+        setIsSubmitting(false)
         return
       }
 
@@ -299,6 +305,7 @@ export function AgendamentoFormDialog({
               description: `Este horário está bloqueado para o profissional no serviço #${i + 1}.`,
               variant: 'destructive',
             })
+            setIsSubmitting(false)
             return
           }
 
@@ -319,6 +326,7 @@ export function AgendamentoFormDialog({
             })
             setConflictData(conflictResult)
             setShowConflictDialog(true)
+            setIsSubmitting(false)
             return
           }
 
@@ -328,6 +336,7 @@ export function AgendamentoFormDialog({
 
       await saveAgendamentos(data)
     } catch (error: any) {
+      setIsSubmitting(false)
       toast({
         title: 'Erro ao salvar agendamento',
         description: error.message,
@@ -413,6 +422,8 @@ export function AgendamentoFormDialog({
         description: error.message,
         variant: 'destructive',
       })
+    } finally {
+      setIsSubmitting(false)
     }
   }
 
@@ -823,12 +834,13 @@ export function AgendamentoFormDialog({
                 <AgendaButton
                   type="submit"
                   disabled={
+                    isSubmitting ||
                     createAgendamento.isPending ||
                     updateAgendamento.isPending ||
                     checkConflict.isPending
                   }
                 >
-                  {createAgendamento.isPending || updateAgendamento.isPending || checkConflict.isPending
+                  {isSubmitting || createAgendamento.isPending || updateAgendamento.isPending || checkConflict.isPending
                     ? 'Salvando...'
                     : agendamento
                       ? 'Atualizar Agendamento'

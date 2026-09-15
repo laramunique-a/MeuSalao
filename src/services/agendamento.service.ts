@@ -379,6 +379,19 @@ export const agendamentoService = {
     const usuario = useAuthStore.getState().usuario
     if (!usuario || !usuario.salao_id) throw new Error('Usuário não autenticado')
 
+    const { data: transacoes } = await supabase
+      .from('transacao_caixa')
+      .select('agendamento_id')
+      .eq('salao_id', usuario.salao_id)
+      .not('agendamento_id', 'is', null)
+      .eq('status', 'ativo')
+
+    const idsComTransacaoAtiva = (transacoes || [])
+      .map((t: any) => t.agendamento_id)
+      .filter(Boolean)
+
+    const idsComTransacaoSet = new Set(idsComTransacaoAtiva)
+
     const { data, error } = await supabase
       .from('agendamento')
       .select(AGENDAMENTO_SELECT)
@@ -388,7 +401,7 @@ export const agendamentoService = {
 
     if (error) throw error
     const mapped = (data || []).map(mapAgendamentoRealTimeStatus)
-    return mapped.filter((ag: any) => ag.status === 'pendente_caixa') as unknown as Agendamento[]
+    return mapped.filter((ag: any) => ag.status === 'pendente_caixa' && !idsComTransacaoSet.has(ag.id)) as unknown as Agendamento[]
   },
 
   async checkConflict(
