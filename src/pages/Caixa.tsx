@@ -133,12 +133,23 @@ export default function Caixa() {
     }
   }
 
-  // Seleção de Comandas Pendentes
+  // Seleção de Comandas Pendentes com deduplicação defensiva
   const pendenciasFiltradas = useMemo(() => {
     if (!pendencias) return []
-    return pendencias.filter(
+    const filtrados = pendencias.filter(
       ag => isAdmin || ag.profissional_id === usuario?.id || (ag.itens && ag.itens.some((it: any) => it.profissional_id === usuario?.id))
     )
+
+    const vistos = new Set<string>()
+    return filtrados.filter(ag => {
+      const dataDia = ag.data_hora ? ag.data_hora.slice(0, 10) : ''
+      const key = `${ag.cliente_id || ''}_${ag.servico_id || ''}_${ag.profissional_id || ''}_${dataDia}`
+      if (vistos.has(key)) {
+        return false
+      }
+      vistos.add(key)
+      return true
+    })
   }, [pendencias, isAdmin, usuario?.id])
 
   const isAllSelected = pendenciasFiltradas.length > 0 && selectedAgendamentos.length === pendenciasFiltradas.length

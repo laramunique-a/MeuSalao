@@ -185,7 +185,34 @@ export const agendamentoService = {
     if (error) throw error
 
     const mapped = (data || []).map(mapAgendamentoRealTimeStatus) as unknown as Agendamento[]
-    return mapped.filter((ag: any) => ag.status === 'pendente_caixa' && !idsComTransacaoSet.has(ag.id))
+    const pendentes = mapped.filter((ag: any) => ag.status === 'pendente_caixa' && !idsComTransacaoSet.has(ag.id))
+
+    // Deduplicação automática: identifica duplicatas no mesmo dia/horário e cancela no banco
+    const uniqueMap = new Map<string, Agendamento>()
+    const duplicatesToCancel: string[] = []
+
+    for (const ag of pendentes) {
+      const dataDia = ag.data_hora ? ag.data_hora.slice(0, 10) : ''
+      const key = `${ag.cliente_id || ''}_${ag.servico_id || ''}_${ag.profissional_id || ''}_${dataDia}`
+      if (uniqueMap.has(key)) {
+        duplicatesToCancel.push(ag.id)
+      } else {
+        uniqueMap.set(key, ag)
+      }
+    }
+
+    if (duplicatesToCancel.length > 0) {
+      (supabase.from('agendamento') as any)
+        .update({ status: 'cancelado' })
+        .in('id', duplicatesToCancel)
+        .then(({ error }: any) => {
+          if (error) {
+            console.error('Erro ao cancelar duplicatas de agendamentos no banco:', error)
+          }
+        })
+    }
+
+    return Array.from(uniqueMap.values())
   },
 
   async hasAnyPendencia(profissionalId?: string): Promise<boolean> {
@@ -401,7 +428,17 @@ export const agendamentoService = {
 
     if (error) throw error
     const mapped = (data || []).map(mapAgendamentoRealTimeStatus)
-    return mapped.filter((ag: any) => ag.status === 'pendente_caixa' && !idsComTransacaoSet.has(ag.id)) as unknown as Agendamento[]
+    const pendentes = mapped.filter((ag: any) => ag.status === 'pendente_caixa' && !idsComTransacaoSet.has(ag.id)) as unknown as Agendamento[]
+
+    const uniqueMap = new Map<string, Agendamento>()
+    for (const ag of pendentes) {
+      const dataDia = ag.data_hora ? ag.data_hora.slice(0, 10) : ''
+      const key = `${ag.cliente_id || ''}_${ag.servico_id || ''}_${ag.profissional_id || ''}_${dataDia}`
+      if (!uniqueMap.has(key)) {
+        uniqueMap.set(key, ag)
+      }
+    }
+    return Array.from(uniqueMap.values())
   },
 
   async checkConflict(
