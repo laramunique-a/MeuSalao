@@ -452,12 +452,10 @@ export function AgendamentosColumns({
                                     </DropdownMenuItem>
                                   )}
 
-                                  {ag.status !== 'em_atendimento' && (
-                                    <DropdownMenuItem onClick={() => onEdit(ag)} className="py-2 text-xs font-semibold uppercase tracking-wider">
-                                      <Pencil className="h-3.5 w-3.5 mr-2" />
-                                      Editar Detalhes
-                                    </DropdownMenuItem>
-                                  )}
+                                  <DropdownMenuItem onClick={() => onEdit(ag)} className="py-2 text-xs font-semibold uppercase tracking-wider">
+                                    <Pencil className="h-3.5 w-3.5 mr-2" />
+                                    Editar Detalhes
+                                  </DropdownMenuItem>
 
                                   {['agendado', 'em_atraso'].includes(ag.status) && (
                                     <>

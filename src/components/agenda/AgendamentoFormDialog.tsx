@@ -273,8 +273,10 @@ export function AgendamentoFormDialog({
 
       const currentDataHora = new Date(`${data.data}T${data.hora}:00`)
 
-      // Só valida horário futuro se NÃO for retroativo
-      if (!isRetroativo && currentDataHora < new Date()) {
+      const isOngoingOrRetro = isRetroativo || (agendamento && ['em_atendimento', 'pendente_caixa'].includes(agendamento.status))
+
+      // Só valida horário futuro se NÃO for retroativo e NÃO for atendimento em andamento
+      if (!isOngoingOrRetro && currentDataHora < new Date()) {
         toast({
           title: 'Horário Inválido',
           description: 'Não é possível agendar para um horário que já passou. Para registrar um atendimento realizado, ative "Atendimento já realizado".',
@@ -285,7 +287,7 @@ export function AgendamentoFormDialog({
       }
 
       // Verificações de bloqueio e conflito somente para agendamentos futuros
-      if (!isRetroativo) {
+      if (!isOngoingOrRetro) {
         let itemStart = new Date(currentDataHora)
         const itemDurations = calculateItemDurations(data.itens, effectiveDuracao)
 
