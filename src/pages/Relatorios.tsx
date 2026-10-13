@@ -3,7 +3,7 @@ import { useClientes } from '@/hooks/useClientes'
 import { useClienteReport, useCaixaPendenciasReport, useFolhaPagamentoReport, useSaldosComissoesReport } from '@/hooks/useRelatorios'
 import { useProfissionais } from '@/hooks/useProfissionais'
 import { useAuthStore } from '@/store/authStore'
-import { MovimentacaoManualDialog } from '@/components/caixa/MovimentacaoManualDialog'
+import { PagarComissaoDialog } from '@/components/caixa/PagarComissaoDialog'
 import { useQueryClient } from '@tanstack/react-query'
 import {
   Popover,
@@ -1071,12 +1071,12 @@ export default function Relatorios() {
           </Card>
         </div>
       )}
-      <MovimentacaoManualDialog
+      <PagarComissaoDialog
         open={isPayDialogOpen}
         onOpenChange={setIsPayDialogOpen}
-        defaultTipoMovimento="comissao"
-        defaultProfissionalId={payProfissionalId}
-        defaultValor={payValor}
+        profissionalId={payProfissionalId}
+        profissionalNome={profissionais.find(p => p.id === payProfissionalId)?.nome}
+        saldoPendente={Number(payValor.replace(',', '.')) || 0}
         onSuccess={() => {
           queryClient.invalidateQueries({ queryKey: ['saldos-comissoes-report'] })
           queryClient.invalidateQueries({ queryKey: ['folha-pagamento-report'] })

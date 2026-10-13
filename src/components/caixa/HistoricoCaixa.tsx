@@ -1,11 +1,24 @@
 import { useState } from 'react'
 import { format, startOfMonth, endOfMonth, startOfDay, endOfDay, subMonths, addMonths, differenceInDays, subDays, addDays } from 'date-fns'
-import { useCaixasByPeriod, useTransacoesByCaixa, useCaixaSummary } from '@/hooks/useCaixa'
+import { useCaixasByPeriod, useTransacoesByCaixa, useCaixaSummary, useReabrirCaixa, useAjustarCaixaFechado } from '@/hooks/useCaixa'
 import { useAuthStore } from '@/store/authStore'
 import { CaixaDiario } from '@/types/models'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent } from '@/components/ui/card'
 import { DateNavigator } from '@/components/ui/date-navigator'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Textarea } from '@/components/ui/textarea'
+import { useToast } from '@/hooks/use-toast'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+  DialogDescription,
+} from '@/components/ui/dialog'
 import {
   ChevronDown,
   ChevronRight,
@@ -15,14 +28,93 @@ import {
   Clock,
   AlertCircle,
   DollarSign,
+  RotateCcw,
+  Pencil,
+  FileText,
 } from 'lucide-react'
 
 const fmt = (n: number | null | undefined) =>
   n != null ? Number(n).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) : '—'
 
 function SessionRow({ caixa }: { caixa: CaixaDiario }) {
+  const { toast } = useToast()
+  const { isAdmin } = useAuthStore()
   const [expanded, setExpanded] = useState(false)
   const { data: transacoes, isLoading } = useTransacoesByCaixa(expanded ? caixa.id : null)
+
+  const reabrirCaixa = useReabrirCaixa()
+  const ajustarCaixa = useAjustarCaixaFechado()
+
+  const [isReabrirOpen, setIsReabrirOpen] = useState(false)
+  const [justificativaReabrir, setJustificativaReabrir] = useState('')
+
+  const [isAjustarOpen, setIsAjustarOpen] = useState(false)
+  const [novoValorInformado, setNovoValorInformado] = useState('')
+  const [justificativaAjustar, setJustificativaAjustar] = useState('')
+
+  async function handleConfirmReabrir() {
+    if (!justificativaReabrir || justificativaReabrir.trim().length < 5) {
+      toast({
+        title: 'Justificativa obrigatória',
+        description: 'Informe uma justificativa com no mínimo 5 caracteres para reabrir este caixa.',
+        variant: 'destructive',
+      })
+      return
+    }
+    try {
+      await reabrirCaixa.mutateAsync({ caixaId: caixa.id, justificativa: justificativaReabrir })
+      toast({
+        title: 'Caixa reaberto!',
+        description: 'A sessão de caixa foi reaberta com registro na auditoria.',
+      })
+      setIsReabrirOpen(false)
+    } catch (err: any) {
+      toast({
+        title: 'Erro ao reabrir caixa',
+        description: err.message,
+        variant: 'destructive',
+      })
+    }
+  }
+
+  async function handleConfirmAjustar() {
+    const clean = novoValorInformado.replace(/[^\d.,]/g, '').replace(',', '.')
+    const valNum = Number(clean)
+    if (isNaN(valNum) || valNum < 0) {
+      toast({
+        title: 'Valor inválido',
+        description: 'Informe um valor válido maior ou igual a zero.',
+        variant: 'destructive',
+      })
+      return
+    }
+    if (!justificativaAjustar || justificativaAjustar.trim().length < 5) {
+      toast({
+        title: 'Justificativa obrigatória',
+        description: 'Informe uma justificativa com no mínimo 5 caracteres para registrar o ajuste.',
+        variant: 'destructive',
+      })
+      return
+    }
+    try {
+      await ajustarCaixa.mutateAsync({
+        caixaId: caixa.id,
+        novoValorInformado: valNum,
+        justificativa: justificativaAjustar,
+      })
+      toast({
+        title: 'Ajuste registrado!',
+        description: 'O valor informado do fechamento foi atualizado com auditoria.',
+      })
+      setIsAjustarOpen(false)
+    } catch (err: any) {
+      toast({
+        title: 'Erro ao registrar ajuste',
+        description: err.message,
+        variant: 'destructive',
+      })
+    }
+  }
 
   const diff =
     caixa.valor_fechamento_informado != null && caixa.valor_fechamento_sistema != null
@@ -133,9 +225,171 @@ function SessionRow({ caixa }: { caixa: CaixaDiario }) {
                 </table>
               </div>
             )}
+
+            {/* Histórico de Auditoria e Observações */}
+            {caixa.observacoes && (
+              <div className="mt-3 p-3 bg-card rounded-xl border border-border space-y-1">
+                <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-1.5">
+                  <FileText className="h-3.5 w-3.5 text-primary" />
+                  Observações e Histórico de Auditoria
+                </span>
+                <p className="text-[11px] text-foreground font-medium whitespace-pre-line leading-relaxed">
+                  {caixa.observacoes}
+                </p>
+              </div>
+            )}
+
+            {/* Ações de Administração Auditadas (Reabrir ou Ajustar Fechamento) */}
+            {isAdmin && caixa.status === 'fechado' && (
+              <div className="mt-3 pt-3 border-t border-border flex items-center justify-end gap-2" onClick={(e) => e.stopPropagation()}>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="h-8 text-[11px] font-semibold gap-1.5 rounded-lg border-border hover:bg-accent"
+                  onClick={() => {
+                    setNovoValorInformado(caixa.valor_fechamento_informado != null ? Number(caixa.valor_fechamento_informado).toFixed(2).replace('.', ',') : '')
+                    setJustificativaAjustar('')
+                    setIsAjustarOpen(true)
+                  }}
+                >
+                  <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
+                  Ajustar Fechamento
+                </Button>
+
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="h-8 text-[11px] font-semibold gap-1.5 rounded-lg border-amber-300 dark:border-amber-900/50 text-amber-700 dark:text-amber-300 hover:bg-amber-50 dark:hover:bg-amber-950/30"
+                  onClick={() => {
+                    setJustificativaReabrir('')
+                    setIsReabrirOpen(true)
+                  }}
+                >
+                  <RotateCcw className="h-3.5 w-3.5 text-amber-600" />
+                  Reabrir Caixa
+                </Button>
+              </div>
+            )}
           </td>
         </tr>
       )}
+
+      {/* DIALOG DE REABERTURA AUDITADA */}
+      <Dialog open={isReabrirOpen} onOpenChange={setIsReabrirOpen}>
+        <DialogContent className="sm:max-w-[440px]" onClick={(e) => e.stopPropagation()}>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-sm font-bold uppercase tracking-wider text-amber-700 dark:text-amber-400">
+              <RotateCcw className="h-5 w-5" />
+              Reabrir Sessão de Caixa
+            </DialogTitle>
+            <DialogDescription className="text-xs text-muted-foreground">
+              A reabertura tornará este caixa aberto novamente. Esta ação e sua justificativa obrigatória serão gravadas permanentemente na auditoria do sistema.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-2 text-xs">
+            <div className="space-y-1.5">
+              <Label htmlFor="justificativa_reabrir" className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest flex items-center justify-between">
+                <span>Justificativa Obrigatória</span>
+                <span className="text-red-500 font-bold">* Mínimo 5 caracteres</span>
+              </Label>
+              <Textarea
+                id="justificativa_reabrir"
+                placeholder="Informe o motivo da reabertura deste caixa..."
+                value={justificativaReabrir}
+                onChange={(e) => setJustificativaReabrir(e.target.value)}
+                rows={3}
+                required
+                className="rounded-lg border-border text-xs resize-none"
+              />
+            </div>
+          </div>
+
+          <DialogFooter className="gap-2 pt-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setIsReabrirOpen(false)}
+              className="text-xs uppercase tracking-wider h-9"
+            >
+              Cancelar
+            </Button>
+            <Button
+              type="button"
+              disabled={reabrirCaixa.isPending || justificativaReabrir.trim().length < 5}
+              onClick={handleConfirmReabrir}
+              className="bg-amber-600 hover:bg-amber-700 text-white text-xs uppercase tracking-wider h-9"
+            >
+              {reabrirCaixa.isPending ? 'Reabrindo...' : 'Confirmar Reabertura'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* DIALOG DE AJUSTE AUDITADO */}
+      <Dialog open={isAjustarOpen} onOpenChange={setIsAjustarOpen}>
+        <DialogContent className="sm:max-w-[440px]" onClick={(e) => e.stopPropagation()}>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-sm font-bold uppercase tracking-wider">
+              <Pencil className="h-5 w-5 text-primary" />
+              Ajustar Valor Informado
+            </DialogTitle>
+            <DialogDescription className="text-xs text-muted-foreground">
+              Altere o valor conferido desta sessão de caixa fechada. O valor anterior e a justificativa serão salvos no histórico.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-2 text-xs">
+            <div className="space-y-1.5">
+              <Label htmlFor="novo_valor_inf" className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
+                Novo Valor Informado (R$)
+              </Label>
+              <Input
+                id="novo_valor_inf"
+                value={novoValorInformado}
+                onChange={(e) => setNovoValorInformado(e.target.value)}
+                placeholder="0,00"
+                className="h-10 rounded-lg border-border text-xs font-bold"
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <Label htmlFor="justificativa_ajuste" className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest flex items-center justify-between">
+                <span>Justificativa Obrigatória</span>
+                <span className="text-red-500 font-bold">* Mínimo 5 caracteres</span>
+              </Label>
+              <Textarea
+                id="justificativa_ajuste"
+                placeholder="Informe o motivo deste ajuste de fechamento..."
+                value={justificativaAjustar}
+                onChange={(e) => setJustificativaAjustar(e.target.value)}
+                rows={3}
+                required
+                className="rounded-lg border-border text-xs resize-none"
+              />
+            </div>
+          </div>
+
+          <DialogFooter className="gap-2 pt-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setIsAjustarOpen(false)}
+              className="text-xs uppercase tracking-wider h-9"
+            >
+              Cancelar
+            </Button>
+            <Button
+              type="button"
+              disabled={ajustarCaixa.isPending || justificativaAjustar.trim().length < 5}
+              onClick={handleConfirmAjustar}
+              className="bg-primary text-primary-foreground text-xs uppercase tracking-wider h-9"
+            >
+              {ajustarCaixa.isPending ? 'Salvando...' : 'Salvar Ajuste'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   )
 }

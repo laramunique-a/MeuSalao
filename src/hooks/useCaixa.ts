@@ -147,7 +147,11 @@ export function useSaldoCaixaAberto(caixaId: string | null | undefined) {
       const transacoes = await caixaService.getTransacoesByCaixa(caixaId)
       const ativas = transacoes.filter((t) => t.status === 'ativo')
       return ativas.reduce((acc, t) => {
-        return t.tipo === 'entrada' ? acc + Number(t.valor) : acc - Number(t.valor)
+        if (t.tipo === 'entrada') {
+          const valBruto = Number((t.metadata as any)?.pagamento?.valor_bruto) || (Number(t.valor) + Number(t.taxa_cartao || 0))
+          return acc + valBruto
+        }
+        return acc - Number(t.valor)
       }, 0)
     },
     enabled: !!caixaId,
@@ -186,6 +190,33 @@ export function useUpdateAberturaCaixa() {
       queryClient.invalidateQueries({ queryKey: ['transacoes-caixa'] })
       queryClient.invalidateQueries({ queryKey: ['saldos-comissoes-report'] })
       queryClient.invalidateQueries({ queryKey: ['folha-pagamento-report'] })
+    },
+  })
+}
+
+export function useReabrirCaixa() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ caixaId, justificativa }: { caixaId: string; justificativa: string }) =>
+      caixaService.reabrirCaixa(caixaId, justificativa),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['caixa-aberto'] })
+      queryClient.invalidateQueries({ queryKey: ['caixas-period'] })
+      queryClient.invalidateQueries({ queryKey: ['saldo-caixa-aberto'] })
+      queryClient.invalidateQueries({ queryKey: ['transacoes-caixa'] })
+      queryClient.invalidateQueries({ queryKey: ['caixa-summary'] })
+    },
+  })
+}
+
+export function useAjustarCaixaFechado() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ caixaId, novoValorInformado, justificativa }: { caixaId: string; novoValorInformado: number; justificativa: string }) =>
+      caixaService.ajustarCaixaFechado(caixaId, novoValorInformado, justificativa),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['caixas-period'] })
+      queryClient.invalidateQueries({ queryKey: ['caixa-summary'] })
     },
   })
 }

@@ -67,9 +67,10 @@ export const caixaService = {
     const usuario = useAuthStore.getState().usuario
     if (!usuario || !usuario.salao_id) throw new Error('Usuário não autenticado')
 
-    // Verificar se existe caixa aberto
+    // Verificar se existe caixa aberto (exceto para Abertura de Caixa ou Pagamento de Comissão)
+    const isPagamentoComissao = transacao.categoria === 'Pagamento de Comissão'
     const caixaAberto = await this.getCaixaAberto()
-    if (!caixaAberto && transacao.categoria !== 'Abertura de Caixa') {
+    if (!caixaAberto && transacao.categoria !== 'Abertura de Caixa' && !isPagamentoComissao) {
       throw new Error('Não é possível realizar movimentações com o caixa fechado.')
     }
 
@@ -168,7 +169,7 @@ export const caixaService = {
         salao_id: usuario.salao_id,
         usuario_id: usuario.id,
         agendamento_id: transacao.agendamento_id,
-        caixa_id: caixaAberto?.id || transacao.caixa_id,
+        caixa_id: isPagamentoComissao ? null : (caixaAberto?.id || transacao.caixa_id || null),
         tipo: transacao.tipo,
         valor: transacao.valor,
         forma_pagamento: transacao.forma_pagamento,
@@ -344,7 +345,7 @@ export const caixaService = {
     // 1. Buscar todas as transações ativas deste caixa
     const { data: transacoes, error: errorTrans } = await (supabase
       .from('transacao_caixa') as any)
-      .select('id, tipo, valor, data_hora')
+      .select('id, tipo, valor, data_hora, taxa_cartao, metadata, forma_pagamento')
       .eq('caixa_id', caixaId)
       .eq('status', 'ativo')
 
@@ -366,9 +367,14 @@ export const caixaService = {
       transRemanescentes = transList.filter(t => new Date(t.data_hora) > cutoffDate)
     }
 
-    // 3. Calcular saldo do sistema para as transações pertencentes ao período fechado
+    // 3. Calcular saldo bruto do sistema para as transações pertencentes ao período fechado (sem descontar taxa de cartao)
     const saldoSistema = transFechamento.reduce((acc, t) => {
-      return t.tipo === 'entrada' ? acc + Number(t.valor) : acc - Number(t.valor)
+      if (t.tipo === 'entrada') {
+        const valBruto = Number(t.metadata?.pagamento?.valor_bruto) || (Number(t.valor) + Number(t.taxa_cartao || 0))
+        return acc + valBruto
+      } else {
+        return acc - Number(t.valor)
+      }
     }, 0)
 
     // 4. Encerrar caixa atual com a data limite e saldo do período
@@ -515,5 +521,81 @@ export const caixaService = {
       .eq('id', transacaoId)
 
     if (errorTrans) throw errorTrans
+  },
+
+  async reabrirCaixa(caixaId: string, justificativa: string) {
+    const usuario = useAuthStore.getState().usuario
+    if (!usuario || !usuario.salao_id) throw new Error('Usuário não autenticado')
+    if (usuario.perfil !== 'administrador' && usuario.perfil !== 'super_admin') {
+      throw new Error('Apenas administradores podem reabrir o caixa.')
+    }
+    if (!justificativa || justificativa.trim().length < 5) {
+      throw new Error('A justificativa para reabertura é obrigatória (mínimo de 5 caracteres).')
+    }
+
+    const { data: caixaAtual, error: errBusca } = await (supabase
+      .from('caixa_diario') as any)
+      .select('*')
+      .eq('id', caixaId)
+      .single()
+
+    if (errBusca) throw errBusca
+
+    const nowStr = new Date().toLocaleString('pt-BR')
+    const logReabertura = `\n[REABERTURA em ${nowStr} por ${usuario.nome}]: ${justificativa.trim()}`
+    const obsAtualizada = (caixaAtual.observacoes || '') + logReabertura
+
+    const { data, error } = await (supabase
+      .from('caixa_diario') as any)
+      .update({
+        status: 'aberto',
+        data_fechamento: null,
+        usuario_fechamento_id: null,
+        observacoes: obsAtualizada,
+      })
+      .eq('id', caixaId)
+      .select()
+      .single()
+
+    if (error) throw error
+    return data as unknown as CaixaDiario
+  },
+
+  async ajustarCaixaFechado(caixaId: string, novoValorInformado: number, justificativa: string) {
+    const usuario = useAuthStore.getState().usuario
+    if (!usuario || !usuario.salao_id) throw new Error('Usuário não autenticado')
+    if (usuario.perfil !== 'administrador' && usuario.perfil !== 'super_admin') {
+      throw new Error('Apenas administradores podem realizar ajustes em caixa fechado.')
+    }
+    if (!justificativa || justificativa.trim().length < 5) {
+      throw new Error('A justificativa para o ajuste é obrigatória (mínimo de 5 caracteres).')
+    }
+
+    const { data: caixaAtual, error: errBusca } = await (supabase
+      .from('caixa_diario') as any)
+      .select('*')
+      .eq('id', caixaId)
+      .single()
+
+    if (errBusca) throw errBusca
+
+    const nowStr = new Date().toLocaleString('pt-BR')
+    const valAnterior = caixaAtual.valor_fechamento_informado != null ? Number(caixaAtual.valor_fechamento_informado).toFixed(2) : '0,00'
+    const valNovo = novoValorInformado.toFixed(2)
+    const logAjuste = `\n[AJUSTE em ${nowStr} por ${usuario.nome}]: De R$ ${valAnterior} para R$ ${valNovo}. Motivo: ${justificativa.trim()}`
+    const obsAtualizada = (caixaAtual.observacoes || '') + logAjuste
+
+    const { data, error } = await (supabase
+      .from('caixa_diario') as any)
+      .update({
+        valor_fechamento_informado: novoValorInformado,
+        observacoes: obsAtualizada,
+      })
+      .eq('id', caixaId)
+      .select()
+      .single()
+
+    if (error) throw error
+    return data as unknown as CaixaDiario
   },
 }

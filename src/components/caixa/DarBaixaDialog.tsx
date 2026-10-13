@@ -397,7 +397,7 @@ export function DarBaixaDialog({ open, onOpenChange, agendamento, agendamentos }
           await createTransacao.mutateAsync({
             agendamento_id: item.agendamentoId,
             tipo: 'entrada',
-            valor: liquido1,
+            valor: bruto1,
             forma_pagamento: data.forma_pagamento,
             categoria: item.categoria,
             descricao: `${prefix}${item.descricao}`,
@@ -444,7 +444,7 @@ export function DarBaixaDialog({ open, onOpenChange, agendamento, agendamentos }
             await createTransacao.mutateAsync({
               agendamento_id: item.agendamentoId,
               tipo: 'entrada',
-              valor: liquido2,
+              valor: bruto2,
               forma_pagamento: data.forma_pagamento_2!,
               categoria: item.categoria,
               descricao: `[2/2] ${item.descricao}`,
@@ -470,7 +470,7 @@ export function DarBaixaDialog({ open, onOpenChange, agendamento, agendamentos }
 
       toast({
         title: 'Baixa realizada!',
-        description: `${listAgendamentos.length > 1 ? `${listAgendamentos.length} comandas baixadas` : 'Baixa concluída'}. O valor líquido de R$ ${totalLiquido.toFixed(2).replace('.', ',')} entrou no caixa.`,
+        description: `${listAgendamentos.length > 1 ? `${listAgendamentos.length} comandas baixadas` : 'Baixa concluída'}. O valor de R$ ${totalBruto.toFixed(2).replace('.', ',')} entrou no caixa.`,
       })
 
       onOpenChange(false)

@@ -26,7 +26,6 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { useTransacoesByDate, useCaixaSummary, useCaixaAberto, useEstornarTransacao, useSaldoCaixaAberto, useTransacoesByCaixa } from '@/hooks/useCaixa'
 import { useAgendamentosEmAtendimento, usePendenciasGlobais, useUpdateAgendamentoStatus } from '@/hooks/useAgendamentos'
-import { useProfissionais } from '@/hooks/useProfissionais'
 import { format, startOfDay, endOfDay, subDays, addDays, isBefore, parseISO, isToday, isYesterday } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { Badge } from '@/components/ui/badge'
@@ -77,7 +76,10 @@ export default function Caixa() {
   const resumoAtivo = useMemo(() => {
     if (caixaAberto) {
       const ativas = transacoesCaixa?.filter((t: any) => t.status === 'ativo') || []
-      const entradas = ativas.filter((t: any) => t.tipo === 'entrada').reduce((sum: number, t: any) => sum + Number(t.valor), 0)
+      const entradas = ativas.filter((t: any) => t.tipo === 'entrada').reduce((sum: number, t: any) => {
+        const valBruto = Number(t.metadata?.pagamento?.valor_bruto) || (Number(t.valor) + Number(t.taxa_cartao || 0))
+        return sum + valBruto
+      }, 0)
       const saidas = ativas.filter((t: any) => t.tipo === 'saida').reduce((sum: number, t: any) => sum + Number(t.valor), 0)
       return {
         entradas,
@@ -98,7 +100,6 @@ export default function Caixa() {
   const { data: pendencias } = useAgendamentosEmAtendimento(dataPendenciasInicio, dataPendenciasFim)
   const estornar = useEstornarTransacao()
   const updateStatus = useUpdateAgendamentoStatus()
-  const { data: todosProfissionais = [] } = useProfissionais()
 
   const { data: pendenciasGlobais = [] } = usePendenciasGlobais()
 
@@ -186,55 +187,6 @@ export default function Caixa() {
     return dataAgendamento < dataAberturaCaixa
   })
 
-  // Calcular comissões por profissional acumulando cada transação ativa individualmente
-  const comissoesPorProfissional = useMemo(() => {
-    const list = caixaAberto ? transacoesCaixa : transacoes
-    if (!list) return {}
-
-    const acc: Record<string, { nome: string; total: number }> = {}
-
-    for (const t of list as any[]) {
-      if (t.status !== 'ativo') continue
-
-      const breakdown = t.metadata?.comissoes_breakdown
-      if (Array.isArray(breakdown) && breakdown.length > 0) {
-        for (const item of breakdown) {
-          const profId = item.profissional_id
-          if (!profId) continue
-
-          // Se não for admin, mostrar apenas as comissões do próprio usuário
-          if (!isAdmin && profId !== usuario?.id) continue
-
-          const profObj = todosProfissionais.find((p: any) => p.id === profId)
-          const profNome = item.profissional_nome || profObj?.nome || 'Profissional'
-
-          const rawComissao = Number(item.comissao_valor) || 0
-          const tComissao = Number(t.comissao_valor)
-          const valorComissao = (tComissao > 0 && rawComissao > tComissao) ? tComissao : rawComissao
-
-          if (!acc[profId]) acc[profId] = { nome: profNome, total: 0 }
-          acc[profId].total += valorComissao
-        }
-      } else if (t.comissao_valor && Number(t.comissao_valor) > 0) {
-        const profId = t.metadata?.profissional_id || t.agendamento?.profissional_id || t.agendamento?.profissional?.id
-        if (!profId) continue
-        if (!isAdmin && profId !== usuario?.id) continue
-
-        const profObj = todosProfissionais.find((p: any) => p.id === profId)
-        const profNome = profObj?.nome || t.agendamento?.profissional?.nome || 'Profissional'
-
-        if (!acc[profId]) acc[profId] = { nome: profNome, total: 0 }
-        acc[profId].total += Number(t.comissao_valor)
-      }
-    }
-
-    return acc
-  }, [caixaAberto, transacoesCaixa, transacoes, isAdmin, usuario?.id, todosProfissionais])
-
-  const totalComissoes = useMemo(() => {
-    return Object.values(comissoesPorProfissional || {}).reduce((acc: number, p: any) => acc + p.total, 0)
-  }, [comissoesPorProfissional])
-
   const filteredTransacoes = useMemo(() => {
     const list = transacoesExibidas || []
     return list.filter((t: any) => 
@@ -280,6 +232,17 @@ export default function Caixa() {
 
   return (
     <div className="max-w-[1120px] mx-auto px-4 py-6">
+      {caixaAberto?.observacoes?.includes('[REABERTURA') && (
+        <div className="mb-4 p-4 border border-amber-300 dark:border-amber-900/50 bg-amber-50/60 dark:bg-amber-950/20 rounded-lg flex items-center gap-3 text-amber-900 dark:text-amber-200">
+          <AlertCircle className="h-5 w-5 text-amber-600 shrink-0" />
+          <div className="text-xs uppercase tracking-wider">
+            <p className="font-semibold">Caixa Reaberto com Justificativa</p>
+            <p className="text-muted-foreground mt-0.5 normal-case font-medium">
+              Este caixa passou por uma reabertura autorizada. O histórico da reabertura e as movimentações subsequentes continuam registrados para auditoria.
+            </p>
+          </div>
+        </div>
+      )}
       {isOldCaixa && (
         <div className="mb-6 p-4 border border-border bg-card rounded-lg flex items-center gap-3 text-foreground">
           <AlertCircle className="h-5 w-5 text-muted-foreground shrink-0" />
@@ -400,10 +363,6 @@ export default function Caixa() {
                     </Badge>
                   </>
                 )}
-                
-                <Badge variant="secondary" className="h-7 px-3 text-[10px] font-semibold bg-background border border-border text-muted-foreground rounded-full shrink-0">
-                  Comissões: <span className="text-foreground ml-1">R$ {totalComissoes.toFixed(2).replace('.', ',')}</span>
-                </Badge>
 
                 {isAdmin && (
                   <Badge className="h-7 px-3 text-[10px] font-semibold bg-primary text-primary-foreground hover:bg-primary/90 border border-transparent rounded-full shrink-0">
@@ -584,37 +543,6 @@ export default function Caixa() {
             </div>
           ) : (
             <div className="flex flex-col gap-8">
-              {/* Sidebar de Comissões movida para cima para dar largura 100% à tabela */}
-              <div className="w-full space-y-4">
-                <Card className="rounded-lg border border-border overflow-hidden bg-card">
-                  <div className="p-4 border-b border-border bg-card flex flex-col sm:flex-row justify-between sm:items-center gap-2">
-                    <h4 className="font-bold flex items-center gap-2 text-[10px] uppercase tracking-widest text-muted-foreground">
-                      <User className="h-3.5 w-3.5 text-muted-foreground" />
-                      Comissões de Hoje
-                    </h4>
-                    <span className="text-[10px] text-muted-foreground uppercase tracking-wider">Lançadas automaticamente.</span>
-                  </div>
-                  <CardContent className="p-4">
-                    {Object.keys(comissoesPorProfissional || {}).length === 0 ? (
-                      <p className="text-[10px] text-muted-foreground uppercase tracking-wider text-center py-4">
-                        Aguardando finalizações...
-                      </p>
-                    ) : (
-                      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                        {Object.values(comissoesPorProfissional as any).map((prof: any, i: number) => (
-                          <div key={i} className="flex justify-between items-center bg-background p-3 rounded-lg border border-border">
-                            <span className="text-xs font-semibold text-foreground uppercase tracking-wider truncate mr-2">{prof.nome}</span>
-                            <Badge variant="outline" className="font-semibold text-[10px] bg-accent border-border text-foreground whitespace-nowrap">
-                              R$ {prof.total.toFixed(2).replace('.', ',')}
-                            </Badge>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              </div>
-
               {/* Extrato de Transações */}
               <div className="w-full space-y-4">
                 <div className="bg-card rounded-lg border border-border overflow-hidden">
